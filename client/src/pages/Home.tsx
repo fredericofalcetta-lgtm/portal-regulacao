@@ -3,6 +3,7 @@ import { Route, Switch } from 'wouter';
 import Sidebar from '@/components/Sidebar';
 import Regulation from './Regulation';
 import Dashboard from './Dashboard';
+import Prioridades from './Prioridades';
 import { trpc } from '@/lib/trpc';
 
 export default function Home() {
@@ -45,6 +46,12 @@ export default function Home() {
             {() => {
               setCurrentPage('dashboard');
               return <Dashboard data={rows} onRefresh={handleRefresh} />;
+            }}
+          </Route>
+          <Route path="/prioridades">
+            {() => {
+              setCurrentPage('prioridades');
+              return <Prioridades />;
             }}
           </Route>
           <Route path="/">

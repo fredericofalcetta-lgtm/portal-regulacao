@@ -13,6 +13,7 @@ function Router() {
       <Route path={"/"} component={Home} />
       <Route path={"/regulacao"} component={Home} />
       <Route path={"/dashboard"} component={Home} />
+      <Route path={"/prioridades"} component={Home} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

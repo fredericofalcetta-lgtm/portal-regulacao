@@ -14,3 +14,8 @@
 - [x] Adicionar botão de sincronização manual no Dashboard
 - [x] Adicionar histórico de sincronizações no Dashboard
 - [x] Armazenar dados no banco de dados (MySQL)
+- [x] Analisar aba Apoio da planilha (colunas F e G)
+- [x] Adicionar tabela de prioridades no banco de dados
+- [x] Sincronizar dados da aba Apoio automaticamente todos os dias
+- [x] Criar página de Listas de Prioridades com links por especialidade
+- [x] Adicionar Listas de Prioridades ao menu lateral

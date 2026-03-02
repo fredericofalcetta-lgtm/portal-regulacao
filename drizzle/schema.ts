@@ -52,3 +52,17 @@ export const syncLog = mysqlTable("sync_log", {
 });
 
 export type SyncLog = typeof syncLog.$inferSelect;
+
+/**
+ * Tabela para armazenar as listas de prioridades por especialidade (aba Apoio, colunas F e G).
+ */
+export const prioridades = mysqlTable("prioridades", {
+  id: int("id").autoincrement().primaryKey(),
+  grandeGrupo: varchar("grande_grupo", { length: 255 }),
+  nomeArquivo: varchar("nome_arquivo", { length: 500 }),
+  linkUrl: text("link_url"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Prioridade = typeof prioridades.$inferSelect;
+export type InsertPrioridade = typeof prioridades.$inferInsert;

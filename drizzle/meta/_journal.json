@@ -15,6 +15,13 @@
       "when": 1772461035694,
       "tag": "0001_futuristic_rattler",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1772461614968,
+      "tag": "0002_tricky_mercury",
+      "breakpoints": true
     }
   ]
 }

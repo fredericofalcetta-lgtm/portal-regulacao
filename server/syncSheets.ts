@@ -1,6 +1,6 @@
 import axios from "axios";
 import { getDb } from "./db";
-import { regulacaoData, syncLog } from "../drizzle/schema";
+import { regulacaoData, syncLog, prioridades } from "../drizzle/schema";
 import { count } from "drizzle-orm";
 
 const SPREADSHEET_ID = "1cZ9aGm307pgF5tug8ScZFqncKy9BF1BHo7Dah9Rgm9k";
@@ -56,6 +56,50 @@ export async function syncSheetsToDb(): Promise<number> {
   return insertRows.length;
 }
 
+export async function syncPrioridadesToDb(): Promise<number> {
+  const apiKey = process.env.GOOGLE_SHEETS_API_KEY;
+  if (!apiKey) throw new Error("GOOGLE_SHEETS_API_KEY não está definida");
+
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados não disponível");
+
+  const SPREADSHEET_ID = "1cZ9aGm307pgF5tug8ScZFqncKy9BF1BHo7Dah9Rgm9k";
+
+  // Buscar metadados com hyperlinks da coluna G da aba Apoio
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?key=${apiKey}&ranges=Apoio!F1:G250&fields=sheets.data.rowData.values.hyperlink,sheets.data.rowData.values.formattedValue`;
+  const response = await axios.get(url, { timeout: 30000 });
+  const sheets = response.data.sheets || [];
+  const rowData = sheets[0]?.data?.[0]?.rowData || [];
+
+  // Limpar dados existentes
+  await db.delete(prioridades);
+
+  const insertRows: { grandeGrupo: string | null; nomeArquivo: string | null; linkUrl: string | null }[] = [];
+
+  // Pular linha 0 (cabeçalho)
+  for (let i = 1; i < rowData.length; i++) {
+    const row = rowData[i];
+    const values = row?.values || [];
+    const colF = values[0];
+    const colG = values[1];
+
+    const grandeGrupo = colF?.formattedValue?.trim() || null;
+    const nomeArquivo = colG?.formattedValue?.trim() || null;
+    const linkUrl = colG?.hyperlink?.trim() || null;
+
+    if (nomeArquivo || linkUrl) {
+      insertRows.push({ grandeGrupo, nomeArquivo, linkUrl });
+    }
+  }
+
+  if (insertRows.length > 0) {
+    await db.insert(prioridades).values(insertRows);
+  }
+
+  console.log(`[Sync] ${insertRows.length} listas de prioridades sincronizadas com sucesso`);
+  return insertRows.length;
+}
+
 /**
  * Sincroniza se o banco estiver vazio (primeira carga) ou se forceSync for true.
  */
@@ -78,6 +122,7 @@ export async function syncAndSeedIfEmpty(forceSync = false): Promise<void> {
 
     console.log("[Sync] Iniciando sincronização com Google Sheets...");
     await syncSheetsToDb();
+    await syncPrioridadesToDb();
   } catch (err) {
     console.error("[Sync] Erro durante sincronização:", err);
   }

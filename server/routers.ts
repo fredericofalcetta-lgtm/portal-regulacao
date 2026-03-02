@@ -3,9 +3,9 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
-import { regulacaoData, syncLog } from "../drizzle/schema";
-import { desc } from "drizzle-orm";
-import { syncSheetsToDb } from "./syncSheets";
+import { regulacaoData, syncLog, prioridades } from "../drizzle/schema";
+import { asc, desc } from "drizzle-orm";
+import { syncSheetsToDb, syncPrioridadesToDb } from "./syncSheets";
 
 export const appRouter = router({
   system: systemRouter,
@@ -75,6 +75,30 @@ export const appRouter = router({
         .from(syncLog)
         .orderBy(desc(syncLog.syncedAt))
         .limit(10);
+    }),
+  }),
+
+  prioridades: router({
+    // Buscar todas as listas de prioridades
+    getAll: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+
+      return db
+        .select()
+        .from(prioridades)
+        .orderBy(asc(prioridades.grandeGrupo), asc(prioridades.nomeArquivo));
+    }),
+
+    // Sincronizar prioridades manualmente
+    sync: publicProcedure.mutation(async () => {
+      try {
+        const count = await syncPrioridadesToDb();
+        return { success: true, count };
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Erro desconhecido";
+        throw new Error(message);
+      }
     }),
   }),
 });

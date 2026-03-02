@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu, X, BarChart3, Table2 } from 'lucide-react';
+import { Menu, X, BarChart3, Table2, ListChecks } from 'lucide-react';
 import { Link } from 'wouter';
 
 interface SidebarProps {
@@ -13,38 +13,30 @@ export default function Sidebar({ currentPage }: SidebarProps) {
   // Auto-collapse after 3 seconds of inactivity
   useEffect(() => {
     const handleMouseMove = () => {
-      // Clear existing timer
-      if (collapseTimer) {
-        clearTimeout(collapseTimer);
-      }
-
-      // Set new timer
-      const timer = setTimeout(() => {
-        setIsOpen(false);
-      }, 3000);
-
+      if (collapseTimer) clearTimeout(collapseTimer);
+      const timer = setTimeout(() => setIsOpen(false), 3000);
       setCollapseTimer(timer);
     };
 
-    // Only set up timer if sidebar is open
     if (isOpen) {
       window.addEventListener('mousemove', handleMouseMove);
       return () => {
         window.removeEventListener('mousemove', handleMouseMove);
-        if (collapseTimer) {
-          clearTimeout(collapseTimer);
-        }
+        if (collapseTimer) clearTimeout(collapseTimer);
       };
     }
   }, [isOpen, collapseTimer]);
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
-    // Clear timer when manually toggling
-    if (collapseTimer) {
-      clearTimeout(collapseTimer);
-    }
+    if (collapseTimer) clearTimeout(collapseTimer);
   };
+
+  const navItems = [
+    { href: '/regulacao', page: 'regulacao', icon: Table2, label: 'Regulação' },
+    { href: '/dashboard', page: 'dashboard', icon: BarChart3, label: 'Dashboard' },
+    { href: '/prioridades', page: 'prioridades', icon: ListChecks, label: 'Listas de Prioridades' },
+  ];
 
   return (
     <>
@@ -68,32 +60,22 @@ export default function Sidebar({ currentPage }: SidebarProps) {
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 px-2 py-4 space-y-2">
-          <Link href="/regulacao">
-            <a
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                currentPage === 'regulacao'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              <Table2 size={20} className="flex-shrink-0" />
-              {isOpen && <span className="text-sm font-medium">Regulação</span>}
-            </a>
-          </Link>
-
-          <Link href="/dashboard">
-            <a
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                currentPage === 'dashboard'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              <BarChart3 size={20} className="flex-shrink-0" />
-              {isOpen && <span className="text-sm font-medium">Dashboard</span>}
-            </a>
-          </Link>
+        <nav className="flex-1 px-2 py-4 space-y-1">
+          {navItems.map(({ href, page, icon: Icon, label }) => (
+            <Link key={page} href={href}>
+              <a
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  currentPage === page
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-300 hover:bg-slate-700'
+                }`}
+                title={!isOpen ? label : undefined}
+              >
+                <Icon size={20} className="flex-shrink-0" />
+                {isOpen && <span className="text-sm font-medium leading-tight">{label}</span>}
+              </a>
+            </Link>
+          ))}
         </nav>
 
         {/* Footer */}
@@ -109,9 +91,7 @@ export default function Sidebar({ currentPage }: SidebarProps) {
         className={`transition-all duration-300 ease-in-out ${
           isOpen ? 'ml-64' : 'ml-20'
         }`}
-      >
-        {/* Content will be rendered here */}
-      </div>
+      />
     </>
   );
 }
