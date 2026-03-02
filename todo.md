@@ -19,3 +19,6 @@
 - [x] Sincronizar dados da aba Apoio automaticamente todos os dias
 - [x] Criar página de Listas de Prioridades com links por especialidade
 - [x] Adicionar Listas de Prioridades ao menu lateral
+- [x] Criar página inicial com boas-vindas, métricas resumidas e links rápidos
+- [x] Adicionar item "Início" ao menu lateral
+- [x] Configurar página inicial como rota padrão (/)

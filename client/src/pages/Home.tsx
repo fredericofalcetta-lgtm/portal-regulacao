@@ -4,15 +4,15 @@ import Sidebar from '@/components/Sidebar';
 import Regulation from './Regulation';
 import Dashboard from './Dashboard';
 import Prioridades from './Prioridades';
+import Landing from './Landing';
 import { trpc } from '@/lib/trpc';
 
 export default function Home() {
-  const [currentPage, setCurrentPage] = useState('regulacao');
+  const [currentPage, setCurrentPage] = useState('inicio');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const utils = trpc.useUtils();
 
-  // Buscar dados do servidor via tRPC
   const { data: sheetsData, isLoading } = trpc.sheets.getData.useQuery();
-
   const rows = sheetsData?.rows ?? [];
 
   const handleRefresh = () => {
@@ -31,11 +31,21 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar currentPage={currentPage} />
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+      <Sidebar currentPage={currentPage} onToggle={setSidebarOpen} />
 
-      <div className="flex-1 overflow-auto">
+      {/* Conteúdo principal com margem dinâmica baseada no estado do sidebar */}
+      <div
+        className="flex-1 overflow-auto transition-all duration-300 ease-in-out"
+        style={{ marginLeft: sidebarOpen ? '16rem' : '5rem' }}
+      >
         <Switch>
+          <Route path="/">
+            {() => {
+              setCurrentPage('inicio');
+              return <Landing />;
+            }}
+          </Route>
           <Route path="/regulacao">
             {() => {
               setCurrentPage('regulacao');
@@ -52,12 +62,6 @@ export default function Home() {
             {() => {
               setCurrentPage('prioridades');
               return <Prioridades />;
-            }}
-          </Route>
-          <Route path="/">
-            {() => {
-              setCurrentPage('regulacao');
-              return <Regulation data={rows} />;
             }}
           </Route>
         </Switch>
