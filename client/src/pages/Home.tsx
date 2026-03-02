@@ -1,29 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Route, Switch } from 'wouter';
 import Sidebar from '@/components/Sidebar';
 import Regulation from './Regulation';
 import Dashboard from './Dashboard';
+import { trpc } from '@/lib/trpc';
 
 export default function Home() {
-  const [data, setData] = useState<(string | number)[][]>([]);
-  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState('regulacao');
+  const utils = trpc.useUtils();
 
-  useEffect(() => {
-    // Load data from public folder
-    fetch('/processed_data.json')
-      .then(res => res.json())
-      .then(json => {
-        setData(json.rows);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error loading data:', err);
-        setLoading(false);
-      });
-  }, []);
+  // Buscar dados do servidor via tRPC
+  const { data: sheetsData, isLoading } = trpc.sheets.getData.useQuery();
 
-  if (loading) {
+  const rows = sheetsData?.rows ?? [];
+
+  const handleRefresh = () => {
+    utils.sheets.getData.invalidate();
+  };
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -37,25 +32,25 @@ export default function Home() {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar currentPage={currentPage} />
-      
+
       <div className="flex-1 overflow-auto">
         <Switch>
           <Route path="/regulacao">
             {() => {
               setCurrentPage('regulacao');
-              return <Regulation data={data} />;
+              return <Regulation data={rows} />;
             }}
           </Route>
           <Route path="/dashboard">
             {() => {
               setCurrentPage('dashboard');
-              return <Dashboard data={data} />;
+              return <Dashboard data={rows} onRefresh={handleRefresh} />;
             }}
           </Route>
           <Route path="/">
             {() => {
               setCurrentPage('regulacao');
-              return <Regulation data={data} />;
+              return <Regulation data={rows} />;
             }}
           </Route>
         </Switch>
