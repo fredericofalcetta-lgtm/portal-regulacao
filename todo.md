@@ -22,3 +22,4 @@
 - [x] Criar página inicial com boas-vindas, métricas resumidas e links rápidos
 - [x] Adicionar item "Início" ao menu lateral
 - [x] Configurar página inicial como rota padrão (/)
+- [x] Corrigir layout dos cards de resumo geral na página inicial (textos maiores que os cards)

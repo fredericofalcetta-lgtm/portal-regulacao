@@ -60,13 +60,13 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-start gap-4 shadow-sm">
-      <div className={`p-3 rounded-lg ${color}`}>
-        <Icon size={20} className="text-white" />
+    <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col items-start gap-2 shadow-sm min-w-0">
+      <div className={`p-2.5 rounded-lg ${color} shrink-0`}>
+        <Icon size={18} className="text-white" />
       </div>
-      <div>
-        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{label}</p>
-        <p className="text-2xl font-bold text-gray-900 mt-0.5">{value}</p>
+      <div className="w-full min-w-0">
+        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide leading-tight truncate">{label}</p>
+        <p className="text-xl font-bold text-gray-900 mt-0.5 truncate">{value}</p>
         {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
       </div>
     </div>
@@ -143,7 +143,7 @@ export default function Landing() {
         {stats && (
           <section className="mb-12">
             <h2 className="text-lg font-semibold text-gray-700 mb-4">Resumo Geral</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
               <StatCard
                 icon={Table2}
                 label="Agendas"

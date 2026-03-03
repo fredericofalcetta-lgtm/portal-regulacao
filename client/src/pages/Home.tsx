@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Route, Switch } from 'wouter';
 import Sidebar from '@/components/Sidebar';
 import Regulation from './Regulation';
@@ -6,6 +6,9 @@ import Dashboard from './Dashboard';
 import Prioridades from './Prioridades';
 import Landing from './Landing';
 import { trpc } from '@/lib/trpc';
+
+const SIDEBAR_OPEN_WIDTH = '16rem';   // w-64
+const SIDEBAR_CLOSED_WIDTH = '5rem';  // w-20
 
 export default function Home() {
   const [currentPage, setCurrentPage] = useState('inicio');
@@ -15,15 +18,19 @@ export default function Home() {
   const { data: sheetsData, isLoading } = trpc.sheets.getData.useQuery();
   const rows = sheetsData?.rows ?? [];
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     utils.sheets.getData.invalidate();
-  };
+  }, [utils]);
+
+  const handleSidebarToggle = useCallback((isOpen: boolean) => {
+    setSidebarOpen(isOpen);
+  }, []);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Carregando dados...</p>
         </div>
       </div>
@@ -32,40 +39,41 @@ export default function Home() {
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      <Sidebar currentPage={currentPage} onToggle={setSidebarOpen} />
+      {/* Sidebar fixo */}
+      <Sidebar currentPage={currentPage} onToggle={handleSidebarToggle} />
 
-      {/* Conteúdo principal com margem dinâmica baseada no estado do sidebar */}
-      <div
-        className="flex-1 overflow-auto transition-all duration-300 ease-in-out"
-        style={{ marginLeft: sidebarOpen ? '16rem' : '5rem' }}
+      {/* Área de conteúdo — margem esquerda acompanha o sidebar */}
+      <main
+        className="flex-1 overflow-y-auto overflow-x-hidden transition-[margin] duration-300 ease-in-out"
+        style={{ marginLeft: sidebarOpen ? SIDEBAR_OPEN_WIDTH : SIDEBAR_CLOSED_WIDTH }}
       >
         <Switch>
           <Route path="/">
             {() => {
-              setCurrentPage('inicio');
+              if (currentPage !== 'inicio') setCurrentPage('inicio');
               return <Landing />;
             }}
           </Route>
           <Route path="/regulacao">
             {() => {
-              setCurrentPage('regulacao');
+              if (currentPage !== 'regulacao') setCurrentPage('regulacao');
               return <Regulation data={rows} />;
             }}
           </Route>
           <Route path="/dashboard">
             {() => {
-              setCurrentPage('dashboard');
+              if (currentPage !== 'dashboard') setCurrentPage('dashboard');
               return <Dashboard data={rows} onRefresh={handleRefresh} />;
             }}
           </Route>
           <Route path="/prioridades">
             {() => {
-              setCurrentPage('prioridades');
+              if (currentPage !== 'prioridades') setCurrentPage('prioridades');
               return <Prioridades />;
             }}
           </Route>
         </Switch>
-      </div>
+      </main>
     </div>
   );
 }
