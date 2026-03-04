@@ -1,6 +1,6 @@
 import axios from "axios";
 import { getDb } from "./db";
-import { regulacaoData, syncLog, prioridades } from "../drizzle/schema";
+import { regulacaoData, syncLog, prioridades, reguladores } from "../drizzle/schema";
 import { count } from "drizzle-orm";
 
 const SPREADSHEET_ID = "1cZ9aGm307pgF5tug8ScZFqncKy9BF1BHo7Dah9Rgm9k";
@@ -100,6 +100,54 @@ export async function syncPrioridadesToDb(): Promise<number> {
   return insertRows.length;
 }
 
+export async function syncReguladoresToDb(): Promise<number> {
+  const apiKey = process.env.GOOGLE_SHEETS_API_KEY;
+  if (!apiKey) throw new Error("GOOGLE_SHEETS_API_KEY não está definida");
+
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados não disponível");
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Reguladores?key=${apiKey}&majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`;
+  const response = await axios.get(url, { timeout: 30000 });
+  const rows: string[][] = response.data.values || [];
+
+  // Pular cabeçalho (linha 0)
+  const dataRows = rows.slice(1);
+
+  // Filtrar linhas válidas (nome e email obrigatórios) e remover e-mails duplicados
+  const seen = new Set<string>();
+  const insertRows = dataRows
+    .filter(row => row[0]?.trim() && row[5]?.trim())
+    .filter(row => {
+      const email = row[5]?.trim().toLowerCase();
+      if (seen.has(email)) return false;
+      seen.add(email);
+      return true;
+    })
+    .map(row => ({
+      nome: row[0]?.trim() ?? "",
+      vinculo: row[1]?.trim() || null,
+      perfil: row[2]?.trim() || null,
+      grandeGrupo: row[3]?.trim() || null,
+      agendas: row[4]?.trim() || null,
+      email: row[5]?.trim().toLowerCase() ?? "",
+      ativo: "sim" as const,
+    }));
+
+  // Limpar e reinserir todos os reguladores
+  await db.delete(reguladores);
+
+  if (insertRows.length > 0) {
+    const batchSize = 100;
+    for (let i = 0; i < insertRows.length; i += batchSize) {
+      await db.insert(reguladores).values(insertRows.slice(i, i + batchSize));
+    }
+  }
+
+  console.log(`[Sync] ${insertRows.length} reguladores sincronizados com sucesso`);
+  return insertRows.length;
+}
+
 /**
  * Sincroniza se o banco estiver vazio (primeira carga) ou se forceSync for true.
  */
@@ -123,6 +171,7 @@ export async function syncAndSeedIfEmpty(forceSync = false): Promise<void> {
     console.log("[Sync] Iniciando sincronização com Google Sheets...");
     await syncSheetsToDb();
     await syncPrioridadesToDb();
+    await syncReguladoresToDb();
   } catch (err) {
     console.error("[Sync] Erro durante sincronização:", err);
   }

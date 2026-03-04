@@ -1,11 +1,11 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
-import { regulacaoData, syncLog, prioridades } from "../drizzle/schema";
-import { asc, desc } from "drizzle-orm";
-import { syncSheetsToDb, syncPrioridadesToDb } from "./syncSheets";
+import { regulacaoData, syncLog, prioridades, reguladores } from "../drizzle/schema";
+import { asc, desc, eq } from "drizzle-orm";
+import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb } from "./syncSheets";
 
 export const appRouter = router({
   system: systemRouter,
@@ -16,11 +16,44 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+
+    /**
+     * Verifica se o usuário autenticado está na lista de reguladores autorizados.
+     * Retorna o perfil do regulador se autorizado, ou null se não autorizado.
+     */
+    checkAccess: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return { authorized: false, regulador: null };
+
+      const userEmail = ctx.user?.email?.toLowerCase();
+      if (!userEmail) return { authorized: false, regulador: null };
+
+      const result = await db
+        .select()
+        .from(reguladores)
+        .where(eq(reguladores.email, userEmail))
+        .limit(1);
+
+      if (result.length === 0) {
+        return { authorized: false, regulador: null };
+      }
+
+      const reg = result[0];
+      return {
+        authorized: reg.ativo === "sim",
+        regulador: {
+          nome: reg.nome,
+          perfil: reg.perfil,
+          grandeGrupo: reg.grandeGrupo,
+          email: reg.email,
+        },
+      };
+    }),
   }),
 
   sheets: router({
     // Buscar todos os dados da tabela regulacao_data
-    getData: publicProcedure.query(async () => {
+    getData: protectedProcedure.query(async () => {
       const db = await getDb();
       if (!db) return { rows: [] };
 
@@ -29,7 +62,6 @@ export const appRouter = router({
         .from(regulacaoData)
         .orderBy(desc(regulacaoData.indexRegula));
 
-      // Converter para o formato esperado pelo frontend (array de arrays)
       const rows = data.map(row => [
         row.agenda ?? "",
         row.municipio ?? "",
@@ -47,7 +79,7 @@ export const appRouter = router({
     }),
 
     // Sincronizar dados manualmente
-    sync: publicProcedure.mutation(async () => {
+    sync: protectedProcedure.mutation(async () => {
       try {
         const count = await syncSheetsToDb();
         return { success: true, count };
@@ -66,7 +98,7 @@ export const appRouter = router({
     }),
 
     // Buscar histórico de sincronizações
-    getSyncHistory: publicProcedure.query(async () => {
+    getSyncHistory: protectedProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
 
@@ -80,7 +112,7 @@ export const appRouter = router({
 
   prioridades: router({
     // Buscar todas as listas de prioridades
-    getAll: publicProcedure.query(async () => {
+    getAll: protectedProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
 
@@ -91,9 +123,22 @@ export const appRouter = router({
     }),
 
     // Sincronizar prioridades manualmente
-    sync: publicProcedure.mutation(async () => {
+    sync: protectedProcedure.mutation(async () => {
       try {
         const count = await syncPrioridadesToDb();
+        return { success: true, count };
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Erro desconhecido";
+        throw new Error(message);
+      }
+    }),
+  }),
+
+  reguladores: router({
+    // Sincronizar reguladores manualmente (apenas admin)
+    sync: protectedProcedure.mutation(async () => {
+      try {
+        const count = await syncReguladoresToDb();
         return { success: true, count };
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "Erro desconhecido";

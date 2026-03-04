@@ -22,6 +22,13 @@
       "when": 1772461614968,
       "tag": "0002_tricky_mercury",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1772543589073,
+      "tag": "0003_loose_cyclops",
+      "breakpoints": true
     }
   ]
 }

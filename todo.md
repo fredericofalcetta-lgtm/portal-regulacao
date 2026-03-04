@@ -23,3 +23,9 @@
 - [x] Adicionar item "Início" ao menu lateral
 - [x] Configurar página inicial como rota padrão (/)
 - [x] Corrigir layout dos cards de resumo geral na página inicial (textos maiores que os cards)
+- [x] Analisar aba Reguladores da planilha (colunas A, C, D, F)
+- [x] Criar tabela de reguladores no banco de dados
+- [x] Sincronizar reguladores diariamente da planilha
+- [x] Implementar sistema de login com verificação de e-mail
+- [x] Proteger todas as rotas do portal com autenticação
+- [x] Criar página de login e página de acesso negado

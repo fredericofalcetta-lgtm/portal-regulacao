@@ -66,3 +66,22 @@ export const prioridades = mysqlTable("prioridades", {
 
 export type Prioridade = typeof prioridades.$inferSelect;
 export type InsertPrioridade = typeof prioridades.$inferInsert;
+
+/**
+ * Tabela para armazenar os reguladores autorizados (aba Reguladores da planilha).
+ * Sincronizada automaticamente todos os dias.
+ */
+export const reguladores = mysqlTable("reguladores", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  vinculo: varchar("vinculo", { length: 100 }),
+  perfil: varchar("perfil", { length: 100 }),
+  grandeGrupo: text("grande_grupo"),
+  agendas: text("agendas"),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  ativo: mysqlEnum("ativo", ["sim", "nao"]).default("sim").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Regulador = typeof reguladores.$inferSelect;
+export type InsertRegulador = typeof reguladores.$inferInsert;
