@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Menu, X, BarChart3, Table2, ListChecks, Home } from 'lucide-react';
+import { Menu, X, BarChart3, Table2, ListChecks, Home, LogOut, UserCircle2 } from 'lucide-react';
 import { Link } from 'wouter';
+import { useRegulador } from '@/contexts/ReguladorContext';
+import { trpc } from '@/lib/trpc';
 
 interface SidebarProps {
   currentPage: string;
@@ -10,6 +12,12 @@ interface SidebarProps {
 export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const { regulador } = useRegulador();
+  const logoutMutation = trpc.auth.logout.useMutation({
+    onSuccess: () => {
+      window.location.href = '/';
+    },
+  });
 
   const setOpen = (value: boolean) => {
     setIsOpen(value);
@@ -42,6 +50,16 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     { href: '/dashboard', page: 'dashboard', icon: BarChart3, label: 'Dashboard' },
     { href: '/prioridades', page: 'prioridades', icon: ListChecks, label: 'Listas de Prioridades' },
   ];
+
+  // Formata o perfil para exibição
+  const perfilLabel = regulador?.perfil
+    ? regulador.perfil.charAt(0).toUpperCase() + regulador.perfil.slice(1).toLowerCase()
+    : null;
+
+  // Pega o primeiro nome para exibição compacta
+  const primeiroNome = regulador?.nome
+    ? regulador.nome.split(' ')[0]
+    : null;
 
   return (
     <div
@@ -84,12 +102,66 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Footer */}
-      {isOpen && (
-        <div className="px-4 py-4 border-t border-slate-700 text-xs text-slate-400 shrink-0">
-          Menu recolhe em 3s
-        </div>
-      )}
+      {/* Footer — perfil do usuário */}
+      <div className="border-t border-slate-700 shrink-0">
+        {isOpen ? (
+          <div className="px-4 py-4 space-y-3">
+            {/* Informações do regulador */}
+            {regulador ? (
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+                  <UserCircle2 size={20} className="text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-white truncate leading-tight">
+                    {regulador.nome}
+                  </p>
+                  {perfilLabel && (
+                    <span className="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full bg-blue-600/30 text-blue-300 border border-blue-500/30">
+                      {perfilLabel}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center shrink-0">
+                  <UserCircle2 size={20} className="text-slate-400" />
+                </div>
+                <p className="text-xs text-slate-400">Carregando perfil...</p>
+              </div>
+            )}
+
+            {/* Botão de sair */}
+            <button
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              <LogOut size={14} className="shrink-0" />
+              <span>{logoutMutation.isPending ? 'Saindo...' : 'Sair'}</span>
+            </button>
+          </div>
+        ) : (
+          /* Sidebar recolhido — exibe apenas avatar e botão de sair */
+          <div className="px-2 py-3 space-y-2 flex flex-col items-center">
+            <div
+              className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center cursor-default"
+              title={regulador ? `${regulador.nome} — ${perfilLabel ?? ''}` : 'Usuário'}
+            >
+              <UserCircle2 size={20} className="text-white" />
+            </div>
+            <button
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+              className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+              title="Sair"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

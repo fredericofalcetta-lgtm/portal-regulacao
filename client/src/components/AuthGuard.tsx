@@ -3,13 +3,14 @@ import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { useEffect } from "react";
 import AcessoNegado from "@/pages/AcessoNegado";
+import { ReguladorProvider } from "@/contexts/ReguladorContext";
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 export default function AuthGuard({ children }: AuthGuardProps) {
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { loading: authLoading, isAuthenticated } = useAuth();
 
   const { data: accessData, isLoading: accessLoading } = trpc.auth.checkAccess.useQuery(
     undefined,
@@ -62,6 +63,10 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     return <AcessoNegado />;
   }
 
-  // Autorizado — renderiza o conteúdo
-  return <>{children}</>;
+  // Autorizado — renderiza o conteúdo com o contexto do regulador
+  return (
+    <ReguladorProvider regulador={accessData?.regulador ?? null}>
+      {children}
+    </ReguladorProvider>
+  );
 }
