@@ -51,6 +51,13 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     { href: '/prioridades', page: 'prioridades', icon: ListChecks, label: 'Listas de Prioridades' },
   ];
 
+  const navItemClass = (page: string) =>
+    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+      currentPage === page
+        ? 'bg-blue-600 text-white'
+        : 'text-slate-300 hover:bg-slate-700'
+    }`;
+
   // Formata o perfil para exibição
   const perfilLabel = regulador?.perfil
     ? regulador.perfil.charAt(0).toUpperCase() + regulador.perfil.slice(1).toLowerCase()
@@ -84,20 +91,16 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
         {navItems.map(({ href, page, icon: Icon, label }) => (
-          <Link key={page} href={href}>
-            <a
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                currentPage === page
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-700'
-              }`}
-              title={!isOpen ? label : undefined}
-            >
-              <Icon size={20} className="flex-shrink-0" />
-              {isOpen && (
-                <span className="text-sm font-medium leading-tight truncate">{label}</span>
-              )}
-            </a>
+          <Link
+            key={page}
+            href={href}
+            className={navItemClass(page)}
+            title={!isOpen ? label : undefined}
+          >
+            <Icon size={20} className="flex-shrink-0" />
+            {isOpen && (
+              <span className="text-sm font-medium leading-tight truncate">{label}</span>
+            )}
           </Link>
         ))}
       </nav>

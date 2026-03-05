@@ -30,3 +30,4 @@
 - [x] Proteger todas as rotas do portal com autenticação
 - [x] Criar página de login e página de acesso negado
 - [x] Exibir nome e perfil do usuário logado no rodapé do menu lateral
+- [x] Corrigir erro de <a> aninhado no Sidebar
