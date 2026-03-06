@@ -43,6 +43,13 @@ function Router() {
           </AuthGuard>
         )}
       </Route>
+      <Route path="/protocolos">
+        {() => (
+          <AuthGuard>
+            <Home />
+          </AuthGuard>
+        )}
+      </Route>
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

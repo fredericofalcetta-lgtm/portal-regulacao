@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Menu, X, BarChart3, Table2, ListChecks, Home, LogOut, UserCircle2 } from 'lucide-react';
+import { Menu, X, BarChart3, Table2, ListChecks, Home, LogOut, UserCircle2, ScrollText } from 'lucide-react';
 import { Link } from 'wouter';
 import { useRegulador } from '@/contexts/ReguladorContext';
 import { trpc } from '@/lib/trpc';
@@ -49,6 +49,7 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     { href: '/regulacao', page: 'regulacao', icon: Table2, label: 'Regulação' },
     { href: '/dashboard', page: 'dashboard', icon: BarChart3, label: 'Dashboard' },
     { href: '/prioridades', page: 'prioridades', icon: ListChecks, label: 'Listas de Prioridades' },
+    { href: '/protocolos', page: 'protocolos', icon: ScrollText, label: 'Protocolos' },
   ];
 
   const navItemClass = (page: string) =>

@@ -85,3 +85,17 @@ export const reguladores = mysqlTable("reguladores", {
 
 export type Regulador = typeof reguladores.$inferSelect;
 export type InsertRegulador = typeof reguladores.$inferInsert;
+
+/**
+ * Tabela para armazenar os protocolos clínicos (aba Apoio, coluna H).
+ * Sincronizada automaticamente todos os dias.
+ */
+export const protocolos = mysqlTable("protocolos", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 500 }).notNull(),
+  linkUrl: text("link_url"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Protocolo = typeof protocolos.$inferSelect;
+export type InsertProtocolo = typeof protocolos.$inferInsert;

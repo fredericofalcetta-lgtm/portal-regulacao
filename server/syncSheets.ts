@@ -1,6 +1,6 @@
 import axios from "axios";
 import { getDb } from "./db";
-import { regulacaoData, syncLog, prioridades, reguladores } from "../drizzle/schema";
+import { regulacaoData, syncLog, prioridades, reguladores, protocolos } from "../drizzle/schema";
 import { count } from "drizzle-orm";
 
 const SPREADSHEET_ID = "1cZ9aGm307pgF5tug8ScZFqncKy9BF1BHo7Dah9Rgm9k";
@@ -145,6 +145,44 @@ export async function syncReguladoresToDb(): Promise<number> {
   }
 
   console.log(`[Sync] ${insertRows.length} reguladores sincronizados com sucesso`);
+  return insertRows.length;
+}
+
+export async function syncProtocolosToDb(): Promise<number> {
+  const apiKey = process.env.GOOGLE_SHEETS_API_KEY;
+  if (!apiKey) throw new Error("GOOGLE_SHEETS_API_KEY não está definida");
+
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados não disponível");
+
+  // Buscar metadados com hyperlinks da coluna H da aba Apoio
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?key=${apiKey}&ranges=Apoio!H:H&fields=sheets.data.rowData.values.hyperlink,sheets.data.rowData.values.formattedValue`;
+  const response = await axios.get(url, { timeout: 30000 });
+  const sheets = response.data.sheets || [];
+  const rowData = sheets[0]?.data?.[0]?.rowData || [];
+
+  // Limpar dados existentes
+  await db.delete(protocolos);
+
+  const insertRows: { nome: string; linkUrl: string | null }[] = [];
+
+  // Pular linha 0 (cabeçalho)
+  for (let i = 1; i < rowData.length; i++) {
+    const row = rowData[i];
+    const cell = row?.values?.[0];
+    const nome = cell?.formattedValue?.trim() || "";
+    const linkUrl = cell?.hyperlink?.trim() || null;
+
+    if (nome) {
+      insertRows.push({ nome, linkUrl });
+    }
+  }
+
+  if (insertRows.length > 0) {
+    await db.insert(protocolos).values(insertRows);
+  }
+
+  console.log(`[Sync] ${insertRows.length} protocolos sincronizados com sucesso`);
   return insertRows.length;
 }
 

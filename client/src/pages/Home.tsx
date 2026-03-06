@@ -4,6 +4,7 @@ import Sidebar from '@/components/Sidebar';
 import Regulation from './Regulation';
 import Dashboard from './Dashboard';
 import Prioridades from './Prioridades';
+import Protocolos from './Protocolos';
 import Landing from './Landing';
 import { trpc } from '@/lib/trpc';
 
@@ -70,6 +71,12 @@ export default function Home() {
             {() => {
               if (currentPage !== 'prioridades') setCurrentPage('prioridades');
               return <Prioridades />;
+            }}
+          </Route>
+          <Route path="/protocolos">
+            {() => {
+              if (currentPage !== 'protocolos') setCurrentPage('protocolos');
+              return <Protocolos />;
             }}
           </Route>
         </Switch>

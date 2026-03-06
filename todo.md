@@ -31,3 +31,7 @@
 - [x] Criar página de login e página de acesso negado
 - [x] Exibir nome e perfil do usuário logado no rodapé do menu lateral
 - [x] Corrigir erro de <a> aninhado no Sidebar
+- [x] Analisar coluna H da aba Apoio (protocolos)
+- [x] Adicionar tabela de protocolos no banco de dados e sincronização diária
+- [x] Criar página de Protocolos com itens clicáveis
+- [x] Adicionar Protocolos ao menu lateral

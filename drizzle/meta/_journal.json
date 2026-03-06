@@ -29,6 +29,13 @@
       "when": 1772543589073,
       "tag": "0003_loose_cyclops",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1772699021102,
+      "tag": "0004_small_azazel",
+      "breakpoints": true
     }
   ]
 }

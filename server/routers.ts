@@ -3,9 +3,9 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
-import { regulacaoData, syncLog, prioridades, reguladores } from "../drizzle/schema";
+import { regulacaoData, syncLog, prioridades, reguladores, protocolos } from "../drizzle/schema";
 import { asc, desc, eq } from "drizzle-orm";
-import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb } from "./syncSheets";
+import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb, syncProtocolosToDb } from "./syncSheets";
 
 export const appRouter = router({
   system: systemRouter,
@@ -126,6 +126,30 @@ export const appRouter = router({
     sync: protectedProcedure.mutation(async () => {
       try {
         const count = await syncPrioridadesToDb();
+        return { success: true, count };
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Erro desconhecido";
+        throw new Error(message);
+      }
+    }),
+  }),
+
+  protocolos: router({
+    // Buscar todos os protocolos
+    getAll: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+
+      return db
+        .select()
+        .from(protocolos)
+        .orderBy(asc(protocolos.nome));
+    }),
+
+    // Sincronizar protocolos manualmente
+    sync: protectedProcedure.mutation(async () => {
+      try {
+        const count = await syncProtocolosToDb();
         return { success: true, count };
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "Erro desconhecido";
