@@ -35,3 +35,4 @@
 - [x] Adicionar tabela de protocolos no banco de dados e sincronização diária
 - [x] Criar página de Protocolos com itens clicáveis
 - [x] Adicionar Protocolos ao menu lateral
+- [x] Restringir especialidades na página de Regulação pelo Grande Grupo do regulador (exceto Monitoramento e Administrador)
