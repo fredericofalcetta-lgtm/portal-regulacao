@@ -120,7 +120,7 @@ export default function Dashboard({ data, onRefresh }: DashboardProps) {
             <RefreshCw size={16} className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
             {syncButtonLabel}
           </button>
-          <p className="text-xs text-muted-foreground">Atualização automática diária às 03:00</p>
+          <p className="text-xs text-muted-foreground">Atualização automática diária às 08:30</p>
         </div>
       </div>
 

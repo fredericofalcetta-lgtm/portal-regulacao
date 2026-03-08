@@ -67,11 +67,11 @@ startServer()
   .then(() => syncAndSeedIfEmpty(false))
   .catch(console.error);
 
-// Sincronização automática diária às 03:00
+// Sincronização automática diária às 08:30
 function scheduleDailySync() {
   const now = new Date();
   const next = new Date();
-  next.setHours(3, 0, 0, 0);
+  next.setHours(8, 30, 0, 0);
   if (next <= now) next.setDate(next.getDate() + 1);
   const msUntilNext = next.getTime() - now.getTime();
 

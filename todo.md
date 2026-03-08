@@ -37,3 +37,4 @@
 - [x] Adicionar Protocolos ao menu lateral
 - [x] Restringir especialidades na página de Regulação pelo Grande Grupo do regulador (exceto Monitoramento e Administrador)
 - [x] Implementar modo noturno (dark mode) com alternância no sidebar e persistência via localStorage
+- [x] Alterar horário de sincronização automática de todos os dados para 08:30
