@@ -27,12 +27,12 @@ export default function Protocolos() {
       {/* Cabeçalho */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <BookOpen className="w-6 h-6 text-blue-600" />
+          <div className="p-2 bg-blue-100 dark:bg-blue-950/50 rounded-lg">
+            <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Protocolos Clínicos</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-bold text-foreground">Protocolos Clínicos</h1>
+            <p className="text-sm text-muted-foreground">
               {protocolos.length} protocolo{protocolos.length !== 1 ? "s" : ""} disponíve{protocolos.length !== 1 ? "is" : "l"}
             </p>
           </div>
@@ -51,7 +51,7 @@ export default function Protocolos() {
 
       {/* Campo de busca */}
       <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           placeholder="Buscar protocolo..."
           value={search}
@@ -64,18 +64,18 @@ export default function Protocolos() {
       {isLoading && (
         <div className="flex items-center justify-center py-16">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3" />
-            <p className="text-gray-500 text-sm">Carregando protocolos...</p>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-3" />
+            <p className="text-muted-foreground text-sm">Carregando protocolos...</p>
           </div>
         </div>
       )}
 
       {/* Estado vazio */}
       {!isLoading && protocolos.length === 0 && (
-        <div className="text-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-          <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 font-medium">Nenhum protocolo encontrado</p>
-          <p className="text-gray-400 text-sm mt-1">Clique em "Sincronizar" para carregar os protocolos da planilha</p>
+        <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
+          <BookOpen className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-muted-foreground font-medium">Nenhum protocolo encontrado</p>
+          <p className="text-muted-foreground/70 text-sm mt-1">Clique em "Sincronizar" para carregar os protocolos da planilha</p>
           <Button
             variant="default"
             size="sm"
@@ -91,10 +91,10 @@ export default function Protocolos() {
 
       {/* Sem resultados na busca */}
       {!isLoading && protocolos.length > 0 && filtered.length === 0 && (
-        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-          <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 font-medium">Nenhum protocolo encontrado para "{search}"</p>
-          <p className="text-gray-400 text-sm mt-1">Tente uma busca diferente</p>
+        <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed border-border">
+          <Search className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="text-muted-foreground font-medium">Nenhum protocolo encontrado para "{search}"</p>
+          <p className="text-muted-foreground/70 text-sm mt-1">Tente uma busca diferente</p>
         </div>
       )}
 
@@ -108,18 +108,18 @@ export default function Protocolos() {
                 href={protocolo.linkUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-start gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:border-blue-400 hover:shadow-md transition-all duration-200 cursor-pointer"
+                className="group flex items-start gap-3 p-4 bg-card border border-border rounded-xl hover:border-primary hover:shadow-md transition-all duration-200 cursor-pointer"
               >
-                <div className="mt-0.5 p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors flex-shrink-0">
-                  <FileText className="w-4 h-4 text-blue-600" />
+                <div className="mt-0.5 p-2 bg-blue-50 dark:bg-blue-950/50 rounded-lg group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors flex-shrink-0">
+                  <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 group-hover:text-blue-700 transition-colors leading-snug">
+                  <p className="text-sm font-medium text-card-foreground group-hover:text-primary transition-colors leading-snug">
                     {protocolo.nome}
                   </p>
                   <div className="flex items-center gap-1 mt-1.5">
-                    <ExternalLink className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                    <span className="text-xs text-gray-400 group-hover:text-blue-500 transition-colors">
+                    <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                    <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
                       Abrir protocolo
                     </span>
                   </div>
@@ -128,16 +128,16 @@ export default function Protocolos() {
             ) : (
               <div
                 key={protocolo.id}
-                className="flex items-start gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl opacity-60"
+                className="flex items-start gap-3 p-4 bg-muted/30 border border-border rounded-xl opacity-60"
               >
-                <div className="mt-0.5 p-2 bg-gray-100 rounded-lg flex-shrink-0">
-                  <FileText className="w-4 h-4 text-gray-400" />
+                <div className="mt-0.5 p-2 bg-muted rounded-lg flex-shrink-0">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-600 leading-snug">
+                  <p className="text-sm font-medium text-muted-foreground leading-snug">
                     {protocolo.nome}
                   </p>
-                  <span className="text-xs text-gray-400 mt-1 block">Sem link disponível</span>
+                  <span className="text-xs text-muted-foreground/70 mt-1 block">Sem link disponível</span>
                 </div>
               </div>
             )

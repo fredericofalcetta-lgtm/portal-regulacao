@@ -2,33 +2,33 @@ import { useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { ExternalLink, RefreshCw, Search, FileText } from 'lucide-react';
 
-// Ícones de cores por grupo
+// Cores dos grupos com suporte dark mode via classes Tailwind
 const GROUP_COLORS: Record<string, string> = {
-  'Cardiologia': 'bg-red-50 border-red-200 text-red-700',
-  'Cirurgia Buco/Estomato': 'bg-orange-50 border-orange-200 text-orange-700',
-  'Cirurgia Geral': 'bg-amber-50 border-amber-200 text-amber-700',
-  'Cirurgia Plástica': 'bg-yellow-50 border-yellow-200 text-yellow-700',
-  'Cirurgia Torac/Pneumo': 'bg-lime-50 border-lime-200 text-lime-700',
-  'Cirurgia Vascular': 'bg-green-50 border-green-200 text-green-700',
-  'Dermatologia': 'bg-teal-50 border-teal-200 text-teal-700',
-  'Endocrinologia': 'bg-cyan-50 border-cyan-200 text-cyan-700',
-  'Gastro/Procto': 'bg-sky-50 border-sky-200 text-sky-700',
-  'Genética': 'bg-blue-50 border-blue-200 text-blue-700',
-  'Geriatria': 'bg-indigo-50 border-indigo-200 text-indigo-700',
-  'Ginecologia': 'bg-violet-50 border-violet-200 text-violet-700',
-  'Hematologia': 'bg-purple-50 border-purple-200 text-purple-700',
-  'Infectologia': 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700',
-  'Mastologia': 'bg-pink-50 border-pink-200 text-pink-700',
-  'Nefrologia': 'bg-rose-50 border-rose-200 text-rose-700',
-  'Neurologia': 'bg-red-50 border-red-200 text-red-700',
-  'Oftalmologia': 'bg-orange-50 border-orange-200 text-orange-700',
-  'Oncologia': 'bg-amber-50 border-amber-200 text-amber-700',
-  'Ortopedia': 'bg-green-50 border-green-200 text-green-700',
-  'Otorrino': 'bg-teal-50 border-teal-200 text-teal-700',
-  'Reabilitação': 'bg-cyan-50 border-cyan-200 text-cyan-700',
-  'Reumatologia': 'bg-blue-50 border-blue-200 text-blue-700',
-  'Saúde Mental': 'bg-indigo-50 border-indigo-200 text-indigo-700',
-  'Urologia': 'bg-violet-50 border-violet-200 text-violet-700',
+  'Cardiologia': 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300',
+  'Cirurgia Buco/Estomato': 'bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300',
+  'Cirurgia Geral': 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300',
+  'Cirurgia Plástica': 'bg-yellow-50 dark:bg-yellow-950/40 border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-300',
+  'Cirurgia Torac/Pneumo': 'bg-lime-50 dark:bg-lime-950/40 border-lime-200 dark:border-lime-800 text-lime-700 dark:text-lime-300',
+  'Cirurgia Vascular': 'bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300',
+  'Dermatologia': 'bg-teal-50 dark:bg-teal-950/40 border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300',
+  'Endocrinologia': 'bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-300',
+  'Gastro/Procto': 'bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300',
+  'Genética': 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300',
+  'Geriatria': 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300',
+  'Ginecologia': 'bg-violet-50 dark:bg-violet-950/40 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300',
+  'Hematologia': 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300',
+  'Infectologia': 'bg-fuchsia-50 dark:bg-fuchsia-950/40 border-fuchsia-200 dark:border-fuchsia-800 text-fuchsia-700 dark:text-fuchsia-300',
+  'Mastologia': 'bg-pink-50 dark:bg-pink-950/40 border-pink-200 dark:border-pink-800 text-pink-700 dark:text-pink-300',
+  'Nefrologia': 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300',
+  'Neurologia': 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-700 dark:text-red-300',
+  'Oftalmologia': 'bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-800 text-orange-700 dark:text-orange-300',
+  'Oncologia': 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300',
+  'Ortopedia': 'bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800 text-green-700 dark:text-green-300',
+  'Otorrino': 'bg-teal-50 dark:bg-teal-950/40 border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300',
+  'Reabilitação': 'bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-300',
+  'Reumatologia': 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300',
+  'Saúde Mental': 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300',
+  'Urologia': 'bg-violet-50 dark:bg-violet-950/40 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300',
 };
 
 function formatNomeArquivo(nome: string): string {
@@ -99,12 +99,12 @@ export default function Prioridades() {
   }[syncStatus];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-background p-8">
       {/* Header */}
       <div className="mb-8 flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Listas de Prioridades</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold text-foreground">Listas de Prioridades</h1>
+          <p className="text-muted-foreground mt-2">
             {totalListas} listas em {totalGrupos} grupos — documentos do Google Drive
           </p>
         </div>
@@ -122,13 +122,13 @@ export default function Prioridades() {
 
       {/* Busca */}
       <div className="mb-6 relative max-w-md">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
           placeholder="Buscar por especialidade ou grupo..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full pl-9 pr-4 py-2 border border-border rounded-lg text-sm bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
         />
       </div>
 
@@ -136,12 +136,12 @@ export default function Prioridades() {
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3"></div>
-            <p className="text-gray-500 text-sm">Carregando listas...</p>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mx-auto mb-3"></div>
+            <p className="text-muted-foreground text-sm">Carregando listas...</p>
           </div>
         </div>
       ) : totalGrupos === 0 ? (
-        <div className="text-center py-16 text-gray-500">
+        <div className="text-center py-16 text-muted-foreground">
           <FileText size={48} className="mx-auto mb-4 opacity-30" />
           <p className="text-lg font-medium">Nenhuma lista encontrada</p>
           <p className="text-sm mt-1">Tente sincronizar os dados ou ajuste a busca.</p>
@@ -151,7 +151,7 @@ export default function Prioridades() {
           {Object.entries(grupos)
             .sort(([a], [b]) => a.localeCompare(b, 'pt-BR'))
             .map(([grupo, itens]) => {
-              const colorClass = GROUP_COLORS[grupo] || 'bg-gray-50 border-gray-200 text-gray-700';
+              const colorClass = GROUP_COLORS[grupo] || 'bg-muted border-border text-muted-foreground';
               return (
                 <div key={grupo}>
                   {/* Cabeçalho do grupo */}
@@ -159,7 +159,7 @@ export default function Prioridades() {
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${colorClass}`}>
                       {grupo}
                     </span>
-                    <span className="text-xs text-gray-400">{itens.length} {itens.length === 1 ? 'lista' : 'listas'}</span>
+                    <span className="text-xs text-muted-foreground">{itens.length} {itens.length === 1 ? 'lista' : 'listas'}</span>
                   </div>
 
                   {/* Cards das listas */}
@@ -170,18 +170,18 @@ export default function Prioridades() {
                         href={item.linkUrl || '#'}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`group flex items-start gap-3 p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all duration-150 ${!item.linkUrl ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+                        className={`group flex items-start gap-3 p-4 bg-card border border-border rounded-lg hover:border-primary hover:shadow-md transition-all duration-150 ${!item.linkUrl ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
                       >
-                        <FileText size={18} className="text-gray-400 group-hover:text-blue-500 mt-0.5 shrink-0 transition-colors" />
+                        <FileText size={18} className="text-muted-foreground group-hover:text-primary mt-0.5 shrink-0 transition-colors" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 group-hover:text-blue-700 leading-snug transition-colors">
+                          <p className="text-sm font-medium text-card-foreground group-hover:text-primary leading-snug transition-colors">
                             {item.nomeArquivo ? formatNomeArquivo(item.nomeArquivo) : 'Sem título'}
                           </p>
                           {!item.linkUrl && (
-                            <p className="text-xs text-gray-400 mt-1">Link não disponível</p>
+                            <p className="text-xs text-muted-foreground mt-1">Link não disponível</p>
                           )}
                         </div>
-                        <ExternalLink size={14} className="text-gray-300 group-hover:text-blue-400 shrink-0 mt-0.5 transition-colors" />
+                        <ExternalLink size={14} className="text-muted-foreground/50 group-hover:text-primary shrink-0 mt-0.5 transition-colors" />
                       </a>
                     ))}
                   </div>

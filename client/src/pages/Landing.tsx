@@ -21,8 +21,9 @@ const NAV_CARDS = [
     description:
       'Consulte e filtre as agendas disponíveis por especialidade, central e município. Dados ordenados por índice de regulação.',
     color: 'bg-blue-600',
-    lightColor: 'bg-blue-50 border-blue-200',
-    textColor: 'text-blue-700',
+    borderColor: 'border-blue-200 dark:border-blue-800',
+    bgColor: 'bg-blue-50 dark:bg-blue-950/40',
+    textColor: 'text-blue-700 dark:text-blue-300',
   },
   {
     href: '/dashboard',
@@ -31,8 +32,9 @@ const NAV_CARDS = [
     description:
       'Visualize métricas e gráficos com a distribuição de cotas, saldos e índices por especialidade e central.',
     color: 'bg-indigo-600',
-    lightColor: 'bg-indigo-50 border-indigo-200',
-    textColor: 'text-indigo-700',
+    borderColor: 'border-indigo-200 dark:border-indigo-800',
+    bgColor: 'bg-indigo-50 dark:bg-indigo-950/40',
+    textColor: 'text-indigo-700 dark:text-indigo-300',
   },
   {
     href: '/prioridades',
@@ -41,8 +43,9 @@ const NAV_CARDS = [
     description:
       'Acesse os documentos de critérios de priorização para cada especialidade, organizados por grupo clínico.',
     color: 'bg-violet-600',
-    lightColor: 'bg-violet-50 border-violet-200',
-    textColor: 'text-violet-700',
+    borderColor: 'border-violet-200 dark:border-violet-800',
+    bgColor: 'bg-violet-50 dark:bg-violet-950/40',
+    textColor: 'text-violet-700 dark:text-violet-300',
   },
 ];
 
@@ -60,14 +63,14 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col items-start gap-2 shadow-sm min-w-0">
+    <div className="bg-card border border-border rounded-xl p-4 flex flex-col items-start gap-2 shadow-sm min-w-0">
       <div className={`p-2.5 rounded-lg ${color} shrink-0`}>
         <Icon size={18} className="text-white" />
       </div>
       <div className="w-full min-w-0">
-        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide leading-tight truncate">{label}</p>
-        <p className="text-xl font-bold text-gray-900 mt-0.5 truncate">{value}</p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide leading-tight truncate">{label}</p>
+        <p className="text-xl font-bold text-card-foreground mt-0.5 truncate">{value}</p>
+        {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
       </div>
     </div>
   );
@@ -112,7 +115,7 @@ export default function Landing() {
     : null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Hero */}
       <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 text-white px-8 py-14">
         <div className="max-w-4xl">
@@ -142,7 +145,7 @@ export default function Landing() {
         {/* Métricas */}
         {stats && (
           <section className="mb-12">
-            <h2 className="text-lg font-semibold text-gray-700 mb-4">Resumo Geral</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-4">Resumo Geral</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
               <StatCard
                 icon={Table2}
@@ -187,21 +190,21 @@ export default function Landing() {
 
         {/* Links rápidos */}
         <section>
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">Acesso Rápido</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Acesso Rápido</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {NAV_CARDS.map(({ href, icon: Icon, title, description, color, lightColor, textColor }) => (
+            {NAV_CARDS.map(({ href, icon: Icon, title, description, color, borderColor, bgColor, textColor }) => (
               <Link key={href} href={href}>
-                <a className={`group block border rounded-xl p-6 bg-white hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 ${lightColor}`}>
+                <div className={`group block border rounded-xl p-6 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 cursor-pointer ${borderColor} ${bgColor}`}>
                   <div className={`inline-flex p-3 rounded-lg ${color} mb-4`}>
                     <Icon size={22} className="text-white" />
                   </div>
                   <h3 className={`font-semibold text-base mb-2 ${textColor}`}>{title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed mb-4">{description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">{description}</p>
                   <div className={`flex items-center gap-1 text-sm font-medium ${textColor} group-hover:gap-2 transition-all`}>
                     Acessar
                     <ArrowRight size={14} />
                   </div>
-                </a>
+                </div>
               </Link>
             ))}
           </div>
@@ -211,15 +214,15 @@ export default function Landing() {
         {prioridades && prioridades.length > 0 && (
           <section className="mt-10">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-700">Listas de Prioridades Disponíveis</h2>
+              <h2 className="text-lg font-semibold text-foreground">Listas de Prioridades Disponíveis</h2>
               <Link href="/prioridades">
-                <a className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                <span className="text-sm text-primary hover:underline flex items-center gap-1 cursor-pointer">
                   Ver todas <ArrowRight size={13} />
-                </a>
+                </span>
               </Link>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <p className="text-sm text-gray-500 mb-3">
+            <div className="bg-card border border-border rounded-xl p-5">
+              <p className="text-sm text-muted-foreground mb-3">
                 {prioridades.length} documentos disponíveis em {new Set(prioridades.map(p => p.grandeGrupo).filter(Boolean)).size} grupos clínicos
               </p>
               <div className="flex flex-wrap gap-2">
@@ -228,7 +231,7 @@ export default function Landing() {
                   .map(grupo => (
                     <span
                       key={grupo}
-                      className="px-3 py-1 bg-violet-50 border border-violet-200 text-violet-700 text-xs font-medium rounded-full"
+                      className="px-3 py-1 bg-violet-50 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 text-xs font-medium rounded-full"
                     >
                       {grupo}
                     </span>

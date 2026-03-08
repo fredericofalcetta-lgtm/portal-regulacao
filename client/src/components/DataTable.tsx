@@ -80,14 +80,14 @@ export default function DataTable({
   };
 
   const getIndexRegulaColor = (value: number): string => {
-    if (value > 3) return 'bg-red-100 text-red-900';
-    if (value > 2) return 'bg-orange-100 text-orange-900';
-    if (value > 1) return 'bg-yellow-100 text-yellow-900';
+    if (value > 3) return 'bg-red-100 dark:bg-red-950/50 text-red-900 dark:text-red-300';
+    if (value > 2) return 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300';
+    if (value > 1) return 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-900 dark:text-yellow-300';
     return '';
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-white">
+    <div className="flex-1 flex flex-col bg-card">
       {/* Header */}
       <div className="px-6 py-4 border-b border-border">
         <h1 className="text-2xl font-semibold text-foreground">
@@ -253,7 +253,7 @@ export default function DataTable({
                 <tr
                   key={rowIndex}
                   className={`border-b border-border hover:bg-secondary transition-colors ${
-                    rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                    rowIndex % 2 === 0 ? 'bg-card' : 'bg-muted/30'
                   }`}
                 >
                   {/* Agenda column with smaller font for municipality */}

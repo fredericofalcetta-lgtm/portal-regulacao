@@ -75,7 +75,7 @@ export default function MultiSelectFilter({
       {/* Input Container */}
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full min-h-10 px-3 py-2 border border-border rounded-md bg-white text-foreground cursor-pointer hover:border-primary transition-colors flex items-center justify-between gap-2 flex-wrap"
+        className="w-full min-h-10 px-3 py-2 border border-border rounded-md bg-input text-foreground cursor-pointer hover:border-primary transition-colors flex items-center justify-between gap-2 flex-wrap"
       >
         {/* Selected Tags */}
         <div className="flex flex-wrap gap-1 flex-1">
@@ -110,7 +110,7 @@ export default function MultiSelectFilter({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-md shadow-lg z-50">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50">
           {/* Search Input */}
           <div className="p-2 border-b border-border">
             <input

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Menu, X, BarChart3, Table2, ListChecks, Home, LogOut, UserCircle2, ScrollText } from 'lucide-react';
+import { Menu, X, BarChart3, Table2, ListChecks, Home, LogOut, UserCircle2, ScrollText, Sun, Moon } from 'lucide-react';
 import { Link } from 'wouter';
 import { useRegulador } from '@/contexts/ReguladorContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { trpc } from '@/lib/trpc';
 
 interface SidebarProps {
@@ -13,6 +14,7 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const { regulador } = useRegulador();
+  const { theme, toggleTheme } = useTheme();
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
       window.location.href = '/';
@@ -64,11 +66,6 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     ? regulador.perfil.charAt(0).toUpperCase() + regulador.perfil.slice(1).toLowerCase()
     : null;
 
-  // Pega o primeiro nome para exibição compacta
-  const primeiroNome = regulador?.nome
-    ? regulador.nome.split(' ')[0]
-    : null;
-
   return (
     <div
       className={`fixed left-0 top-0 h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white transition-all duration-300 ease-in-out z-40 flex flex-col ${
@@ -106,7 +103,7 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Footer — perfil do usuário */}
+      {/* Footer — perfil do usuário + tema */}
       <div className="border-t border-slate-700 shrink-0">
         {isOpen ? (
           <div className="px-4 py-4 space-y-3">
@@ -136,18 +133,43 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
               </div>
             )}
 
-            {/* Botão de sair */}
-            <button
-              onClick={() => logoutMutation.mutate()}
-              disabled={logoutMutation.isPending}
-              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-            >
-              <LogOut size={14} className="shrink-0" />
-              <span>{logoutMutation.isPending ? 'Saindo...' : 'Sair'}</span>
-            </button>
+            {/* Linha de ações: tema + sair */}
+            <div className="flex items-center gap-2">
+              {/* Botão de alternância de tema */}
+              {toggleTheme && (
+                <button
+                  onClick={toggleTheme}
+                  className="flex items-center gap-2 flex-1 px-3 py-2 text-xs text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                  title={theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
+                >
+                  {theme === 'dark' ? (
+                    <>
+                      <Sun size={14} className="shrink-0 text-yellow-400" />
+                      <span>Modo claro</span>
+                    </>
+                  ) : (
+                    <>
+                      <Moon size={14} className="shrink-0 text-blue-300" />
+                      <span>Modo escuro</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Botão de sair */}
+              <button
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+                className="flex items-center gap-2 px-3 py-2 text-xs text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                title="Sair"
+              >
+                <LogOut size={14} className="shrink-0" />
+                <span className="sr-only">{logoutMutation.isPending ? 'Saindo...' : 'Sair'}</span>
+              </button>
+            </div>
           </div>
         ) : (
-          /* Sidebar recolhido — exibe apenas avatar e botão de sair */
+          /* Sidebar recolhido — exibe apenas avatar, botão de tema e sair */
           <div className="px-2 py-3 space-y-2 flex flex-col items-center">
             <div
               className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center cursor-default"
@@ -155,6 +177,22 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
             >
               <UserCircle2 size={20} className="text-white" />
             </div>
+
+            {/* Botão de tema compacto */}
+            {toggleTheme && (
+              <button
+                onClick={toggleTheme}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                title={theme === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
+              >
+                {theme === 'dark' ? (
+                  <Sun size={16} className="text-yellow-400" />
+                ) : (
+                  <Moon size={16} className="text-blue-300" />
+                )}
+              </button>
+            )}
+
             <button
               onClick={() => logoutMutation.mutate()}
               disabled={logoutMutation.isPending}

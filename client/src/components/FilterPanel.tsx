@@ -34,7 +34,7 @@ export default function FilterPanel({
   };
 
   return (
-    <div className="w-full lg:w-96 bg-white border-r border-border p-6 space-y-6">
+    <div className="w-full lg:w-96 bg-card border-r border-border p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-foreground">Filtros</h2>

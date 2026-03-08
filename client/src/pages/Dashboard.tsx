@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Users, Clock, CheckCircle, RefreshCw, History } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface DashboardProps {
   data: (string | number)[][];
@@ -10,10 +11,12 @@ interface DashboardProps {
 
 export default function Dashboard({ data, onRefresh }: DashboardProps) {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const syncMutation = trpc.sheets.sync.useMutation({
     onMutate: () => setSyncStatus('syncing'),
-    onSuccess: (result) => {
+    onSuccess: () => {
       setSyncStatus('success');
       setTimeout(() => setSyncStatus('idle'), 3000);
       if (onRefresh) onRefresh();
@@ -93,13 +96,20 @@ export default function Dashboard({ data, onRefresh }: DashboardProps) {
     error: 'bg-red-600',
   }[syncStatus];
 
+  // Cores dos gráficos adaptadas ao tema
+  const chartAxisColor = isDark ? '#8B949E' : '#6b7280';
+  const chartGridColor = isDark ? '#30363D' : '#e5e7eb';
+  const tooltipStyle = isDark
+    ? { backgroundColor: '#1C2333', border: '1px solid #30363D', color: '#E2E8F0' }
+    : { backgroundColor: '#ffffff', border: '1px solid #e5e7eb', color: '#1f2937' };
+
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-background p-8">
       {/* Header */}
       <div className="mb-8 flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">Visão geral das regulações de encaminhamentos</p>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-2">Visão geral das regulações de encaminhamentos</p>
         </div>
         <div className="flex flex-col items-end gap-2">
           <button
@@ -110,82 +120,54 @@ export default function Dashboard({ data, onRefresh }: DashboardProps) {
             <RefreshCw size={16} className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
             {syncButtonLabel}
           </button>
-          <p className="text-xs text-gray-500">Atualização automática diária às 03:00</p>
+          <p className="text-xs text-muted-foreground">Atualização automática diária às 03:00</p>
         </div>
       </div>
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">Total de Registros</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{metrics.totalRecords.toLocaleString('pt-BR')}</p>
+        {[
+          { label: 'Total de Registros', value: metrics.totalRecords.toLocaleString('pt-BR'), icon: Users, color: 'text-blue-500' },
+          { label: 'Total de Cotas', value: metrics.totalCotas.toLocaleString('pt-BR'), icon: TrendingUp, color: 'text-green-500' },
+          { label: 'Saldo Disponível', value: metrics.totalSaldo.toLocaleString('pt-BR'), icon: CheckCircle, color: 'text-emerald-500' },
+          { label: 'Aguardando', value: metrics.totalAguardando.toLocaleString('pt-BR'), icon: Clock, color: 'text-orange-500' },
+          { label: 'Índice Médio', value: metrics.avgIndexRegula.toFixed(2), icon: TrendingUp, color: 'text-red-500' },
+        ].map(({ label, value, icon: Icon, color }) => (
+          <div key={label} className="bg-card border border-border rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-muted-foreground text-sm font-medium">{label}</p>
+                <p className="text-2xl font-bold text-card-foreground mt-2">{value}</p>
+              </div>
+              <Icon className={color} size={32} />
             </div>
-            <Users className="text-blue-500" size={32} />
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">Total de Cotas</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{metrics.totalCotas.toLocaleString('pt-BR')}</p>
-            </div>
-            <TrendingUp className="text-green-500" size={32} />
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">Saldo Disponível</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{metrics.totalSaldo.toLocaleString('pt-BR')}</p>
-            </div>
-            <CheckCircle className="text-emerald-500" size={32} />
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">Aguardando</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{metrics.totalAguardando.toLocaleString('pt-BR')}</p>
-            </div>
-            <Clock className="text-orange-500" size={32} />
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">Índice Médio</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">{metrics.avgIndexRegula.toFixed(2)}</p>
-            </div>
-            <TrendingUp className="text-red-500" size={32} />
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Top 10 Especialidades</h2>
+        <div className="bg-card border border-border rounded-lg shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-card-foreground mb-4">Top 10 Especialidades</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={especialidadesData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 12 }} />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="value" fill="#3b82f6" />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 12, fill: chartAxisColor }} />
+              <YAxis tick={{ fill: chartAxisColor }} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Distribuição por Central</h2>
+        <div className="bg-card border border-border rounded-lg shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-card-foreground mb-4">Distribuição por Central</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={centraisData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 12 }} />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="value" fill="#10b981" />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} tick={{ fontSize: 12, fill: chartAxisColor }} />
+              <YAxis tick={{ fill: chartAxisColor }} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -194,8 +176,8 @@ export default function Dashboard({ data, onRefresh }: DashboardProps) {
       {/* Index Distribution + Sync History */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="grid grid-cols-1 gap-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Distribuição de Índice Regula</h2>
+          <div className="bg-card border border-border rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-card-foreground mb-4">Distribuição de Índice Regula</h2>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
@@ -211,20 +193,20 @@ export default function Dashboard({ data, onRefresh }: DashboardProps) {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip contentStyle={tooltipStyle} />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Resumo por Índice</h2>
+          <div className="bg-card border border-border rounded-lg shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-card-foreground mb-4">Resumo por Índice</h2>
             <div className="space-y-3">
               {indexDistribution.map((item, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-gray-700 font-medium">{item.range}</span>
+                    <span className="text-foreground font-medium">{item.range}</span>
                   </div>
-                  <span className="text-gray-900 font-bold">{item.count.toLocaleString('pt-BR')}</span>
+                  <span className="text-foreground font-bold">{item.count.toLocaleString('pt-BR')}</span>
                 </div>
               ))}
             </div>
@@ -232,34 +214,34 @@ export default function Dashboard({ data, onRefresh }: DashboardProps) {
         </div>
 
         {/* Sync History */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-card border border-border rounded-lg shadow-sm p-6">
           <div className="flex items-center gap-2 mb-4">
-            <History size={20} className="text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Histórico de Sincronizações</h2>
+            <History size={20} className="text-muted-foreground" />
+            <h2 className="text-lg font-semibold text-card-foreground">Histórico de Sincronizações</h2>
           </div>
           {syncHistory && syncHistory.length > 0 ? (
             <div className="space-y-3">
               {syncHistory.map((log) => (
-                <div key={log.id} className="flex items-start justify-between border-b border-gray-100 pb-3 last:border-0">
+                <div key={log.id} className="flex items-start justify-between border-b border-border pb-3 last:border-0">
                   <div>
                     <div className="flex items-center gap-2">
                       <span
                         className={`inline-block w-2 h-2 rounded-full ${log.status === 'success' ? 'bg-green-500' : 'bg-red-500'}`}
                       />
-                      <span className="text-sm font-medium text-gray-800">
+                      <span className="text-sm font-medium text-card-foreground">
                         {log.status === 'success' ? `${log.rowCount?.toLocaleString('pt-BR')} registros` : 'Erro'}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">{log.message}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{log.message}</p>
                   </div>
-                  <span className="text-xs text-gray-400 whitespace-nowrap ml-4">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap ml-4">
                     {new Date(log.syncedAt).toLocaleString('pt-BR')}
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-sm">Nenhuma sincronização registrada ainda.</p>
+            <p className="text-muted-foreground text-sm">Nenhuma sincronização registrada ainda.</p>
           )}
         </div>
       </div>
