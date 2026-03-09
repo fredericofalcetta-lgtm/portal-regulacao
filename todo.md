@@ -38,3 +38,4 @@
 - [x] Restringir especialidades na página de Regulação pelo Grande Grupo do regulador (exceto Monitoramento e Administrador)
 - [x] Implementar modo noturno (dark mode) com alternância no sidebar e persistência via localStorage
 - [x] Alterar horário de sincronização automática de todos os dados para 08:30
+- [x] Implementar filtros em cascata: ao filtrar por especialidade, o filtro de Agenda exibe apenas as agendas daquela especialidade

@@ -41,24 +41,42 @@ export default function Regulation({ data }: RegulationProps) {
     });
   }, [data, regulador, isIrrestrito]);
 
-  // Extract unique values for filters (based on filtered data)
-  const { agendas, centrais, especialidades } = useMemo(() => {
-    const agendasSet = new Set<string>();
+  // Todas as opções únicas de filtro (sem cascata) — base para Especialidade e Central
+  const { centrais, especialidades } = useMemo(() => {
     const centraisSet = new Set<string>();
     const especialidadesSet = new Set<string>();
 
     dadosFiltradosPorPerfil.forEach(row => {
-      agendasSet.add(String(row[0]));
       centraisSet.add(String(row[8]));
       especialidadesSet.add(String(row[9]));
     });
 
     return {
-      agendas: Array.from(agendasSet).sort(),
       centrais: Array.from(centraisSet).sort(),
       especialidades: Array.from(especialidadesSet).sort(),
     };
   }, [dadosFiltradosPorPerfil]);
+
+  // Agendas em cascata: filtradas pelas especialidades selecionadas (e centrais selecionadas)
+  const agendas = useMemo(() => {
+    const agendasSet = new Set<string>();
+
+    dadosFiltradosPorPerfil.forEach(row => {
+      const especialidade = String(row[9]);
+      const central = String(row[8]);
+
+      const matchEsp =
+        selectedEspecialidades.size === 0 || selectedEspecialidades.has(especialidade);
+      const matchCentral =
+        selectedCentrais.size === 0 || selectedCentrais.has(central);
+
+      if (matchEsp && matchCentral) {
+        agendasSet.add(String(row[0]));
+      }
+    });
+
+    return Array.from(agendasSet).sort();
+  }, [dadosFiltradosPorPerfil, selectedEspecialidades, selectedCentrais]);
 
   const headers = [
     'Agenda',
