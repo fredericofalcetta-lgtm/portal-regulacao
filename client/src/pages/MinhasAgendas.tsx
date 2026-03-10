@@ -1,14 +1,146 @@
-import { LogOut, Loader2, ClipboardList, RefreshCw } from 'lucide-react';
+import { LogIn, LogOut, Loader2, ClipboardList, RefreshCw, Send, CheckCircle2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 
+// ─── Componente de linha de agenda ───────────────────────────────────────────
+
+interface AgendaRowProps {
+  agendaId: number;
+  agendaNome: string;
+  municipio?: string | null;
+  especialidade: string;
+  central?: string | null;
+  cotas?: number | null;
+  saldo?: number | null;
+  aguardando?: number | null;
+  indexRegula?: number | null;
+  temCheckIn: boolean;
+  encaminhadoPor?: string | null;
+  createdAt: Date;
+  onCheckIn: () => void;
+  isPending: boolean;
+}
+
+function AgendaRow({
+  agendaNome,
+  municipio,
+  especialidade,
+  central,
+  cotas,
+  saldo,
+  aguardando,
+  indexRegula,
+  temCheckIn,
+  encaminhadoPor,
+  createdAt,
+  onCheckIn,
+  isPending,
+}: AgendaRowProps) {
+  const getBadgeColor = (value: number | null | undefined): string => {
+    if (!value) return 'bg-muted text-muted-foreground';
+    if (value > 3) return 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300';
+    if (value > 2) return 'bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300';
+    if (value > 1) return 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300';
+    return 'bg-muted text-muted-foreground';
+  };
+
+  return (
+    <tr className="border-t border-border hover:bg-secondary/50 transition-colors">
+      <td className="px-4 py-3">
+        <div className="font-medium text-sm text-foreground">{agendaNome}</div>
+        {municipio && (
+          <div className="text-xs text-muted-foreground mt-0.5">{municipio}</div>
+        )}
+      </td>
+      <td className="px-4 py-3 text-center text-xs text-foreground">{especialidade}</td>
+      <td className="px-4 py-3 text-center text-xs text-foreground">{central ?? '—'}</td>
+      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{cotas ?? '—'}</td>
+      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{saldo ?? '—'}</td>
+      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando ?? '—'}</td>
+      <td className="px-4 py-3 text-center">
+        <span className={`inline-block px-2 py-0.5 rounded text-sm ${getBadgeColor(indexRegula)}`}>
+          {indexRegula != null ? indexRegula.toFixed(2) : '—'}
+        </span>
+      </td>
+      {encaminhadoPor !== undefined && (
+        <td className="px-4 py-3 text-center text-xs text-muted-foreground">
+          {encaminhadoPor ?? '—'}
+        </td>
+      )}
+      <td className="px-4 py-3 text-center text-xs text-muted-foreground">
+        {new Date(createdAt).toLocaleString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          day: '2-digit',
+          month: '2-digit',
+        })}
+      </td>
+      <td className="px-4 py-3 text-center">
+        <button
+          onClick={onCheckIn}
+          disabled={isPending}
+          title={temCheckIn ? 'Fazer check-out desta agenda' : 'Fazer check-in nesta agenda'}
+          className={`flex items-center gap-1 mx-auto px-2 py-1 rounded text-xs font-medium transition-colors disabled:opacity-50 ${
+            temCheckIn
+              ? 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50'
+              : 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50'
+          }`}
+        >
+          {isPending ? (
+            <Loader2 size={11} className="animate-spin" />
+          ) : temCheckIn ? (
+            <LogOut size={11} />
+          ) : (
+            <LogIn size={11} />
+          )}
+          {temCheckIn ? 'Check-out' : 'Check-in'}
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+// ─── Cabeçalho da tabela ─────────────────────────────────────────────────────
+
+function TableHeader({ showEncaminhadoPor }: { showEncaminhadoPor: boolean }) {
+  return (
+    <thead className="bg-secondary">
+      <tr>
+        <th className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Agenda</th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Especialidade</th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Central</th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Cotas</th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Saldo</th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aguardando</th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Index</th>
+        {showEncaminhadoPor && (
+          <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Encaminhado por</th>
+        )}
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">
+          {showEncaminhadoPor ? 'Encaminhado em' : 'Check-in em'}
+        </th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Ação</th>
+      </tr>
+    </thead>
+  );
+}
+
+// ─── Página principal ─────────────────────────────────────────────────────────
+
 export default function MinhasAgendas() {
-  const { data: checkIns = [], isLoading, refetch } = trpc.checkIns.getMeus.useQuery();
+  const { data: checkIns = [], isLoading: loadingCheckIns, refetch: refetchCheckIns } =
+    trpc.checkIns.getMeus.useQuery();
+
+  const { data: encaminhadas = [], isLoading: loadingEncaminhadas, refetch: refetchEncaminhadas } =
+    trpc.encaminhamentos.getMinhas.useQuery();
 
   const checkInMutation = trpc.checkIns.checkIn.useMutation({
-    onSuccess: () => refetch(),
+    onSuccess: () => {
+      refetchCheckIns();
+      refetchEncaminhadas();
+    },
   });
 
-  const handleCheckOut = (ci: {
+  const handleCheckIn = (enc: {
     agendaId: number;
     agendaNome: string;
     municipio?: string | null;
@@ -20,24 +152,26 @@ export default function MinhasAgendas() {
     indexRegula?: number | null;
   }) => {
     checkInMutation.mutate({
-      agendaId: ci.agendaId,
-      agendaNome: ci.agendaNome,
-      municipio: ci.municipio ?? undefined,
-      especialidade: ci.especialidade,
-      central: ci.central ?? undefined,
-      cotas: ci.cotas ?? undefined,
-      saldo: ci.saldo ?? undefined,
-      aguardando: ci.aguardando ?? undefined,
-      indexRegula: ci.indexRegula ?? undefined,
+      agendaId: enc.agendaId,
+      agendaNome: enc.agendaNome,
+      municipio: enc.municipio ?? undefined,
+      especialidade: enc.especialidade,
+      central: enc.central ?? undefined,
+      cotas: enc.cotas ?? undefined,
+      saldo: enc.saldo ?? undefined,
+      aguardando: enc.aguardando ?? undefined,
+      indexRegula: enc.indexRegula ?? undefined,
     });
   };
 
-  const getBadgeColor = (value: number | null | undefined): string => {
-    if (!value) return 'bg-muted text-muted-foreground';
-    if (value > 3) return 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300';
-    if (value > 2) return 'bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300';
-    if (value > 1) return 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300';
-    return 'bg-muted text-muted-foreground';
+  const isLoading = loadingCheckIns || loadingEncaminhadas;
+
+  // Conjunto de agendaIds com check-in ativo (para marcar nas encaminhadas)
+  const checkInIds = new Set(checkIns.map(ci => ci.agendaId));
+
+  const handleRefresh = () => {
+    refetchCheckIns();
+    refetchEncaminhadas();
   };
 
   return (
@@ -52,144 +186,131 @@ export default function MinhasAgendas() {
             <div>
               <h1 className="text-2xl font-semibold text-foreground">Minhas Agendas</h1>
               <p className="text-sm text-muted-foreground mt-0.5">
-                Agendas com check-in ativo nesta sessão
+                Check-ins ativos e agendas encaminhadas para você
               </p>
             </div>
           </div>
           <button
-            onClick={() => refetch()}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors disabled:opacity-50"
           >
-            <RefreshCw size={14} />
+            <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
             Atualizar
           </button>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 p-6">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 size={32} className="animate-spin text-muted-foreground" />
-          </div>
-        ) : checkIns.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <ClipboardList size={28} className="text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-medium text-foreground mb-2">
-              Nenhum check-in ativo
-            </h3>
-            <p className="text-sm text-muted-foreground max-w-sm">
-              Você ainda não fez check-in em nenhuma agenda. Acesse a aba{' '}
-              <strong>Regulação</strong> e clique em "Check-in" na agenda desejada.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground mb-4">
-              {checkIns.length} agenda{checkIns.length !== 1 ? 's' : ''} em regulação
-            </p>
+      <div className="flex-1 p-6 space-y-8">
 
+        {/* ── Seção 1: Check-ins ativos ── */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <CheckCircle2 size={18} className="text-green-600 dark:text-green-400" />
+            <h2 className="text-lg font-semibold text-foreground">Check-ins ativos</h2>
+            <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300">
+              {checkIns.length}
+            </span>
+          </div>
+
+          {loadingCheckIns ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 size={24} className="animate-spin text-muted-foreground" />
+            </div>
+          ) : checkIns.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center rounded-lg border border-dashed border-border bg-card">
+              <ClipboardList size={24} className="text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">
+                Você não tem check-ins ativos no momento.
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Acesse a aba <strong>Regulação</strong> e clique em "Check-in" em uma agenda.
+              </p>
+            </div>
+          ) : (
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full border-collapse">
-                <thead className="bg-secondary">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider">
-                      Agenda
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">
-                      Especialidade
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">
-                      Central
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">
-                      Cotas
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">
-                      Saldo
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">
-                      Aguardando
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">
-                      Index
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">
-                      Check-in em
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">
-                      Ação
-                    </th>
-                  </tr>
-                </thead>
+                <TableHeader showEncaminhadoPor={false} />
                 <tbody>
                   {checkIns.map((ci, idx) => (
-                    <tr
+                    <AgendaRow
                       key={ci.id}
-                      className={`border-t border-border hover:bg-secondary/50 transition-colors ${
-                        idx % 2 === 0 ? 'bg-card' : 'bg-muted/20'
-                      }`}
-                    >
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-sm text-foreground">{ci.agendaNome}</div>
-                        {ci.municipio && (
-                          <div className="text-xs text-muted-foreground mt-0.5">{ci.municipio}</div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-center text-xs text-foreground">
-                        {ci.especialidade}
-                      </td>
-                      <td className="px-4 py-3 text-center text-xs text-foreground">
-                        {ci.central ?? '—'}
-                      </td>
-                      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">
-                        {ci.cotas ?? '—'}
-                      </td>
-                      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">
-                        {ci.saldo ?? '—'}
-                      </td>
-                      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">
-                        {ci.aguardando ?? '—'}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded text-sm ${getBadgeColor(ci.indexRegula)}`}
-                        >
-                          {ci.indexRegula != null ? ci.indexRegula.toFixed(2) : '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center text-xs text-muted-foreground">
-                        {new Date(ci.createdAt).toLocaleString('pt-BR', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          day: '2-digit',
-                          month: '2-digit',
-                        })}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => handleCheckOut(ci)}
-                          disabled={checkInMutation.isPending}
-                          title="Fazer check-out desta agenda"
-                          className="flex items-center gap-1 mx-auto px-2 py-1 rounded text-xs font-medium bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors disabled:opacity-50"
-                        >
-                          {checkInMutation.isPending ? (
-                            <Loader2 size={11} className="animate-spin" />
-                          ) : (
-                            <LogOut size={11} />
-                          )}
-                          Check-out
-                        </button>
-                      </td>
-                    </tr>
+                      agendaId={ci.agendaId}
+                      agendaNome={ci.agendaNome}
+                      municipio={ci.municipio}
+                      especialidade={ci.especialidade}
+                      central={ci.central}
+                      cotas={ci.cotas}
+                      saldo={ci.saldo}
+                      aguardando={ci.aguardando}
+                      indexRegula={ci.indexRegula}
+                      temCheckIn={true}
+                      createdAt={ci.createdAt}
+                      onCheckIn={() => handleCheckIn(ci)}
+                      isPending={checkInMutation.isPending}
+                    />
                   ))}
                 </tbody>
               </table>
             </div>
+          )}
+        </section>
+
+        {/* ── Seção 2: Agendas encaminhadas ── */}
+        <section>
+          <div className="flex items-center gap-2 mb-3">
+            <Send size={18} className="text-blue-600 dark:text-blue-400" />
+            <h2 className="text-lg font-semibold text-foreground">Encaminhadas para mim</h2>
+            <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300">
+              {encaminhadas.length}
+            </span>
           </div>
-        )}
+
+          {loadingEncaminhadas ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 size={24} className="animate-spin text-muted-foreground" />
+            </div>
+          ) : encaminhadas.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10 text-center rounded-lg border border-dashed border-border bg-card">
+              <Send size={24} className="text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">
+                Nenhuma agenda foi encaminhada para você ainda.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-border">
+              <table className="w-full border-collapse">
+                <TableHeader showEncaminhadoPor={true} />
+                <tbody>
+                  {encaminhadas.map((enc) => (
+                    <AgendaRow
+                      key={enc.id}
+                      agendaId={enc.agendaId}
+                      agendaNome={enc.agendaNome}
+                      municipio={null}
+                      especialidade={enc.especialidade}
+                      central={null}
+                      cotas={null}
+                      saldo={null}
+                      aguardando={null}
+                      indexRegula={null}
+                      temCheckIn={checkInIds.has(enc.agendaId)}
+                      encaminhadoPor={enc.encaminhadoPorNome}
+                      createdAt={enc.createdAt}
+                      onCheckIn={() => handleCheckIn({
+                        agendaId: enc.agendaId,
+                        agendaNome: enc.agendaNome,
+                        especialidade: enc.especialidade,
+                      })}
+                      isPending={checkInMutation.isPending}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
       </div>
     </div>
   );

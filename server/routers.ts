@@ -193,6 +193,18 @@ export const appRouter = router({
   }),
 
   encaminhamentos: router({
+    // Buscar encaminhamentos destinados ao usuário logado
+    getMinhas: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const email = ctx.user?.email ?? "";
+      return db
+        .select()
+        .from(encaminhamentos)
+        .where(eq(encaminhamentos.reguladorEmail, email))
+        .orderBy(desc(encaminhamentos.createdAt));
+    }),
+
     // Buscar todos os encaminhamentos (carregado uma vez para a tabela)
     getAll: protectedProcedure.query(async () => {
       const db = await getDb();

@@ -47,3 +47,4 @@
 - [x] Adicionar Minhas Agendas ao menu lateral
 - [x] Implementar limpeza automática de check-ins no logout
 - [x] Corrigir erro 404 ao acessar /minhas-agendas
+- [x] Reformular Minhas Agendas: exibir check-ins ativos e agendas encaminhadas, com check-in direto nas encaminhadas
