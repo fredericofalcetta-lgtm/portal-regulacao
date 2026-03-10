@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Route, Switch } from 'wouter';
 import Sidebar from '@/components/Sidebar';
 import Regulation from './Regulation';
@@ -16,6 +16,16 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState('inicio');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const utils = trpc.useUtils();
+
+  // Limpar check-ins quando o usuário fechar a aba ou o navegador
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // navigator.sendBeacon envia a requisição mesmo quando a página está sendo fechada
+      navigator.sendBeacon('/api/checkins/clear');
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   const { data: sheetsData, isLoading } = trpc.sheets.getData.useQuery();
   const rows = sheetsData?.rows ?? [];

@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { syncAndSeedIfEmpty } from "../syncSheets";
+import { sdk } from "./sdk";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -36,6 +37,29 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  // Endpoint dedicado para limpeza de check-ins via sendBeacon (beforeunload)
+  // navigator.sendBeacon só suporta POST com Content-Type text/plain ou application/x-www-form-urlencoded
+  app.post("/api/checkins/clear", async (req, res) => {
+    try {
+      const user = await sdk.authenticateRequest(req);
+      if (!user?.email) {
+        res.status(401).end();
+        return;
+      }
+      const { getDb } = await import("../db");
+      const { checkIns } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const db = await getDb();
+      if (db) {
+        await db.delete(checkIns).where(eq(checkIns.usuarioEmail, user.email));
+      }
+      res.status(204).end();
+    } catch {
+      // Silently fail — sendBeacon não processa a resposta
+      res.status(204).end();
+    }
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",
