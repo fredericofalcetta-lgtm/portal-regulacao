@@ -50,6 +50,13 @@ function Router() {
           </AuthGuard>
         )}
       </Route>
+      <Route path="/minhas-agendas">
+        {() => (
+          <AuthGuard>
+            <Home />
+          </AuthGuard>
+        )}
+      </Route>
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

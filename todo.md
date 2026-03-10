@@ -46,3 +46,4 @@
 - [x] Criar página Minhas Agendas com check-ins ativos do usuário
 - [x] Adicionar Minhas Agendas ao menu lateral
 - [x] Implementar limpeza automática de check-ins no logout
+- [x] Corrigir erro 404 ao acessar /minhas-agendas
