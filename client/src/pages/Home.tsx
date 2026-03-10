@@ -6,6 +6,7 @@ import Dashboard from './Dashboard';
 import Prioridades from './Prioridades';
 import Protocolos from './Protocolos';
 import Landing from './Landing';
+import MinhasAgendas from './MinhasAgendas';
 import { trpc } from '@/lib/trpc';
 
 const SIDEBAR_OPEN_WIDTH = '16rem';   // w-64
@@ -77,6 +78,12 @@ export default function Home() {
             {() => {
               if (currentPage !== 'protocolos') setCurrentPage('protocolos');
               return <Protocolos />;
+            }}
+          </Route>
+          <Route path="/minhas-agendas">
+            {() => {
+              if (currentPage !== 'minhas-agendas') setCurrentPage('minhas-agendas');
+              return <MinhasAgendas />;
             }}
           </Route>
         </Switch>

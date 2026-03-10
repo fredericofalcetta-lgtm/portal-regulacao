@@ -39,3 +39,10 @@
 - [x] Implementar modo noturno (dark mode) com alternância no sidebar e persistência via localStorage
 - [x] Alterar horário de sincronização automática de todos os dados para 08:30
 - [x] Implementar filtros em cascata: ao filtrar por especialidade, o filtro de Agenda exibe apenas as agendas daquela especialidade
+- [x] Criar tabelas de encaminhamentos e check-ins no banco de dados
+- [x] Criar procedures tRPC para encaminhamento (admin/monitor) e check-in (todos os perfis)
+- [x] Adicionar coluna de Encaminhamento (dropdown multi-seleção) na tabela de Regulação — apenas admin/monitor
+- [x] Adicionar coluna de Check-in (toggle) na tabela de Regulação — todos os perfis
+- [x] Criar página Minhas Agendas com check-ins ativos do usuário
+- [x] Adicionar Minhas Agendas ao menu lateral
+- [x] Implementar limpeza automática de check-ins no logout

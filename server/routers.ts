@@ -3,9 +3,18 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
-import { regulacaoData, syncLog, prioridades, reguladores, protocolos } from "../drizzle/schema";
-import { asc, desc, eq } from "drizzle-orm";
+import {
+  regulacaoData,
+  syncLog,
+  prioridades,
+  reguladores,
+  protocolos,
+  encaminhamentos,
+  checkIns,
+} from "../drizzle/schema";
+import { asc, desc, eq, and } from "drizzle-orm";
 import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb, syncProtocolosToDb } from "./syncSheets";
+import { z } from "zod";
 
 export const appRouter = router({
   system: systemRouter,
@@ -52,7 +61,7 @@ export const appRouter = router({
   }),
 
   sheets: router({
-    // Buscar todos os dados da tabela regulacao_data
+    // Buscar todos os dados da tabela regulacao_data (inclui id no índice 10)
     getData: protectedProcedure.query(async () => {
       const db = await getDb();
       if (!db) return { rows: [] };
@@ -73,6 +82,7 @@ export const appRouter = router({
         row.indexRegula ?? 0,
         row.central ?? "",
         row.especialidade ?? "",
+        row.id, // índice 10: id da linha para encaminhamentos e check-ins
       ]);
 
       return { rows };
@@ -159,7 +169,7 @@ export const appRouter = router({
   }),
 
   reguladores: router({
-    // Sincronizar reguladores manualmente (apenas admin)
+    // Sincronizar reguladores manualmente
     sync: protectedProcedure.mutation(async () => {
       try {
         const count = await syncReguladoresToDb();
@@ -168,6 +178,164 @@ export const appRouter = router({
         const message = error instanceof Error ? error.message : "Erro desconhecido";
         throw new Error(message);
       }
+    }),
+
+    // Listar todos os reguladores ativos com perfil 'Regulador'
+    listarReguladores: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db
+        .select({ nome: reguladores.nome, email: reguladores.email, perfil: reguladores.perfil })
+        .from(reguladores)
+        .where(and(eq(reguladores.ativo, "sim"), eq(reguladores.perfil, "Regulador")))
+        .orderBy(asc(reguladores.nome));
+    }),
+  }),
+
+  encaminhamentos: router({
+    // Buscar todos os encaminhamentos (carregado uma vez para a tabela)
+    getAll: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db
+        .select()
+        .from(encaminhamentos)
+        .orderBy(desc(encaminhamentos.createdAt));
+    }),
+
+    // Encaminhar agenda para reguladores (admin/monitor)
+    encaminhar: protectedProcedure
+      .input(z.object({
+        agendaId: z.number(),
+        agendaNome: z.string(),
+        especialidade: z.string(),
+        reguladores: z.array(z.object({
+          email: z.string(),
+          nome: z.string(),
+        })),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco de dados não disponível");
+
+        const encaminhadoPorEmail = ctx.user?.email ?? "";
+        const encaminhadoPorNome = ctx.user?.name ?? "";
+
+        // Remover encaminhamentos anteriores desta agenda
+        await db
+          .delete(encaminhamentos)
+          .where(eq(encaminhamentos.agendaId, input.agendaId));
+
+        if (input.reguladores.length === 0) return { success: true };
+
+        // Inserir novos encaminhamentos
+        await db.insert(encaminhamentos).values(
+          input.reguladores.map(reg => ({
+            agendaId: input.agendaId,
+            agendaNome: input.agendaNome,
+            especialidade: input.especialidade,
+            reguladorEmail: reg.email,
+            reguladorNome: reg.nome,
+            encaminhadoPorEmail,
+            encaminhadoPorNome,
+          }))
+        );
+
+        return { success: true };
+      }),
+  }),
+
+  checkIns: router({
+    // Buscar check-ins do usuário logado
+    getMeus: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const email = ctx.user?.email ?? "";
+      return db
+        .select()
+        .from(checkIns)
+        .where(eq(checkIns.usuarioEmail, email))
+        .orderBy(desc(checkIns.createdAt));
+    }),
+
+    // Buscar todos os check-ins (para exibir na tabela)
+    getAll: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db
+        .select()
+        .from(checkIns)
+        .orderBy(desc(checkIns.createdAt));
+    }),
+
+    // Fazer check-in ou check-out em uma agenda (toggle)
+    checkIn: protectedProcedure
+      .input(z.object({
+        agendaId: z.number(),
+        agendaNome: z.string(),
+        municipio: z.string().optional(),
+        especialidade: z.string(),
+        central: z.string().optional(),
+        cotas: z.number().optional(),
+        saldo: z.number().optional(),
+        aguardando: z.number().optional(),
+        indexRegula: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco de dados não disponível");
+
+        const usuarioEmail = ctx.user?.email ?? "";
+        const usuarioNome = ctx.user?.name ?? "";
+
+        // Verificar se já existe check-in desta agenda para este usuário
+        const existing = await db
+          .select()
+          .from(checkIns)
+          .where(and(
+            eq(checkIns.agendaId, input.agendaId),
+            eq(checkIns.usuarioEmail, usuarioEmail)
+          ))
+          .limit(1);
+
+        if (existing.length > 0) {
+          // Já tem check-in: fazer check-out (remover)
+          await db
+            .delete(checkIns)
+            .where(and(
+              eq(checkIns.agendaId, input.agendaId),
+              eq(checkIns.usuarioEmail, usuarioEmail)
+            ));
+          return { action: "checkout" as const };
+        }
+
+        // Fazer check-in
+        await db.insert(checkIns).values({
+          agendaId: input.agendaId,
+          agendaNome: input.agendaNome,
+          municipio: input.municipio,
+          especialidade: input.especialidade,
+          central: input.central,
+          cotas: input.cotas,
+          saldo: input.saldo,
+          aguardando: input.aguardando,
+          indexRegula: input.indexRegula,
+          usuarioEmail,
+          usuarioNome,
+        });
+
+        return { action: "checkin" as const };
+      }),
+
+    // Remover todos os check-ins do usuário (chamado no logout)
+    clearMeus: protectedProcedure.mutation(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+      const email = ctx.user?.email ?? "";
+      await db
+        .delete(checkIns)
+        .where(eq(checkIns.usuarioEmail, email));
+      return { success: true };
     }),
   }),
 });

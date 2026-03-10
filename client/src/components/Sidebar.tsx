@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Menu, X, BarChart3, Table2, ListChecks, Home, LogOut, UserCircle2, ScrollText, Sun, Moon } from 'lucide-react';
+import { Menu, X, BarChart3, Table2, ListChecks, Home, LogOut, UserCircle2, ScrollText, Sun, Moon, ClipboardList } from 'lucide-react';
 import { Link } from 'wouter';
 import { useRegulador } from '@/contexts/ReguladorContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -15,11 +15,22 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const { regulador } = useRegulador();
   const { theme, toggleTheme } = useTheme();
+  const clearCheckInsMutation = trpc.checkIns.clearMeus.useMutation();
+
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
       window.location.href = '/';
     },
   });
+
+  const handleLogout = async () => {
+    try {
+      await clearCheckInsMutation.mutateAsync();
+    } catch {
+      // Ignorar erros ao limpar check-ins
+    }
+    logoutMutation.mutate();
+  };
 
   const setOpen = (value: boolean) => {
     setIsOpen(value);
@@ -49,6 +60,7 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
   const navItems = [
     { href: '/', page: 'inicio', icon: Home, label: 'Início' },
     { href: '/regulacao', page: 'regulacao', icon: Table2, label: 'Regulação' },
+    { href: '/minhas-agendas', page: 'minhas-agendas', icon: ClipboardList, label: 'Minhas Agendas' },
     { href: '/dashboard', page: 'dashboard', icon: BarChart3, label: 'Dashboard' },
     { href: '/prioridades', page: 'prioridades', icon: ListChecks, label: 'Listas de Prioridades' },
     { href: '/protocolos', page: 'protocolos', icon: ScrollText, label: 'Protocolos' },
@@ -158,8 +170,8 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
 
               {/* Botão de sair */}
               <button
-                onClick={() => logoutMutation.mutate()}
-                disabled={logoutMutation.isPending}
+                onClick={handleLogout}
+                disabled={logoutMutation.isPending || clearCheckInsMutation.isPending}
                 className="flex items-center gap-2 px-3 py-2 text-xs text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
                 title="Sair"
               >
@@ -194,8 +206,8 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
             )}
 
             <button
-              onClick={() => logoutMutation.mutate()}
-              disabled={logoutMutation.isPending}
+              onClick={handleLogout}
+              disabled={logoutMutation.isPending || clearCheckInsMutation.isPending}
               className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
               title="Sair"
             >

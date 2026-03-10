@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
-
-interface Row {
-  [key: string]: string | number;
-}
+import { trpc } from '@/lib/trpc';
+import EncaminharCell from './EncaminharCell';
+import CheckInCell from './CheckInCell';
 
 interface DataTableProps {
   headers: string[];
@@ -14,6 +13,8 @@ interface DataTableProps {
   sortColumn: number;
   sortOrder: 'asc' | 'desc';
   onSort: (column: number) => void;
+  perfilUsuario: string;
+  emailUsuario: string;
 }
 
 export default function DataTable({
@@ -25,14 +26,52 @@ export default function DataTable({
   sortColumn,
   sortOrder,
   onSort,
+  perfilUsuario,
+  emailUsuario,
 }: DataTableProps) {
+  const isAdminOuMonitor =
+    perfilUsuario.toLowerCase() === 'administrador' ||
+    perfilUsuario.toLowerCase() === 'monitoramento';
+
+  // Buscar encaminhamentos e check-ins para exibir nas células
+  const { data: encaminhamentosData = [], refetch: refetchEncaminhamentos } =
+    trpc.encaminhamentos.getAll.useQuery();
+  const { data: checkInsData = [], refetch: refetchCheckIns } =
+    trpc.checkIns.getAll.useQuery();
+
+  // Mapear encaminhamentos por agendaId
+  const encaminhamentosPorAgenda = useMemo(() => {
+    const map = new Map<number, { reguladorEmail: string; reguladorNome: string }[]>();
+    for (const enc of encaminhamentosData) {
+      const list = map.get(enc.agendaId) ?? [];
+      list.push({ reguladorEmail: enc.reguladorEmail, reguladorNome: enc.reguladorNome });
+      map.set(enc.agendaId, list);
+    }
+    return map;
+  }, [encaminhamentosData]);
+
+  // Mapear check-ins por agendaId
+  const checkInsPorAgenda = useMemo(() => {
+    const map = new Map<number, { usuarioEmail: string; usuarioNome: string }[]>();
+    for (const ci of checkInsData) {
+      const list = map.get(ci.agendaId) ?? [];
+      list.push({ usuarioEmail: ci.usuarioEmail, usuarioNome: ci.usuarioNome });
+      map.set(ci.agendaId, list);
+    }
+    return map;
+  }, [checkInsData]);
+
+  const handleUpdate = () => {
+    refetchEncaminhamentos();
+    refetchCheckIns();
+  };
+
   // Filter and sort data
   const filteredAndSortedRows = useMemo(() => {
     let filtered = rows.filter(row => {
-      // Check if row matches all selected filters
-      const agenda = String(row[0]); // Column A
-      const central = String(row[8]); // Column I
-      const especialidade = String(row[9]); // Column J
+      const agenda = String(row[0]);
+      const central = String(row[8]);
+      const especialidade = String(row[9]);
 
       const matchesAgenda = selectedAgendas.size === 0 || selectedAgendas.has(agenda);
       const matchesCentral = selectedCentrais.size === 0 || selectedCentrais.has(central);
@@ -42,31 +81,15 @@ export default function DataTable({
       return matchesAgenda && matchesCentral && matchesEspecialidade;
     });
 
-    // Sort by IndexRegula (Column H - index 7) in descending order by default
-    // Then apply custom sort if user clicked a column
     filtered.sort((a, b) => {
-      let aVal: any;
-      let bVal: any;
-      let columnToSort = sortColumn;
-
-      // If sorting by column 7 (IndexRegula), always use numeric sort
-      if (columnToSort === 7) {
-        aVal = parseFloat(String(a[7])) || 0;
-        bVal = parseFloat(String(b[7])) || 0;
+      const numericColumns = [2, 3, 4, 5, 6, 7];
+      if (numericColumns.includes(sortColumn)) {
+        const aVal = parseFloat(String(a[sortColumn])) || 0;
+        const bVal = parseFloat(String(b[sortColumn])) || 0;
         return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
       }
-
-      // Try to parse as numbers for numeric columns
-      const numericColumns = [2, 3, 4, 5, 6, 7]; // Cotas, Saldo, Aguardando, Autorizadas, Aut/Cotas, IndexRegula
-      if (numericColumns.includes(columnToSort)) {
-        aVal = parseFloat(String(a[columnToSort])) || 0;
-        bVal = parseFloat(String(b[columnToSort])) || 0;
-        return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
-      }
-
-      // String sort for other columns
-      aVal = String(a[columnToSort]);
-      bVal = String(b[columnToSort]);
+      const aVal = String(a[sortColumn]);
+      const bVal = String(b[sortColumn]);
       return sortOrder === 'desc'
         ? bVal.localeCompare(aVal, 'pt-BR')
         : aVal.localeCompare(bVal, 'pt-BR');
@@ -75,16 +98,21 @@ export default function DataTable({
     return filtered;
   }, [rows, selectedAgendas, selectedCentrais, selectedEspecialidades, sortColumn, sortOrder]);
 
-  const handleSort = (columnIndex: number) => {
-    onSort(columnIndex);
-  };
-
   const getIndexRegulaColor = (value: number): string => {
     if (value > 3) return 'bg-red-100 dark:bg-red-950/50 text-red-900 dark:text-red-300';
     if (value > 2) return 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300';
     if (value > 1) return 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-900 dark:text-yellow-300';
     return '';
   };
+
+  const SortIcon = ({ col }: { col: number }) =>
+    sortColumn === col ? (
+      sortOrder === 'desc' ? (
+        <ChevronDown size={16} className="text-primary" />
+      ) : (
+        <ChevronUp size={16} className="text-primary" />
+      )
+    ) : null;
 
   return (
     <div className="flex-1 flex flex-col bg-card">
@@ -101,142 +129,99 @@ export default function DataTable({
       {/* Table Container */}
       <div className="flex-1 overflow-x-auto">
         <table className="w-full border-collapse">
-          <thead className="sticky top-0 bg-secondary">
+          <thead className="sticky top-0 bg-secondary z-10">
             <tr>
+              {/* Agenda */}
               <th
-                onClick={() => handleSort(0)}
+                onClick={() => onSort(0)}
                 className="px-6 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
                   <span>Agenda</span>
-                  {sortColumn === 0 && (
-                    <span>
-                      {sortOrder === 'desc' ? (
-                        <ChevronDown size={16} className="text-primary" />
-                      ) : (
-                        <ChevronUp size={16} className="text-primary" />
-                      )}
-                    </span>
-                  )}
+                  <SortIcon col={0} />
                 </div>
               </th>
+
+              {/* Encaminhar — apenas admin/monitor */}
+              {isAdminOuMonitor && (
+                <th className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">
+                  Encaminhar
+                </th>
+              )}
+
+              {/* Check-in — todos */}
+              <th className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">
+                Check-in
+              </th>
+
+              {/* Cotas */}
               <th
-                onClick={() => handleSort(2)}
+                onClick={() => onSort(2)}
                 className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
               >
-                <div className="flex items-center justify-center space-x-2">
+                <div className="flex items-center justify-center space-x-1">
                   <span>Cotas</span>
-                  {sortColumn === 2 && (
-                    <span>
-                      {sortOrder === 'desc' ? (
-                        <ChevronDown size={16} className="text-primary" />
-                      ) : (
-                        <ChevronUp size={16} className="text-primary" />
-                      )}
-                    </span>
-                  )}
+                  <SortIcon col={2} />
                 </div>
               </th>
+              {/* Saldo */}
               <th
-                onClick={() => handleSort(3)}
+                onClick={() => onSort(3)}
                 className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
               >
-                <div className="flex items-center justify-center space-x-2">
+                <div className="flex items-center justify-center space-x-1">
                   <span>Saldo</span>
-                  {sortColumn === 3 && (
-                    <span>
-                      {sortOrder === 'desc' ? (
-                        <ChevronDown size={16} className="text-primary" />
-                      ) : (
-                        <ChevronUp size={16} className="text-primary" />
-                      )}
-                    </span>
-                  )}
+                  <SortIcon col={3} />
                 </div>
               </th>
+              {/* Aguardando */}
               <th
-                onClick={() => handleSort(4)}
+                onClick={() => onSort(4)}
                 className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
               >
-                <div className="flex items-center justify-center space-x-2">
+                <div className="flex items-center justify-center space-x-1">
                   <span>Aguardando</span>
-                  {sortColumn === 4 && (
-                    <span>
-                      {sortOrder === 'desc' ? (
-                        <ChevronDown size={16} className="text-primary" />
-                      ) : (
-                        <ChevronUp size={16} className="text-primary" />
-                      )}
-                    </span>
-                  )}
+                  <SortIcon col={4} />
                 </div>
               </th>
+              {/* Autorizadas */}
               <th
-                onClick={() => handleSort(5)}
+                onClick={() => onSort(5)}
                 className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
               >
-                <div className="flex items-center justify-center space-x-2">
+                <div className="flex items-center justify-center space-x-1">
                   <span>Autorizadas</span>
-                  {sortColumn === 5 && (
-                    <span>
-                      {sortOrder === 'desc' ? (
-                        <ChevronDown size={16} className="text-primary" />
-                      ) : (
-                        <ChevronUp size={16} className="text-primary" />
-                      )}
-                    </span>
-                  )}
+                  <SortIcon col={5} />
                 </div>
               </th>
+              {/* Index */}
               <th
-                onClick={() => handleSort(7)}
+                onClick={() => onSort(7)}
                 className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
               >
-                <div className="flex items-center justify-center space-x-2">
+                <div className="flex items-center justify-center space-x-1">
                   <span>Index</span>
-                  {sortColumn === 7 && (
-                    <span>
-                      {sortOrder === 'desc' ? (
-                        <ChevronDown size={16} className="text-primary" />
-                      ) : (
-                        <ChevronUp size={16} className="text-primary" />
-                      )}
-                    </span>
-                  )}
+                  <SortIcon col={7} />
                 </div>
               </th>
+              {/* Central */}
               <th
-                onClick={() => handleSort(8)}
+                onClick={() => onSort(8)}
                 className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
               >
-                <div className="flex items-center justify-center space-x-2">
+                <div className="flex items-center justify-center space-x-1">
                   <span>Central</span>
-                  {sortColumn === 8 && (
-                    <span>
-                      {sortOrder === 'desc' ? (
-                        <ChevronDown size={16} className="text-primary" />
-                      ) : (
-                        <ChevronUp size={16} className="text-primary" />
-                      )}
-                    </span>
-                  )}
+                  <SortIcon col={8} />
                 </div>
               </th>
+              {/* Especialidade */}
               <th
-                onClick={() => handleSort(9)}
+                onClick={() => onSort(9)}
                 className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
               >
-                <div className="flex items-center justify-center space-x-2">
+                <div className="flex items-center justify-center space-x-1">
                   <span>Especialidade</span>
-                  {sortColumn === 9 && (
-                    <span>
-                      {sortOrder === 'desc' ? (
-                        <ChevronDown size={16} className="text-primary" />
-                      ) : (
-                        <ChevronUp size={16} className="text-primary" />
-                      )}
-                    </span>
-                  )}
+                  <SortIcon col={9} />
                 </div>
               </th>
             </tr>
@@ -244,67 +229,106 @@ export default function DataTable({
           <tbody>
             {filteredAndSortedRows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-6 py-8 text-center">
+                <td colSpan={isAdminOuMonitor ? 10 : 9} className="px-6 py-8 text-center">
                   <p className="text-muted-foreground">Nenhum resultado encontrado</p>
                 </td>
               </tr>
             ) : (
-              filteredAndSortedRows.map((row, rowIndex) => (
-                <tr
-                  key={rowIndex}
-                  className={`border-b border-border hover:bg-secondary transition-colors ${
-                    rowIndex % 2 === 0 ? 'bg-card' : 'bg-muted/30'
-                  }`}
-                >
-                  {/* Agenda column with smaller font for municipality */}
-                  <td className="px-6 py-4 text-foreground">
-                    <div className="font-medium text-sm">{String(row[0])}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {String(row[1])}
-                    </div>
-                  </td>
-                  {/* Cotas */}
-                  <td className="px-3 py-4 text-center text-sm font-medium text-foreground">
-                    {String(row[2])}
-                  </td>
-                  {/* Saldo */}
-                  <td className="px-3 py-4 text-center text-sm font-medium text-foreground">
-                    {String(row[3])}
-                  </td>
-                  {/* Aguardando */}
-                  <td className="px-3 py-4 text-center text-sm font-medium text-foreground">
-                    {String(row[4])}
-                  </td>
-                  {/* Autorizadas */}
-                  <td className="px-3 py-4 text-center text-sm font-medium text-foreground">
-                    {String(row[5])}
-                  </td>
-                  {/* IndexRegula with conditional coloring */}
-                  <td className="px-3 py-4 text-center">
-                    {(() => {
-                      const value = parseFloat(String(row[7])) || 0;
-                      const bgColor = getIndexRegulaColor(value);
-                      return (
-                        <span
-                          className={`inline-block px-2 py-1 rounded text-sm font-semibold ${
-                            bgColor || 'text-foreground'
-                          }`}
-                        >
-                          {value.toFixed(2)}
-                        </span>
-                      );
-                    })()}
-                  </td>
-                  {/* Central */}
-                  <td className="px-3 py-4 text-center text-xs font-medium text-foreground">
-                    {String(row[8])}
-                  </td>
-                  {/* Especialidade */}
-                  <td className="px-3 py-4 text-center text-xs text-foreground">
-                    {String(row[9])}
-                  </td>
-                </tr>
-              ))
+              filteredAndSortedRows.map((row, rowIndex) => {
+                const agendaId = typeof row[10] === 'number' ? row[10] : 0;
+                const encaminhadosAtuais = encaminhamentosPorAgenda.get(agendaId) ?? [];
+                const checkInsAtuais = checkInsPorAgenda.get(agendaId) ?? [];
+                const indexValue = parseFloat(String(row[7])) || 0;
+
+                return (
+                  <tr
+                    key={rowIndex}
+                    className={`border-b border-border hover:bg-secondary transition-colors ${
+                      rowIndex % 2 === 0 ? 'bg-card' : 'bg-muted/30'
+                    }`}
+                  >
+                    {/* Agenda */}
+                    <td className="px-6 py-3 text-foreground">
+                      <div className="font-medium text-sm">{String(row[0])}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{String(row[1])}</div>
+                    </td>
+
+                    {/* Encaminhar — apenas admin/monitor */}
+                    {isAdminOuMonitor && (
+                      <td className="px-3 py-3 text-center">
+                        {agendaId > 0 ? (
+                          <EncaminharCell
+                            agendaId={agendaId}
+                            agendaNome={String(row[0])}
+                            especialidade={String(row[9])}
+                            encaminhadosAtuais={encaminhadosAtuais}
+                            onUpdate={handleUpdate}
+                          />
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
+                    )}
+
+                    {/* Check-in — todos */}
+                    <td className="px-3 py-3 text-center">
+                      {agendaId > 0 ? (
+                        <CheckInCell
+                          agendaId={agendaId}
+                          agendaNome={String(row[0])}
+                          municipio={String(row[1])}
+                          especialidade={String(row[9])}
+                          central={String(row[8])}
+                          cotas={typeof row[2] === 'number' ? row[2] : undefined}
+                          saldo={typeof row[3] === 'number' ? row[3] : undefined}
+                          aguardando={typeof row[4] === 'number' ? row[4] : undefined}
+                          indexRegula={indexValue}
+                          checkInsAtuais={checkInsAtuais}
+                          usuarioEmail={emailUsuario}
+                          onUpdate={handleUpdate}
+                        />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+
+                    {/* Cotas */}
+                    <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
+                      {String(row[2])}
+                    </td>
+                    {/* Saldo */}
+                    <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
+                      {String(row[3])}
+                    </td>
+                    {/* Aguardando */}
+                    <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
+                      {String(row[4])}
+                    </td>
+                    {/* Autorizadas */}
+                    <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
+                      {String(row[5])}
+                    </td>
+                    {/* IndexRegula */}
+                    <td className="px-3 py-3 text-center">
+                      <span
+                        className={`inline-block px-2 py-1 rounded text-sm font-semibold ${
+                          getIndexRegulaColor(indexValue) || 'text-foreground'
+                        }`}
+                      >
+                        {indexValue.toFixed(2)}
+                      </span>
+                    </td>
+                    {/* Central */}
+                    <td className="px-3 py-3 text-center text-xs font-medium text-foreground">
+                      {String(row[8])}
+                    </td>
+                    {/* Especialidade */}
+                    <td className="px-3 py-3 text-center text-xs text-foreground">
+                      {String(row[9])}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
