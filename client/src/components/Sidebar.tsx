@@ -80,18 +80,18 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
 
   return (
     <div
-      className={`fixed left-0 top-0 h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white transition-all duration-300 ease-in-out z-40 flex flex-col ${
-        isOpen ? 'w-64' : 'w-20'
+      className={`relative h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white transition-all duration-300 ease-in-out z-40 flex flex-col shrink-0 ${
+        isOpen ? 'w-64' : 'w-16'
       }`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between h-16 px-4 border-b border-slate-700 shrink-0">
+      <div className={`flex items-center h-16 border-b border-slate-700 shrink-0 ${isOpen ? 'justify-between px-4' : 'justify-center px-2'}`}>
         {isOpen && (
           <h1 className="text-base font-bold truncate">Portal Regulação</h1>
         )}
         <button
           onClick={toggleSidebar}
-          className="p-2 hover:bg-slate-700 rounded-lg transition-colors ml-auto"
+          className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
           title={isOpen ? 'Recolher menu' : 'Expandir menu'}
         >
           {isOpen ? <X size={20} /> : <Menu size={20} />}
@@ -104,7 +104,13 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
           <Link
             key={page}
             href={href}
-            className={navItemClass(page)}
+            className={`flex items-center rounded-lg transition-colors ${
+              isOpen ? 'gap-3 px-4 py-3' : 'justify-center px-2 py-3'
+            } ${
+              currentPage === page
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-300 hover:bg-slate-700'
+            }`}
             title={!isOpen ? label : undefined}
           >
             <Icon size={20} className="flex-shrink-0" />
