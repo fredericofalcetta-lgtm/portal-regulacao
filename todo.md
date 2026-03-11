@@ -49,3 +49,6 @@
 - [x] Corrigir erro 404 ao acessar /minhas-agendas
 - [x] Reformular Minhas Agendas: exibir check-ins ativos e agendas encaminhadas, com check-in direto nas encaminhadas
 - [x] Garantir check-out automático ao fechar aba/navegador (beforeunload) além do logout
+- [x] Corrigir EncaminharCell: mostrar todos os reguladores cadastrados para Admin/Monitoramento
+- [x] Corrigir CheckInCell: check-in é ação individual, não vinculado ao encaminhamento
+- [x] Reformular Minhas Agendas: duas seções separadas (Atribuídas a Mim / Meus Check-ins) com check-in direto nas atribuídas

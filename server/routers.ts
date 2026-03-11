@@ -180,14 +180,14 @@ export const appRouter = router({
       }
     }),
 
-    // Listar todos os reguladores ativos com perfil 'Regulador'
+    // Listar todos os usuários ativos cadastrados (para encaminhamento por Admin/Monitor)
     listarReguladores: protectedProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
       return db
         .select({ nome: reguladores.nome, email: reguladores.email, perfil: reguladores.perfil })
         .from(reguladores)
-        .where(and(eq(reguladores.ativo, "sim"), eq(reguladores.perfil, "Regulador")))
+        .where(eq(reguladores.ativo, "sim"))
         .orderBy(asc(reguladores.nome));
     }),
   }),
