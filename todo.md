@@ -52,3 +52,4 @@
 - [x] Corrigir EncaminharCell: mostrar todos os reguladores cadastrados para Admin/Monitoramento
 - [x] Corrigir CheckInCell: check-in é ação individual, não vinculado ao encaminhamento
 - [x] Reformular Minhas Agendas: duas seções separadas (Atribuídas a Mim / Meus Check-ins) com check-in direto nas atribuídas
+- [x] Remover coluna Especialidade da tabela de agendas na tela de Regulação

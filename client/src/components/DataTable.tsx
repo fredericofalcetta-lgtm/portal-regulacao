@@ -214,22 +214,13 @@ export default function DataTable({
                   <SortIcon col={8} />
                 </div>
               </th>
-              {/* Especialidade */}
-              <th
-                onClick={() => onSort(9)}
-                className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
-              >
-                <div className="flex items-center justify-center space-x-1">
-                  <span>Especialidade</span>
-                  <SortIcon col={9} />
-                </div>
-              </th>
+
             </tr>
           </thead>
           <tbody>
             {filteredAndSortedRows.length === 0 ? (
               <tr>
-                <td colSpan={isAdminOuMonitor ? 10 : 9} className="px-6 py-8 text-center">
+                <td colSpan={isAdminOuMonitor ? 9 : 8} className="px-6 py-8 text-center">
                   <p className="text-muted-foreground">Nenhum resultado encontrado</p>
                 </td>
               </tr>
@@ -322,10 +313,7 @@ export default function DataTable({
                     <td className="px-3 py-3 text-center text-xs font-medium text-foreground">
                       {String(row[8])}
                     </td>
-                    {/* Especialidade */}
-                    <td className="px-3 py-3 text-center text-xs text-foreground">
-                      {String(row[9])}
-                    </td>
+
                   </tr>
                 );
               })
