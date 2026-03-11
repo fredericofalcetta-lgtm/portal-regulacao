@@ -44,6 +44,24 @@ export default function MultiSelectFilter({
     option.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const allFilteredSelected =
+    filteredOptions.length > 0 &&
+    filteredOptions.every(opt => selectedValues.has(opt));
+
+  const handleToggleAll = () => {
+    if (allFilteredSelected) {
+      // Desmarcar todas as opções filtradas
+      const newValues = new Set(selectedValues);
+      filteredOptions.forEach(opt => newValues.delete(opt));
+      onChange(newValues);
+    } else {
+      // Marcar todas as opções filtradas
+      const newValues = new Set(selectedValues);
+      filteredOptions.forEach(opt => newValues.add(opt));
+      onChange(newValues);
+    }
+  };
+
   const handleToggleOption = (option: string) => {
     const newValues = new Set(selectedValues);
     if (newValues.has(option)) {
@@ -130,20 +148,36 @@ export default function MultiSelectFilter({
                 Nenhuma opção encontrada
               </div>
             ) : (
-              filteredOptions.map(option => (
-                <label
-                  key={option}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-secondary cursor-pointer transition-colors"
-                >
+              <>
+                {/* Item Selecionar todas */}
+                <label className="flex items-center gap-2 px-3 py-2 hover:bg-secondary cursor-pointer transition-colors border-b border-border bg-muted/40">
                   <input
                     type="checkbox"
-                    checked={selectedValues.has(option)}
-                    onChange={() => handleToggleOption(option)}
+                    checked={allFilteredSelected}
+                    onChange={handleToggleAll}
                     className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary cursor-pointer"
                   />
-                  <span className="text-sm text-foreground flex-1">{option}</span>
+                  <span className="text-sm font-medium text-foreground flex-1">
+                    {allFilteredSelected ? 'Desmarcar todas' : 'Selecionar todas'}
+                    {searchTerm && ` (${filteredOptions.length})`}
+                  </span>
                 </label>
-              ))
+
+                {filteredOptions.map(option => (
+                  <label
+                    key={option}
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-secondary cursor-pointer transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedValues.has(option)}
+                      onChange={() => handleToggleOption(option)}
+                      className="w-4 h-4 rounded border-border text-primary focus:ring-2 focus:ring-primary cursor-pointer"
+                    />
+                    <span className="text-sm text-foreground flex-1">{option}</span>
+                  </label>
+                ))}
+              </>
             )}
           </div>
 
