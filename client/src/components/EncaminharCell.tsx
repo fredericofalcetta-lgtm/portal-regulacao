@@ -7,6 +7,7 @@ interface EncaminharCellProps {
   agendaNome: string;
   especialidade: string;
   encaminhadosAtuais: { reguladorEmail: string; reguladorNome: string }[];
+  reguladoresList: { email: string; nome: string }[];
   onUpdate: () => void;
 }
 
@@ -15,6 +16,7 @@ export default function EncaminharCell({
   agendaNome,
   especialidade,
   encaminhadosAtuais,
+  reguladoresList,
   onUpdate,
 }: EncaminharCellProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,7 +25,6 @@ export default function EncaminharCell({
   );
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const { data: reguladoresList = [] } = trpc.reguladores.listarReguladores.useQuery();
   const encaminharMutation = trpc.encaminhamentos.encaminhar.useMutation({
     onSuccess: () => {
       onUpdate();

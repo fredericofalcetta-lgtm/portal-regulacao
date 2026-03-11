@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Menu, X, BarChart3, Table2, ListChecks, Home, LogOut, UserCircle2, ScrollText, Sun, Moon, ClipboardList } from 'lucide-react';
 import { Link } from 'wouter';
 import { useRegulador } from '@/contexts/ReguladorContext';
@@ -32,10 +32,10 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     logoutMutation.mutate();
   };
 
-  const setOpen = (value: boolean) => {
+  const setOpen = useCallback((value: boolean) => {
     setIsOpen(value);
     onToggle?.(value);
-  };
+  }, [onToggle]);
 
   // Auto-collapse after 3 seconds of mouse inactivity
   useEffect(() => {

@@ -54,3 +54,7 @@
 - [x] Reformular Minhas Agendas: duas seções separadas (Atribuídas a Mim / Meus Check-ins) com check-in direto nas atribuídas
 - [x] Remover coluna Especialidade da tabela de agendas na tela de Regulação
 - [x] Adicionar opção "Selecionar todas" nos filtros de Central e Agenda
+- [x] Otimizar performance: memoização de filtros e dados no Regulation.tsx
+- [x] Otimizar performance: React.memo e useCallback no DataTable e células de ação
+- [x] Otimizar performance: lazy loading de rotas e staleTime nas queries tRPC
+- [x] Otimizar performance: MultiSelectFilter com useMemo para opções filtradas

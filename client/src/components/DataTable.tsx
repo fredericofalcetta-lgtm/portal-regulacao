@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, memo, useCallback } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import EncaminharCell from './EncaminharCell';
@@ -17,6 +17,122 @@ interface DataTableProps {
   emailUsuario: string;
 }
 
+// Memoizar a linha da tabela para evitar re-renders desnecessários
+const TableRow = memo(function TableRow({
+  row,
+  rowIndex,
+  isAdminOuMonitor,
+  encaminhadosAtuais,
+  checkInsAtuais,
+  reguladoresList,
+  emailUsuario,
+  onUpdate,
+}: {
+  row: (string | number)[];
+  rowIndex: number;
+  isAdminOuMonitor: boolean;
+  encaminhadosAtuais: { reguladorEmail: string; reguladorNome: string }[];
+  checkInsAtuais: { usuarioEmail: string; usuarioNome: string }[];
+  reguladoresList: { email: string; nome: string }[];
+  emailUsuario: string;
+  onUpdate: () => void;
+}) {
+  const agendaId = typeof row[10] === 'number' ? row[10] : 0;
+  const indexValue = parseFloat(String(row[7])) || 0;
+
+  const getIndexRegulaColor = (value: number): string => {
+    if (value > 3) return 'bg-red-100 dark:bg-red-950/50 text-red-900 dark:text-red-300';
+    if (value > 2) return 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300';
+    if (value > 1) return 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-900 dark:text-yellow-300';
+    return '';
+  };
+
+  return (
+    <tr
+      className={`border-b border-border hover:bg-secondary transition-colors ${
+        rowIndex % 2 === 0 ? 'bg-card' : 'bg-muted/30'
+      }`}
+    >
+      {/* Agenda */}
+      <td className="px-6 py-3 text-foreground">
+        <div className="font-medium text-sm">{String(row[0])}</div>
+        <div className="text-xs text-muted-foreground mt-0.5">{String(row[1])}</div>
+      </td>
+
+      {/* Encaminhar — apenas admin/monitor */}
+      {isAdminOuMonitor && (
+        <td className="px-3 py-3 text-center">
+          {agendaId > 0 ? (
+            <EncaminharCell
+              agendaId={agendaId}
+              agendaNome={String(row[0])}
+              especialidade={String(row[9])}
+              encaminhadosAtuais={encaminhadosAtuais}
+              reguladoresList={reguladoresList}
+              onUpdate={onUpdate}
+            />
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          )}
+        </td>
+      )}
+
+      {/* Check-in — todos */}
+      <td className="px-3 py-3 text-center">
+        {agendaId > 0 ? (
+          <CheckInCell
+            agendaId={agendaId}
+            agendaNome={String(row[0])}
+            municipio={String(row[1])}
+            especialidade={String(row[9])}
+            central={String(row[8])}
+            cotas={typeof row[2] === 'number' ? row[2] : undefined}
+            saldo={typeof row[3] === 'number' ? row[3] : undefined}
+            aguardando={typeof row[4] === 'number' ? row[4] : undefined}
+            indexRegula={indexValue}
+            checkInsAtuais={checkInsAtuais}
+            usuarioEmail={emailUsuario}
+            onUpdate={onUpdate}
+          />
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        )}
+      </td>
+
+      {/* Cotas */}
+      <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
+        {String(row[2])}
+      </td>
+      {/* Saldo */}
+      <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
+        {String(row[3])}
+      </td>
+      {/* Aguardando */}
+      <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
+        {String(row[4])}
+      </td>
+      {/* Autorizadas */}
+      <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
+        {String(row[5])}
+      </td>
+      {/* IndexRegula */}
+      <td className="px-3 py-3 text-center">
+        <span
+          className={`inline-block px-2 py-1 rounded text-sm font-semibold ${
+            getIndexRegulaColor(indexValue) || 'text-foreground'
+          }`}
+        >
+          {indexValue.toFixed(2)}
+        </span>
+      </td>
+      {/* Central */}
+      <td className="px-3 py-3 text-center text-xs font-medium text-foreground">
+        {String(row[8])}
+      </td>
+    </tr>
+  );
+});
+
 export default function DataTable({
   headers,
   rows,
@@ -33,11 +149,21 @@ export default function DataTable({
     perfilUsuario.toLowerCase() === 'administrador' ||
     perfilUsuario.toLowerCase() === 'monitoramento';
 
-  // Buscar encaminhamentos e check-ins para exibir nas células
+  // Uma única query para reguladores — compartilhada por todas as linhas
+  const { data: reguladoresList = [] } = trpc.reguladores.listarReguladores.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  // Queries de encaminhamentos e check-ins com staleTime para evitar refetches desnecessários
   const { data: encaminhamentosData = [], refetch: refetchEncaminhamentos } =
-    trpc.encaminhamentos.getAll.useQuery();
+    trpc.encaminhamentos.getAll.useQuery(undefined, {
+      staleTime: 30 * 1000, // 30 segundos
+    });
   const { data: checkInsData = [], refetch: refetchCheckIns } =
-    trpc.checkIns.getAll.useQuery();
+    trpc.checkIns.getAll.useQuery(undefined, {
+      staleTime: 30 * 1000,
+    });
 
   // Mapear encaminhamentos por agendaId
   const encaminhamentosPorAgenda = useMemo(() => {
@@ -61,10 +187,10 @@ export default function DataTable({
     return map;
   }, [checkInsData]);
 
-  const handleUpdate = () => {
+  const handleUpdate = useCallback(() => {
     refetchEncaminhamentos();
     refetchCheckIns();
-  };
+  }, [refetchEncaminhamentos, refetchCheckIns]);
 
   // Filter and sort data
   const filteredAndSortedRows = useMemo(() => {
@@ -97,13 +223,6 @@ export default function DataTable({
 
     return filtered;
   }, [rows, selectedAgendas, selectedCentrais, selectedEspecialidades, sortColumn, sortOrder]);
-
-  const getIndexRegulaColor = (value: number): string => {
-    if (value > 3) return 'bg-red-100 dark:bg-red-950/50 text-red-900 dark:text-red-300';
-    if (value > 2) return 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300';
-    if (value > 1) return 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-900 dark:text-yellow-300';
-    return '';
-  };
 
   const SortIcon = ({ col }: { col: number }) =>
     sortColumn === col ? (
@@ -214,7 +333,6 @@ export default function DataTable({
                   <SortIcon col={8} />
                 </div>
               </th>
-
             </tr>
           </thead>
           <tbody>
@@ -227,94 +345,18 @@ export default function DataTable({
             ) : (
               filteredAndSortedRows.map((row, rowIndex) => {
                 const agendaId = typeof row[10] === 'number' ? row[10] : 0;
-                const encaminhadosAtuais = encaminhamentosPorAgenda.get(agendaId) ?? [];
-                const checkInsAtuais = checkInsPorAgenda.get(agendaId) ?? [];
-                const indexValue = parseFloat(String(row[7])) || 0;
-
                 return (
-                  <tr
-                    key={rowIndex}
-                    className={`border-b border-border hover:bg-secondary transition-colors ${
-                      rowIndex % 2 === 0 ? 'bg-card' : 'bg-muted/30'
-                    }`}
-                  >
-                    {/* Agenda */}
-                    <td className="px-6 py-3 text-foreground">
-                      <div className="font-medium text-sm">{String(row[0])}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">{String(row[1])}</div>
-                    </td>
-
-                    {/* Encaminhar — apenas admin/monitor */}
-                    {isAdminOuMonitor && (
-                      <td className="px-3 py-3 text-center">
-                        {agendaId > 0 ? (
-                          <EncaminharCell
-                            agendaId={agendaId}
-                            agendaNome={String(row[0])}
-                            especialidade={String(row[9])}
-                            encaminhadosAtuais={encaminhadosAtuais}
-                            onUpdate={handleUpdate}
-                          />
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </td>
-                    )}
-
-                    {/* Check-in — todos */}
-                    <td className="px-3 py-3 text-center">
-                      {agendaId > 0 ? (
-                        <CheckInCell
-                          agendaId={agendaId}
-                          agendaNome={String(row[0])}
-                          municipio={String(row[1])}
-                          especialidade={String(row[9])}
-                          central={String(row[8])}
-                          cotas={typeof row[2] === 'number' ? row[2] : undefined}
-                          saldo={typeof row[3] === 'number' ? row[3] : undefined}
-                          aguardando={typeof row[4] === 'number' ? row[4] : undefined}
-                          indexRegula={indexValue}
-                          checkInsAtuais={checkInsAtuais}
-                          usuarioEmail={emailUsuario}
-                          onUpdate={handleUpdate}
-                        />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
-                    </td>
-
-                    {/* Cotas */}
-                    <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
-                      {String(row[2])}
-                    </td>
-                    {/* Saldo */}
-                    <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
-                      {String(row[3])}
-                    </td>
-                    {/* Aguardando */}
-                    <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
-                      {String(row[4])}
-                    </td>
-                    {/* Autorizadas */}
-                    <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
-                      {String(row[5])}
-                    </td>
-                    {/* IndexRegula */}
-                    <td className="px-3 py-3 text-center">
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-sm font-semibold ${
-                          getIndexRegulaColor(indexValue) || 'text-foreground'
-                        }`}
-                      >
-                        {indexValue.toFixed(2)}
-                      </span>
-                    </td>
-                    {/* Central */}
-                    <td className="px-3 py-3 text-center text-xs font-medium text-foreground">
-                      {String(row[8])}
-                    </td>
-
-                  </tr>
+                  <TableRow
+                    key={agendaId > 0 ? agendaId : rowIndex}
+                    row={row}
+                    rowIndex={rowIndex}
+                    isAdminOuMonitor={isAdminOuMonitor}
+                    encaminhadosAtuais={encaminhamentosPorAgenda.get(agendaId) ?? []}
+                    checkInsAtuais={checkInsPorAgenda.get(agendaId) ?? []}
+                    reguladoresList={reguladoresList}
+                    emailUsuario={emailUsuario}
+                    onUpdate={handleUpdate}
+                  />
                 );
               })
             )}

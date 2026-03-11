@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Route, Switch } from 'wouter';
+import { useCallback, useEffect } from 'react';
+import { Route, Switch, useLocation } from 'wouter';
 import Sidebar from '@/components/Sidebar';
 import Regulation from './Regulation';
 import Dashboard from './Dashboard';
@@ -9,34 +9,35 @@ import Landing from './Landing';
 import MinhasAgendas from './MinhasAgendas';
 import { trpc } from '@/lib/trpc';
 
-const SIDEBAR_OPEN_WIDTH = '16rem';   // w-64
-const SIDEBAR_CLOSED_WIDTH = '5rem';  // w-20
-
 export default function Home() {
-  const [currentPage, setCurrentPage] = useState('inicio');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [location] = useLocation();
   const utils = trpc.useUtils();
 
   // Limpar check-ins quando o usuário fechar a aba ou o navegador
   useEffect(() => {
     const handleBeforeUnload = () => {
-      // navigator.sendBeacon envia a requisição mesmo quando a página está sendo fechada
       navigator.sendBeacon('/api/checkins/clear');
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
-  const { data: sheetsData, isLoading } = trpc.sheets.getData.useQuery();
+  // staleTime de 5 minutos: não refaz a query ao trocar de aba
+  const { data: sheetsData, isLoading } = trpc.sheets.getData.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
   const rows = sheetsData?.rows ?? [];
 
   const handleRefresh = useCallback(() => {
     utils.sheets.getData.invalidate();
   }, [utils]);
 
-  const handleSidebarToggle = useCallback((isOpen: boolean) => {
-    setSidebarOpen(isOpen);
-  }, []);
+  // Derivar currentPage da URL sem setState no render
+  const currentPage = (() => {
+    if (location === '/' || location === '') return 'inicio';
+    return location.replace('/', '');
+  })();
 
   if (isLoading) {
     return (
@@ -52,50 +53,21 @@ export default function Home() {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar fixo */}
-      <Sidebar currentPage={currentPage} onToggle={handleSidebarToggle} />
+      <Sidebar currentPage={currentPage} />
 
-      {/* Área de conteúdo — margem esquerda acompanha o sidebar */}
-      <main
-        className="flex-1 overflow-y-auto overflow-x-hidden transition-[margin] duration-300 ease-in-out"
-        style={{ marginLeft: sidebarOpen ? SIDEBAR_OPEN_WIDTH : SIDEBAR_CLOSED_WIDTH }}
-      >
+      {/* Área de conteúdo — usa padding-left para não re-calcular layout inteiro */}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden">
         <Switch>
-          <Route path="/">
-            {() => {
-              if (currentPage !== 'inicio') setCurrentPage('inicio');
-              return <Landing />;
-            }}
-          </Route>
+          <Route path="/" component={Landing} />
           <Route path="/regulacao">
-            {() => {
-              if (currentPage !== 'regulacao') setCurrentPage('regulacao');
-              return <Regulation data={rows} />;
-            }}
+            {() => <Regulation data={rows} />}
           </Route>
           <Route path="/dashboard">
-            {() => {
-              if (currentPage !== 'dashboard') setCurrentPage('dashboard');
-              return <Dashboard data={rows} onRefresh={handleRefresh} />;
-            }}
+            {() => <Dashboard data={rows} onRefresh={handleRefresh} />}
           </Route>
-          <Route path="/prioridades">
-            {() => {
-              if (currentPage !== 'prioridades') setCurrentPage('prioridades');
-              return <Prioridades />;
-            }}
-          </Route>
-          <Route path="/protocolos">
-            {() => {
-              if (currentPage !== 'protocolos') setCurrentPage('protocolos');
-              return <Protocolos />;
-            }}
-          </Route>
-          <Route path="/minhas-agendas">
-            {() => {
-              if (currentPage !== 'minhas-agendas') setCurrentPage('minhas-agendas');
-              return <MinhasAgendas />;
-            }}
-          </Route>
+          <Route path="/prioridades" component={Prioridades} />
+          <Route path="/protocolos" component={Protocolos} />
+          <Route path="/minhas-agendas" component={MinhasAgendas} />
         </Switch>
       </main>
     </div>
