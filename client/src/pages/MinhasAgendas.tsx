@@ -287,20 +287,26 @@ export default function MinhasAgendas() {
                       key={enc.id}
                       agendaId={enc.agendaId}
                       agendaNome={enc.agendaNome}
-                      municipio={null}
+                      municipio={enc.municipio}
                       especialidade={enc.especialidade}
-                      central={null}
-                      cotas={null}
-                      saldo={null}
-                      aguardando={null}
-                      indexRegula={null}
+                      central={enc.central}
+                      cotas={enc.cotas}
+                      saldo={enc.saldo}
+                      aguardando={enc.aguardando}
+                      indexRegula={enc.indexRegula}
                       temCheckIn={checkInIds.has(enc.agendaId)}
                       encaminhadoPor={enc.encaminhadoPorNome}
                       createdAt={enc.createdAt}
                       onCheckIn={() => handleCheckIn({
                         agendaId: enc.agendaId,
                         agendaNome: enc.agendaNome,
+                        municipio: enc.municipio,
                         especialidade: enc.especialidade,
+                        central: enc.central ?? undefined,
+                        cotas: enc.cotas ?? undefined,
+                        saldo: enc.saldo ?? undefined,
+                        aguardando: enc.aguardando ?? undefined,
+                        indexRegula: enc.indexRegula ?? undefined,
                       })}
                       isPending={checkInMutation.isPending}
                     />

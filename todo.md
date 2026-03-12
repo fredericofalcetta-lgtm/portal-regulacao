@@ -59,3 +59,4 @@
 - [x] Otimizar performance: lazy loading de rotas e staleTime nas queries tRPC
 - [x] Otimizar performance: MultiSelectFilter com useMemo para opções filtradas
 - [x] Corrigir layout: conteúdo principal deve ocupar todo o espaço quando sidebar está recolhido
+- [x] Corrigir exibição de informações das agendas encaminhadas na página Minhas Agendas

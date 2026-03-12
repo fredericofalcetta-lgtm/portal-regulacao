@@ -193,16 +193,38 @@ export const appRouter = router({
   }),
 
   encaminhamentos: router({
-    // Buscar encaminhamentos destinados ao usuário logado
+    // Buscar encaminhamentos destinados ao usuário logado (com dados atualizados da agenda)
     getMinhas: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       if (!db) return [];
       const email = ctx.user?.email ?? "";
-      return db
-        .select()
+
+      // Buscar encaminhamentos com JOIN na tabela de dados para pegar informações atualizadas
+      const result = await db
+        .select({
+          id: encaminhamentos.id,
+          agendaId: encaminhamentos.agendaId,
+          agendaNome: encaminhamentos.agendaNome,
+          especialidade: encaminhamentos.especialidade,
+          reguladorEmail: encaminhamentos.reguladorEmail,
+          reguladorNome: encaminhamentos.reguladorNome,
+          encaminhadoPorEmail: encaminhamentos.encaminhadoPorEmail,
+          encaminhadoPorNome: encaminhamentos.encaminhadoPorNome,
+          createdAt: encaminhamentos.createdAt,
+          // Dados atualizados da agenda via JOIN
+          municipio: regulacaoData.municipio,
+          central: regulacaoData.central,
+          cotas: regulacaoData.cotas,
+          saldo: regulacaoData.saldo,
+          aguardando: regulacaoData.aguardando,
+          indexRegula: regulacaoData.indexRegula,
+        })
         .from(encaminhamentos)
+        .leftJoin(regulacaoData, eq(encaminhamentos.agendaId, regulacaoData.id))
         .where(eq(encaminhamentos.reguladorEmail, email))
         .orderBy(desc(encaminhamentos.createdAt));
+
+      return result;
     }),
 
     // Buscar todos os encaminhamentos (carregado uma vez para a tabela)
