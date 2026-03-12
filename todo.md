@@ -60,3 +60,5 @@
 - [x] Otimizar performance: MultiSelectFilter com useMemo para opções filtradas
 - [x] Corrigir layout: conteúdo principal deve ocupar todo o espaço quando sidebar está recolhido
 - [x] Corrigir exibição de informações das agendas encaminhadas na página Minhas Agendas
+- [x] Remover coluna Especialidade da página Minhas Agendas
+- [x] Adicionar botão de exclusão de encaminhamento na página Minhas Agendas

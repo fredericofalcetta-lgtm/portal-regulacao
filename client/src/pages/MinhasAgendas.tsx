@@ -1,4 +1,4 @@
-import { LogIn, LogOut, Loader2, ClipboardList, RefreshCw, Send, CheckCircle2 } from 'lucide-react';
+import { LogIn, LogOut, Loader2, ClipboardList, RefreshCw, Send, CheckCircle2, Trash2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 
 // ─── Componente de linha de agenda ───────────────────────────────────────────
@@ -7,7 +7,6 @@ interface AgendaRowProps {
   agendaId: number;
   agendaNome: string;
   municipio?: string | null;
-  especialidade: string;
   central?: string | null;
   cotas?: number | null;
   saldo?: number | null;
@@ -17,13 +16,14 @@ interface AgendaRowProps {
   encaminhadoPor?: string | null;
   createdAt: Date;
   onCheckIn: () => void;
-  isPending: boolean;
+  onRemover?: () => void;
+  isCheckInPending: boolean;
+  isRemoverPending: boolean;
 }
 
 function AgendaRow({
   agendaNome,
   municipio,
-  especialidade,
   central,
   cotas,
   saldo,
@@ -33,7 +33,9 @@ function AgendaRow({
   encaminhadoPor,
   createdAt,
   onCheckIn,
-  isPending,
+  onRemover,
+  isCheckInPending,
+  isRemoverPending,
 }: AgendaRowProps) {
   const getBadgeColor = (value: number | null | undefined): string => {
     if (!value) return 'bg-muted text-muted-foreground';
@@ -51,7 +53,6 @@ function AgendaRow({
           <div className="text-xs text-muted-foreground mt-0.5">{municipio}</div>
         )}
       </td>
-      <td className="px-4 py-3 text-center text-xs text-foreground">{especialidade}</td>
       <td className="px-4 py-3 text-center text-xs text-foreground">{central ?? '—'}</td>
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{cotas ?? '—'}</td>
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{saldo ?? '—'}</td>
@@ -77,7 +78,7 @@ function AgendaRow({
       <td className="px-4 py-3 text-center">
         <button
           onClick={onCheckIn}
-          disabled={isPending}
+          disabled={isCheckInPending}
           title={temCheckIn ? 'Fazer check-out desta agenda' : 'Fazer check-in nesta agenda'}
           className={`flex items-center gap-1 mx-auto px-2 py-1 rounded text-xs font-medium transition-colors disabled:opacity-50 ${
             temCheckIn
@@ -85,7 +86,7 @@ function AgendaRow({
               : 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50'
           }`}
         >
-          {isPending ? (
+          {isCheckInPending ? (
             <Loader2 size={11} className="animate-spin" />
           ) : temCheckIn ? (
             <LogOut size={11} />
@@ -95,18 +96,34 @@ function AgendaRow({
           {temCheckIn ? 'Check-out' : 'Check-in'}
         </button>
       </td>
+      {onRemover !== undefined && (
+        <td className="px-4 py-3 text-center">
+          <button
+            onClick={onRemover}
+            disabled={isRemoverPending}
+            title="Remover este encaminhamento"
+            className="flex items-center gap-1 mx-auto px-2 py-1 rounded text-xs font-medium transition-colors disabled:opacity-50 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-red-100 dark:hover:bg-red-950/50 hover:text-red-700 dark:hover:text-red-300"
+          >
+            {isRemoverPending ? (
+              <Loader2 size={11} className="animate-spin" />
+            ) : (
+              <Trash2 size={11} />
+            )}
+            Concluído
+          </button>
+        </td>
+      )}
     </tr>
   );
 }
 
 // ─── Cabeçalho da tabela ─────────────────────────────────────────────────────
 
-function TableHeader({ showEncaminhadoPor }: { showEncaminhadoPor: boolean }) {
+function TableHeader({ showEncaminhadoPor, showRemover }: { showEncaminhadoPor: boolean; showRemover: boolean }) {
   return (
     <thead className="bg-secondary">
       <tr>
         <th className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Agenda</th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Especialidade</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Central</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Cotas</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Saldo</th>
@@ -118,7 +135,10 @@ function TableHeader({ showEncaminhadoPor }: { showEncaminhadoPor: boolean }) {
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">
           {showEncaminhadoPor ? 'Encaminhado em' : 'Check-in em'}
         </th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Ação</th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Check-in</th>
+        {showRemover && (
+          <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Ação</th>
+        )}
       </tr>
     </thead>
   );
@@ -140,11 +160,17 @@ export default function MinhasAgendas() {
     },
   });
 
+  const removerMutation = trpc.encaminhamentos.removerMeu.useMutation({
+    onSuccess: () => {
+      refetchEncaminhadas();
+    },
+  });
+
   const handleCheckIn = (enc: {
     agendaId: number;
     agendaNome: string;
     municipio?: string | null;
-    especialidade: string;
+    especialidade?: string;
     central?: string | null;
     cotas?: number | null;
     saldo?: number | null;
@@ -155,7 +181,7 @@ export default function MinhasAgendas() {
       agendaId: enc.agendaId,
       agendaNome: enc.agendaNome,
       municipio: enc.municipio ?? undefined,
-      especialidade: enc.especialidade,
+      especialidade: enc.especialidade ?? '',
       central: enc.central ?? undefined,
       cotas: enc.cotas ?? undefined,
       saldo: enc.saldo ?? undefined,
@@ -230,15 +256,14 @@ export default function MinhasAgendas() {
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full border-collapse">
-                <TableHeader showEncaminhadoPor={false} />
+                <TableHeader showEncaminhadoPor={false} showRemover={false} />
                 <tbody>
-                  {checkIns.map((ci, idx) => (
+                  {checkIns.map((ci) => (
                     <AgendaRow
                       key={ci.id}
                       agendaId={ci.agendaId}
                       agendaNome={ci.agendaNome}
                       municipio={ci.municipio}
-                      especialidade={ci.especialidade}
                       central={ci.central}
                       cotas={ci.cotas}
                       saldo={ci.saldo}
@@ -247,7 +272,8 @@ export default function MinhasAgendas() {
                       temCheckIn={true}
                       createdAt={ci.createdAt}
                       onCheckIn={() => handleCheckIn(ci)}
-                      isPending={checkInMutation.isPending}
+                      isCheckInPending={checkInMutation.isPending}
+                      isRemoverPending={false}
                     />
                   ))}
                 </tbody>
@@ -280,7 +306,7 @@ export default function MinhasAgendas() {
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full border-collapse">
-                <TableHeader showEncaminhadoPor={true} />
+                <TableHeader showEncaminhadoPor={true} showRemover={true} />
                 <tbody>
                   {encaminhadas.map((enc) => (
                     <AgendaRow
@@ -288,7 +314,6 @@ export default function MinhasAgendas() {
                       agendaId={enc.agendaId}
                       agendaNome={enc.agendaNome}
                       municipio={enc.municipio}
-                      especialidade={enc.especialidade}
                       central={enc.central}
                       cotas={enc.cotas}
                       saldo={enc.saldo}
@@ -302,13 +327,15 @@ export default function MinhasAgendas() {
                         agendaNome: enc.agendaNome,
                         municipio: enc.municipio,
                         especialidade: enc.especialidade,
-                        central: enc.central ?? undefined,
-                        cotas: enc.cotas ?? undefined,
-                        saldo: enc.saldo ?? undefined,
-                        aguardando: enc.aguardando ?? undefined,
-                        indexRegula: enc.indexRegula ?? undefined,
+                        central: enc.central,
+                        cotas: enc.cotas,
+                        saldo: enc.saldo,
+                        aguardando: enc.aguardando,
+                        indexRegula: enc.indexRegula,
                       })}
-                      isPending={checkInMutation.isPending}
+                      onRemover={() => removerMutation.mutate({ id: enc.id })}
+                      isCheckInPending={checkInMutation.isPending}
+                      isRemoverPending={removerMutation.isPending}
                     />
                   ))}
                 </tbody>

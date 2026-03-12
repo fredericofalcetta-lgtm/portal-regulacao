@@ -237,6 +237,23 @@ export const appRouter = router({
         .orderBy(desc(encaminhamentos.createdAt));
     }),
 
+    // Remover um encaminhamento específico (pelo próprio regulador destinatário)
+    removerMeu: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco de dados não disponível");
+        const email = ctx.user?.email ?? "";
+        // Só permite remover encaminhamentos destinados ao próprio usuário
+        await db
+          .delete(encaminhamentos)
+          .where(and(
+            eq(encaminhamentos.id, input.id),
+            eq(encaminhamentos.reguladorEmail, email)
+          ));
+        return { success: true };
+      }),
+
     // Encaminhar agenda para reguladores (admin/monitor)
     encaminhar: protectedProcedure
       .input(z.object({
