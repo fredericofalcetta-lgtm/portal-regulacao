@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Menu, X, BarChart3, Table2, ListChecks, Home, LogOut, UserCircle2, ScrollText, Sun, Moon, ClipboardList } from 'lucide-react';
+import { Menu, X, BarChart3, Table2, ListChecks, Home, LogOut, UserCircle2, ScrollText, Sun, Moon, ClipboardList, Activity } from 'lucide-react';
 import { Link } from 'wouter';
 import { useRegulador } from '@/contexts/ReguladorContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -57,14 +57,18 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
 
   const toggleSidebar = () => setOpen(!isOpen);
 
+  const isAdminOrMonitor = regulador?.perfil?.toLowerCase() === 'administrador' ||
+    regulador?.perfil?.toLowerCase() === 'monitoramento';
+
   const navItems = [
-    { href: '/', page: 'inicio', icon: Home, label: 'Início' },
-    { href: '/regulacao', page: 'regulacao', icon: Table2, label: 'Regulação' },
-    { href: '/minhas-agendas', page: 'minhas-agendas', icon: ClipboardList, label: 'Minhas Agendas' },
-    { href: '/dashboard', page: 'dashboard', icon: BarChart3, label: 'Dashboard' },
-    { href: '/prioridades', page: 'prioridades', icon: ListChecks, label: 'Listas de Prioridades' },
-    { href: '/protocolos', page: 'protocolos', icon: ScrollText, label: 'Protocolos' },
-  ];
+    { href: '/', page: 'inicio', icon: Home, label: 'Início', visible: true },
+    { href: '/regulacao', page: 'regulacao', icon: Table2, label: 'Regulação', visible: true },
+    { href: '/minhas-agendas', page: 'minhas-agendas', icon: ClipboardList, label: 'Minhas Agendas', visible: true },
+    { href: '/monitor-checkins', page: 'monitor-checkins', icon: Activity, label: 'Monitor de Check-ins', visible: isAdminOrMonitor },
+    { href: '/dashboard', page: 'dashboard', icon: BarChart3, label: 'Dashboard', visible: true },
+    { href: '/prioridades', page: 'prioridades', icon: ListChecks, label: 'Listas de Prioridades', visible: true },
+    { href: '/protocolos', page: 'protocolos', icon: ScrollText, label: 'Protocolos', visible: true },
+  ].filter(item => item.visible);
 
   const navItemClass = (page: string) =>
     `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${

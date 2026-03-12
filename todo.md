@@ -62,3 +62,4 @@
 - [x] Corrigir exibição de informações das agendas encaminhadas na página Minhas Agendas
 - [x] Remover coluna Especialidade da página Minhas Agendas
 - [x] Adicionar botão de exclusão de encaminhamento na página Minhas Agendas
+- [x] Criar aba Monitor de Check-ins (Admin/Monitor): lista todas as agendas com check-in ativo e quem está regulando

@@ -7,6 +7,7 @@ import Prioridades from './Prioridades';
 import Protocolos from './Protocolos';
 import Landing from './Landing';
 import MinhasAgendas from './MinhasAgendas';
+import MonitorCheckIns from './MonitorCheckIns';
 import { trpc } from '@/lib/trpc';
 
 export default function Home() {
@@ -68,6 +69,7 @@ export default function Home() {
           <Route path="/prioridades" component={Prioridades} />
           <Route path="/protocolos" component={Protocolos} />
           <Route path="/minhas-agendas" component={MinhasAgendas} />
+          <Route path="/monitor-checkins" component={MonitorCheckIns} />
         </Switch>
       </main>
     </div>
