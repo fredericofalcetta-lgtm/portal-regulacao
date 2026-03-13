@@ -190,8 +190,48 @@ export default function MinhasAgendas() {
   const removerMutation = trpc.encaminhamentos.removerMeu.useMutation({
     onSuccess: () => {
       refetchEncaminhadas();
+      refetchCheckIns();
     },
   });
+
+  // Faz check-out e remove encaminhamento em sequência
+  const handleConcluir = (enc: {
+    id: number;
+    agendaId: number;
+    agendaNome: string;
+    municipio?: string | null;
+    especialidade?: string;
+    central?: string | null;
+    cotas?: number | null;
+    saldo?: number | null;
+    aguardando?: number | null;
+    indexRegula?: number | null;
+  }) => {
+    const temCheckIn = checkInIds.has(enc.agendaId);
+    if (temCheckIn) {
+      // Faz check-out primeiro, depois remove o encaminhamento
+      checkInMutation.mutate(
+        {
+          agendaId: enc.agendaId,
+          agendaNome: enc.agendaNome,
+          municipio: enc.municipio ?? undefined,
+          especialidade: enc.especialidade ?? '',
+          central: enc.central ?? undefined,
+          cotas: enc.cotas ?? undefined,
+          saldo: enc.saldo ?? undefined,
+          aguardando: enc.aguardando ?? undefined,
+          indexRegula: enc.indexRegula ?? undefined,
+        },
+        {
+          onSuccess: () => {
+            removerMutation.mutate({ id: enc.id });
+          },
+        }
+      );
+    } else {
+      removerMutation.mutate({ id: enc.id });
+    }
+  };
 
   const handleCheckIn = (enc: {
     agendaId: number;
@@ -362,7 +402,18 @@ export default function MinhasAgendas() {
                         aguardando: enc.aguardando,
                         indexRegula: enc.indexRegula,
                       })}
-                      onRemover={() => removerMutation.mutate({ id: enc.id })}
+                      onRemover={() => handleConcluir({
+                        id: enc.id,
+                        agendaId: enc.agendaId,
+                        agendaNome: enc.agendaNome,
+                        municipio: enc.municipio,
+                        especialidade: enc.especialidade,
+                        central: enc.central,
+                        cotas: enc.cotas,
+                        saldo: enc.saldo,
+                        aguardando: enc.aguardando,
+                        indexRegula: enc.indexRegula,
+                      })}
                       isCheckInPending={checkInMutation.isPending}
                       isRemoverPending={removerMutation.isPending}
                       showFlags={true}

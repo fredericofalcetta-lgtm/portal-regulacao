@@ -64,3 +64,4 @@
 - [x] Adicionar botão de exclusão de encaminhamento na página Minhas Agendas
 - [x] Criar aba Monitor de Check-ins (Admin/Monitor): lista todas as agendas com check-in ativo e quem está regulando
 - [x] Importar coluna Flags da planilha e exibir na página Minhas Agendas
+- [x] Ao clicar em "Concluído" nas encaminhadas, fazer check-out automático se houver check-in ativo na agenda
