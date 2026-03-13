@@ -1,10 +1,26 @@
 import { Activity, Loader2, RefreshCw, UserCheck } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 
 export default function MonitorCheckIns() {
-  const { data: checkIns = [], isLoading, refetch } =
-    trpc.checkIns.getAll.useQuery(undefined, { staleTime: 30_000 });
+  const { data: checkIns = [], isLoading, refetch, dataUpdatedAt } =
+    trpc.checkIns.getAll.useQuery(undefined, {
+      staleTime: 30_000,
+      refetchInterval: 60_000, // Atualiza automaticamente a cada 60 segundos
+    });
+
+  // Contador regressivo até a próxima atualização
+  const [countdown, setCountdown] = useState(60);
+  useEffect(() => {
+    setCountdown(60);
+    const interval = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) return 60;
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [dataUpdatedAt]);
 
   // Agrupar check-ins por agendaId para mostrar múltiplos reguladores na mesma agenda
   const agendasAgrupadas = useMemo(() => {
@@ -80,8 +96,12 @@ export default function MonitorCheckIns() {
               <span className="font-medium">{checkIns.length}</span>
               <span className="text-muted-foreground">check-in{checkIns.length !== 1 ? 's' : ''} ativo{checkIns.length !== 1 ? 's' : ''}</span>
             </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-muted/50 text-xs text-muted-foreground">
+              <RefreshCw size={11} className={isLoading ? 'animate-spin' : ''} />
+              <span>Próxima em <span className="font-semibold text-foreground">{countdown}s</span></span>
+            </div>
             <button
-              onClick={() => refetch()}
+              onClick={() => { refetch(); setCountdown(60); }}
               disabled={isLoading}
               className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors disabled:opacity-50"
             >

@@ -66,3 +66,4 @@
 - [x] Importar coluna Flags da planilha e exibir na página Minhas Agendas
 - [x] Ao clicar em "Concluído" nas encaminhadas, fazer check-out automático se houver check-in ativo na agenda
 - [x] Adicionar botão "Encaminhar para mim" para Reguladores na coluna de encaminhamento da tabela de Regulação
+- [x] Atualização automática a cada 60 segundos no Monitor de Check-ins
