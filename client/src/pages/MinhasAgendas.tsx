@@ -1,4 +1,4 @@
-import { LogIn, LogOut, Loader2, ClipboardList, RefreshCw, Send, CheckCircle2, Trash2 } from 'lucide-react';
+import { LogIn, LogOut, Loader2, ClipboardList, RefreshCw, Send, CheckCircle2, Trash2, Flag } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 
 // ─── Componente de linha de agenda ───────────────────────────────────────────
@@ -12,6 +12,7 @@ interface AgendaRowProps {
   saldo?: number | null;
   aguardando?: number | null;
   indexRegula?: number | null;
+  flags?: string | null;
   temCheckIn: boolean;
   encaminhadoPor?: string | null;
   createdAt: Date;
@@ -19,6 +20,7 @@ interface AgendaRowProps {
   onRemover?: () => void;
   isCheckInPending: boolean;
   isRemoverPending: boolean;
+  showFlags?: boolean;
 }
 
 function AgendaRow({
@@ -29,6 +31,7 @@ function AgendaRow({
   saldo,
   aguardando,
   indexRegula,
+  flags,
   temCheckIn,
   encaminhadoPor,
   createdAt,
@@ -36,6 +39,7 @@ function AgendaRow({
   onRemover,
   isCheckInPending,
   isRemoverPending,
+  showFlags = false,
 }: AgendaRowProps) {
   const getBadgeColor = (value: number | null | undefined): string => {
     if (!value) return 'bg-muted text-muted-foreground';
@@ -62,6 +66,18 @@ function AgendaRow({
           {indexRegula != null ? indexRegula.toFixed(2) : '—'}
         </span>
       </td>
+      {showFlags && (
+        <td className="px-4 py-3 text-center">
+          {flags ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300">
+              <Flag size={10} />
+              {flags}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          )}
+        </td>
+      )}
       {encaminhadoPor !== undefined && (
         <td className="px-4 py-3 text-center text-xs text-muted-foreground">
           {encaminhadoPor ?? '—'}
@@ -119,7 +135,15 @@ function AgendaRow({
 
 // ─── Cabeçalho da tabela ─────────────────────────────────────────────────────
 
-function TableHeader({ showEncaminhadoPor, showRemover }: { showEncaminhadoPor: boolean; showRemover: boolean }) {
+function TableHeader({
+  showEncaminhadoPor,
+  showRemover,
+  showFlags,
+}: {
+  showEncaminhadoPor: boolean;
+  showRemover: boolean;
+  showFlags?: boolean;
+}) {
   return (
     <thead className="bg-secondary">
       <tr>
@@ -129,6 +153,9 @@ function TableHeader({ showEncaminhadoPor, showRemover }: { showEncaminhadoPor: 
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Saldo</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aguardando</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Index</th>
+        {showFlags && (
+          <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Flags</th>
+        )}
         {showEncaminhadoPor && (
           <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Encaminhado por</th>
         )}
@@ -256,7 +283,7 @@ export default function MinhasAgendas() {
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full border-collapse">
-                <TableHeader showEncaminhadoPor={false} showRemover={false} />
+                <TableHeader showEncaminhadoPor={false} showRemover={false} showFlags={false} />
                 <tbody>
                   {checkIns.map((ci) => (
                     <AgendaRow
@@ -274,6 +301,7 @@ export default function MinhasAgendas() {
                       onCheckIn={() => handleCheckIn(ci)}
                       isCheckInPending={checkInMutation.isPending}
                       isRemoverPending={false}
+                      showFlags={false}
                     />
                   ))}
                 </tbody>
@@ -306,7 +334,7 @@ export default function MinhasAgendas() {
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full border-collapse">
-                <TableHeader showEncaminhadoPor={true} showRemover={true} />
+                <TableHeader showEncaminhadoPor={true} showRemover={true} showFlags={true} />
                 <tbody>
                   {encaminhadas.map((enc) => (
                     <AgendaRow
@@ -319,6 +347,7 @@ export default function MinhasAgendas() {
                       saldo={enc.saldo}
                       aguardando={enc.aguardando}
                       indexRegula={enc.indexRegula}
+                      flags={enc.flags}
                       temCheckIn={checkInIds.has(enc.agendaId)}
                       encaminhadoPor={enc.encaminhadoPorNome}
                       createdAt={enc.createdAt}
@@ -336,6 +365,7 @@ export default function MinhasAgendas() {
                       onRemover={() => removerMutation.mutate({ id: enc.id })}
                       isCheckInPending={checkInMutation.isPending}
                       isRemoverPending={removerMutation.isPending}
+                      showFlags={true}
                     />
                   ))}
                 </tbody>

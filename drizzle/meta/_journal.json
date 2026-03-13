@@ -43,6 +43,13 @@
       "when": 1773134594155,
       "tag": "0005_tense_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1773391011046,
+      "tag": "0006_kind_ultimates",
+      "breakpoints": true
     }
   ]
 }

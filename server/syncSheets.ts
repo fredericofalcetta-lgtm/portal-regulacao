@@ -36,6 +36,7 @@ export async function syncSheetsToDb(): Promise<number> {
       indexRegula: row[7] != null ? parseFloat(String(row[7])) || null : null,
       central: row[8] != null ? String(row[8]) : null,
       especialidade: row[9] != null ? String(row[9]) : null,
+      flags: row[10] != null ? String(row[10]) : null,
     }));
 
   if (insertRows.length > 0) {

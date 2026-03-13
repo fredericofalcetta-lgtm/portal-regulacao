@@ -1,0 +1,1 @@
+ALTER TABLE `regulacao_data` ADD `flags` text;

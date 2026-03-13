@@ -218,6 +218,7 @@ export const appRouter = router({
           saldo: regulacaoData.saldo,
           aguardando: regulacaoData.aguardando,
           indexRegula: regulacaoData.indexRegula,
+          flags: regulacaoData.flags,
         })
         .from(encaminhamentos)
         .leftJoin(regulacaoData, eq(encaminhamentos.agendaId, regulacaoData.id))
