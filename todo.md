@@ -65,3 +65,4 @@
 - [x] Criar aba Monitor de Check-ins (Admin/Monitor): lista todas as agendas com check-in ativo e quem está regulando
 - [x] Importar coluna Flags da planilha e exibir na página Minhas Agendas
 - [x] Ao clicar em "Concluído" nas encaminhadas, fazer check-out automático se houver check-in ativo na agenda
+- [x] Adicionar botão "Encaminhar para mim" para Reguladores na coluna de encaminhamento da tabela de Regulação

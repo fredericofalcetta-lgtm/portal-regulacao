@@ -2,6 +2,7 @@ import { useMemo, memo, useCallback } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import EncaminharCell from './EncaminharCell';
+import AutoEncaminharCell from './AutoEncaminharCell';
 import CheckInCell from './CheckInCell';
 
 interface DataTableProps {
@@ -22,6 +23,7 @@ const TableRow = memo(function TableRow({
   row,
   rowIndex,
   isAdminOuMonitor,
+  isRegulador,
   encaminhadosAtuais,
   checkInsAtuais,
   reguladoresList,
@@ -31,6 +33,7 @@ const TableRow = memo(function TableRow({
   row: (string | number)[];
   rowIndex: number;
   isAdminOuMonitor: boolean;
+  isRegulador: boolean;
   encaminhadosAtuais: { reguladorEmail: string; reguladorNome: string }[];
   checkInsAtuais: { usuarioEmail: string; usuarioNome: string }[];
   reguladoresList: { email: string; nome: string }[];
@@ -59,18 +62,29 @@ const TableRow = memo(function TableRow({
         <div className="text-xs text-muted-foreground mt-0.5">{String(row[1])}</div>
       </td>
 
-      {/* Encaminhar — apenas admin/monitor */}
-      {isAdminOuMonitor && (
+      {/* Encaminhar — admin/monitor: dropdown; regulador: botão toggle */}
+      {(isAdminOuMonitor || isRegulador) && (
         <td className="px-3 py-3 text-center">
           {agendaId > 0 ? (
-            <EncaminharCell
-              agendaId={agendaId}
-              agendaNome={String(row[0])}
-              especialidade={String(row[9])}
-              encaminhadosAtuais={encaminhadosAtuais}
-              reguladoresList={reguladoresList}
-              onUpdate={onUpdate}
-            />
+            isAdminOuMonitor ? (
+              <EncaminharCell
+                agendaId={agendaId}
+                agendaNome={String(row[0])}
+                especialidade={String(row[9])}
+                encaminhadosAtuais={encaminhadosAtuais}
+                reguladoresList={reguladoresList}
+                onUpdate={onUpdate}
+              />
+            ) : (
+              <AutoEncaminharCell
+                agendaId={agendaId}
+                agendaNome={String(row[0])}
+                especialidade={String(row[9])}
+                emailUsuario={emailUsuario}
+                encaminhadosAtuais={encaminhadosAtuais}
+                onUpdate={onUpdate}
+              />
+            )
           ) : (
             <span className="text-xs text-muted-foreground">—</span>
           )}
@@ -148,6 +162,7 @@ export default function DataTable({
   const isAdminOuMonitor =
     perfilUsuario.toLowerCase() === 'administrador' ||
     perfilUsuario.toLowerCase() === 'monitoramento';
+  const isRegulador = perfilUsuario.toLowerCase() === 'regulador';
 
   // Uma única query para reguladores — compartilhada por todas as linhas
   const { data: reguladoresList = [] } = trpc.reguladores.listarReguladores.useQuery(undefined, {
@@ -261,8 +276,8 @@ export default function DataTable({
                 </div>
               </th>
 
-              {/* Encaminhar — apenas admin/monitor */}
-              {isAdminOuMonitor && (
+              {/* Encaminhar — admin/monitor e regulador */}
+              {(isAdminOuMonitor || isRegulador) && (
                 <th className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">
                   Encaminhar
                 </th>
@@ -338,7 +353,7 @@ export default function DataTable({
           <tbody>
             {filteredAndSortedRows.length === 0 ? (
               <tr>
-                <td colSpan={isAdminOuMonitor ? 9 : 8} className="px-6 py-8 text-center">
+                <td colSpan={(isAdminOuMonitor || isRegulador) ? 9 : 8} className="px-6 py-8 text-center">
                   <p className="text-muted-foreground">Nenhum resultado encontrado</p>
                 </td>
               </tr>
@@ -351,6 +366,7 @@ export default function DataTable({
                     row={row}
                     rowIndex={rowIndex}
                     isAdminOuMonitor={isAdminOuMonitor}
+                    isRegulador={isRegulador}
                     encaminhadosAtuais={encaminhamentosPorAgenda.get(agendaId) ?? []}
                     checkInsAtuais={checkInsPorAgenda.get(agendaId) ?? []}
                     reguladoresList={reguladoresList}

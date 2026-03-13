@@ -295,6 +295,54 @@ export const appRouter = router({
 
         return { success: true };
       }),
+
+    // Auto-encaminhamento: regulador encaminha agenda para si mesmo (toggle)
+    autoEncaminhar: protectedProcedure
+      .input(z.object({
+        agendaId: z.number(),
+        agendaNome: z.string(),
+        especialidade: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco de dados não disponível");
+
+        const email = ctx.user?.email ?? "";
+        const nome = ctx.user?.name ?? "";
+
+        // Verificar se já existe encaminhamento para este usuário nesta agenda
+        const existing = await db
+          .select()
+          .from(encaminhamentos)
+          .where(and(
+            eq(encaminhamentos.agendaId, input.agendaId),
+            eq(encaminhamentos.reguladorEmail, email)
+          ))
+          .limit(1);
+
+        if (existing.length > 0) {
+          // Já existe: remover (toggle off)
+          await db
+            .delete(encaminhamentos)
+            .where(and(
+              eq(encaminhamentos.agendaId, input.agendaId),
+              eq(encaminhamentos.reguladorEmail, email)
+            ));
+          return { action: 'removed' };
+        } else {
+          // Não existe: inserir (toggle on)
+          await db.insert(encaminhamentos).values({
+            agendaId: input.agendaId,
+            agendaNome: input.agendaNome,
+            especialidade: input.especialidade,
+            reguladorEmail: email,
+            reguladorNome: nome,
+            encaminhadoPorEmail: email,
+            encaminhadoPorNome: nome,
+          });
+          return { action: 'added' };
+        }
+      }),
   }),
 
   checkIns: router({
