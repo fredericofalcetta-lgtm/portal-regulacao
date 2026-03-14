@@ -346,14 +346,31 @@ export const appRouter = router({
   }),
 
   checkIns: router({
-    // Buscar check-ins do usuário logado
+    // Buscar check-ins do usuário logado (com flags atualizadas via JOIN)
     getMeus: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       if (!db) return [];
       const email = ctx.user?.email ?? "";
       return db
-        .select()
+        .select({
+          id: checkIns.id,
+          agendaId: checkIns.agendaId,
+          agendaNome: checkIns.agendaNome,
+          municipio: checkIns.municipio,
+          especialidade: checkIns.especialidade,
+          central: checkIns.central,
+          cotas: checkIns.cotas,
+          saldo: checkIns.saldo,
+          aguardando: checkIns.aguardando,
+          indexRegula: checkIns.indexRegula,
+          usuarioEmail: checkIns.usuarioEmail,
+          usuarioNome: checkIns.usuarioNome,
+          createdAt: checkIns.createdAt,
+          // Flags atualizadas da planilha via JOIN
+          flags: regulacaoData.flags,
+        })
         .from(checkIns)
+        .leftJoin(regulacaoData, eq(checkIns.agendaId, regulacaoData.id))
         .where(eq(checkIns.usuarioEmail, email))
         .orderBy(desc(checkIns.createdAt));
     }),

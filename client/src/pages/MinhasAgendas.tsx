@@ -323,7 +323,7 @@ export default function MinhasAgendas() {
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full border-collapse">
-                <TableHeader showEncaminhadoPor={false} showRemover={false} showFlags={false} />
+                <TableHeader showEncaminhadoPor={false} showRemover={false} showFlags={true} />
                 <tbody>
                   {checkIns.map((ci) => (
                     <AgendaRow
@@ -336,12 +336,13 @@ export default function MinhasAgendas() {
                       saldo={ci.saldo}
                       aguardando={ci.aguardando}
                       indexRegula={ci.indexRegula}
+                      flags={ci.flags}
                       temCheckIn={true}
                       createdAt={ci.createdAt}
                       onCheckIn={() => handleCheckIn(ci)}
                       isCheckInPending={checkInMutation.isPending}
                       isRemoverPending={false}
-                      showFlags={false}
+                      showFlags={true}
                     />
                   ))}
                 </tbody>
@@ -374,7 +375,7 @@ export default function MinhasAgendas() {
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full border-collapse">
-                <TableHeader showEncaminhadoPor={true} showRemover={true} showFlags={true} />
+                <TableHeader showEncaminhadoPor={true} showRemover={true} showFlags={false} />
                 <tbody>
                   {encaminhadas.map((enc) => (
                     <AgendaRow
@@ -387,7 +388,6 @@ export default function MinhasAgendas() {
                       saldo={enc.saldo}
                       aguardando={enc.aguardando}
                       indexRegula={enc.indexRegula}
-                      flags={enc.flags}
                       temCheckIn={checkInIds.has(enc.agendaId)}
                       encaminhadoPor={enc.encaminhadoPorNome}
                       createdAt={enc.createdAt}
@@ -416,7 +416,7 @@ export default function MinhasAgendas() {
                       })}
                       isCheckInPending={checkInMutation.isPending}
                       isRemoverPending={removerMutation.isPending}
-                      showFlags={true}
+                      showFlags={false}
                     />
                   ))}
                 </tbody>
