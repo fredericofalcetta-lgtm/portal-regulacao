@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, X, Send } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { ChevronDown, X, Send, Search } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 
 interface EncaminharCellProps {
@@ -20,10 +20,12 @@ export default function EncaminharCell({
   onUpdate,
 }: EncaminharCellProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [busca, setBusca] = useState('');
   const [selecionados, setSelecionados] = useState<Set<string>>(
     new Set(encaminhadosAtuais.map(e => e.reguladorEmail))
   );
   const containerRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const encaminharMutation = trpc.encaminhamentos.encaminhar.useMutation({
     onSuccess: () => {
@@ -37,6 +39,14 @@ export default function EncaminharCell({
     setSelecionados(new Set(encaminhadosAtuais.map(e => e.reguladorEmail)));
   }, [encaminhadosAtuais]);
 
+  // Focar no campo de busca ao abrir o dropdown
+  useEffect(() => {
+    if (isOpen) {
+      setBusca('');
+      setTimeout(() => searchRef.current?.focus(), 50);
+    }
+  }, [isOpen]);
+
   // Fechar ao clicar fora
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -47,6 +57,13 @@ export default function EncaminharCell({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Filtrar lista pelo texto digitado
+  const reguladoresFiltrados = useMemo(() => {
+    if (!busca.trim()) return reguladoresList;
+    const termo = busca.trim().toLowerCase();
+    return reguladoresList.filter(r => r.nome.toLowerCase().includes(termo));
+  }, [reguladoresList, busca]);
 
   const toggleRegulador = (email: string) => {
     const novo = new Set(selecionados);
@@ -94,19 +111,44 @@ export default function EncaminharCell({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-56 bg-popover border border-border rounded-md shadow-xl z-50">
+        <div className="absolute top-full left-0 mt-1 w-60 bg-popover border border-border rounded-md shadow-xl z-50">
+          {/* Cabeçalho */}
           <div className="p-2 border-b border-border">
             <p className="text-xs font-semibold text-foreground">Encaminhar para:</p>
             <p className="text-xs text-muted-foreground truncate">{agendaNome}</p>
           </div>
 
-          <div className="max-h-48 overflow-y-auto">
-            {reguladoresList.length === 0 ? (
+          {/* Campo de busca */}
+          <div className="px-2 pt-2 pb-1">
+            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-secondary border border-border focus-within:border-primary transition-colors">
+              <Search size={11} className="text-muted-foreground shrink-0" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={busca}
+                onChange={e => setBusca(e.target.value)}
+                placeholder="Buscar profissional..."
+                className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none min-w-0"
+              />
+              {busca && (
+                <button
+                  onClick={() => setBusca('')}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X size={10} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Lista filtrada */}
+          <div className="max-h-44 overflow-y-auto">
+            {reguladoresFiltrados.length === 0 ? (
               <p className="px-3 py-3 text-xs text-muted-foreground text-center">
-                Nenhum regulador encontrado
+                {busca ? `Nenhum resultado para "${busca}"` : 'Nenhum regulador encontrado'}
               </p>
             ) : (
-              reguladoresList.map(reg => (
+              reguladoresFiltrados.map(reg => (
                 <label
                   key={reg.email}
                   className="flex items-center gap-2 px-3 py-2 hover:bg-secondary cursor-pointer transition-colors"
@@ -123,6 +165,7 @@ export default function EncaminharCell({
             )}
           </div>
 
+          {/* Rodapé com ações */}
           <div className="p-2 border-t border-border flex gap-2">
             <button
               onClick={handleSalvar}
