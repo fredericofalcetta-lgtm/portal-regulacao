@@ -41,6 +41,23 @@ export default function Regulation({ data }: RegulationProps) {
     });
   }, [data, regulador, isIrrestrito]);
 
+  // Ordem personalizada das Centrais: CRA primeiro, depois NºCRS em ordem numérica
+  const ORDEM_CENTRAIS = ['CRA', '1CRS', '2CRS', '3CRS', '5CRS', '6CRS', '7CRS', '8CRS', '9CRS', '10CRS', '11CRS', '12CRS', '13CRS', '14CRS', '15CRS', '16CRS', '17CRS', '18CRS'];
+
+  const sortCentrais = (lista: string[]): string[] => {
+    return [...lista].sort((a, b) => {
+      const ia = ORDEM_CENTRAIS.indexOf(a);
+      const ib = ORDEM_CENTRAIS.indexOf(b);
+      // Se ambos estão na lista de ordem, usar a posição definida
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      // Se só um está, ele vem primeiro
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      // Demais valores em ordem alfabética
+      return a.localeCompare(b);
+    });
+  };
+
   // Todas as opções únicas de filtro (sem cascata) — base para Especialidade e Central
   const { centrais, especialidades } = useMemo(() => {
     const centraisSet = new Set<string>();
@@ -52,7 +69,7 @@ export default function Regulation({ data }: RegulationProps) {
     });
 
     return {
-      centrais: Array.from(centraisSet).sort(),
+      centrais: sortCentrais(Array.from(centraisSet)),
       especialidades: Array.from(especialidadesSet).sort(),
     };
   }, [dadosFiltradosPorPerfil]);

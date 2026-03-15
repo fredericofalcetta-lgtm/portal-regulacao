@@ -69,3 +69,4 @@
 - [x] Atualização automática a cada 60 segundos no Monitor de Check-ins
 - [x] Mover coluna Flags de "Encaminhadas para mim" para "Check-ins ativos" em Minhas Agendas
 - [x] Adicionar campo de busca por digitação no dropdown de encaminhamento da aba Regulação
+- [x] Ordenar filtro de Centrais na ordem: CRA, 1CRS, 2CRS, ..., 18CRS
