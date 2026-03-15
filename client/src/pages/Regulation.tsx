@@ -24,22 +24,49 @@ export default function Regulation({ data }: RegulationProps) {
     return PERFIS_IRRESTRITO.includes(regulador.perfil.toLowerCase());
   }, [regulador]);
 
-  // Filtra os dados com base no Grande Grupo do regulador (se perfil restrito)
-  const dadosFiltradosPorPerfil = useMemo(() => {
-    if (isIrrestrito || !regulador?.grandeGrupo) return data;
-
-    const gruposDoRegulador = regulador.grandeGrupo
-      .split(/[,;\/]/)
-      .map(g => g.trim().toLowerCase())
+  // Parseia a lista de agendas responsáveis do regulador (campo agendas, coluna E da planilha)
+  // Suporta separadores: vírgula, ponto-e-vírgula, barra, ou múltiplos espaços
+  const agendasDoRegulador = useMemo(() => {
+    if (!regulador?.agendas) return null;
+    const lista = regulador.agendas
+      .split(/[,;\/]|\s{2,}/)
+      .map(a => a.trim().toLowerCase())
       .filter(Boolean);
+    return lista.length > 0 ? lista : null;
+  }, [regulador]);
 
-    if (gruposDoRegulador.length === 0) return data;
+  // Filtra os dados com base nas agendas responsáveis (se houver) e no Grande Grupo
+  const dadosFiltradosPorPerfil = useMemo(() => {
+    if (isIrrestrito) return data;
 
-    return data.filter(row => {
-      const especialidade = String(row[9]).toLowerCase();
-      return gruposDoRegulador.some(grupo => especialidade.includes(grupo));
-    });
-  }, [data, regulador, isIrrestrito]);
+    let resultado = data;
+
+    // Filtro por agendas responsáveis (coluna E da planilha Reguladores)
+    if (agendasDoRegulador && agendasDoRegulador.length > 0) {
+      resultado = resultado.filter(row => {
+        const nomeAgenda = String(row[0]).toLowerCase();
+        return agendasDoRegulador.some(ag => nomeAgenda.includes(ag) || ag.includes(nomeAgenda));
+      });
+      return resultado;
+    }
+
+    // Fallback: filtro por Grande Grupo (especialidade) se não houver agendas definidas
+    if (regulador?.grandeGrupo) {
+      const gruposDoRegulador = regulador.grandeGrupo
+        .split(/[,;\/]/)
+        .map(g => g.trim().toLowerCase())
+        .filter(Boolean);
+
+      if (gruposDoRegulador.length > 0) {
+        resultado = resultado.filter(row => {
+          const especialidade = String(row[9]).toLowerCase();
+          return gruposDoRegulador.some(grupo => especialidade.includes(grupo));
+        });
+      }
+    }
+
+    return resultado;
+  }, [data, regulador, isIrrestrito, agendasDoRegulador]);
 
   // Ordem personalizada das Centrais: CRA primeiro, depois NºCRS em ordem numérica
   const ORDEM_CENTRAIS = ['CRA', '1CRS', '2CRS', '3CRS', '5CRS', '6CRS', '7CRS', '8CRS', '9CRS', '10CRS', '11CRS', '12CRS', '13CRS', '14CRS', '15CRS', '16CRS', '17CRS', '18CRS'];

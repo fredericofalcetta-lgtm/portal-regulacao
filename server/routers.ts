@@ -54,6 +54,7 @@ export const appRouter = router({
           nome: reg.nome,
           perfil: reg.perfil,
           grandeGrupo: reg.grandeGrupo,
+          agendas: reg.agendas,
           email: reg.email,
         },
       };

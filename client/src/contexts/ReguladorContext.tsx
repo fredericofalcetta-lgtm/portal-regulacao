@@ -4,6 +4,7 @@ export interface ReguladorInfo {
   nome: string;
   perfil: string | null;
   grandeGrupo: string | null;
+  agendas: string | null;
   email: string;
 }
 
