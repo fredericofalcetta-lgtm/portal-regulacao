@@ -77,3 +77,4 @@
 - [x] Remover botão Concluído de Encaminhadas para mim e mover para Check-ins ativos
 - [x] Check-out em Check-ins ativos retorna agenda para Encaminhadas para mim
 - [x] Nova caixa Agendas Concluídas com soma de Aguardando e botão Limpar
+- [x] Limite de 2 check-ins por agenda com alerta para terceiro usuário

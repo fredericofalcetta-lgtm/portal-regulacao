@@ -425,7 +425,26 @@ export const appRouter = router({
               eq(checkIns.agendaId, input.agendaId),
               eq(checkIns.usuarioEmail, usuarioEmail)
             ));
-          return { action: "checkout" as const };
+          return { action: "checkout" as const, bloqueado: false, reguladores: [] };
+        }
+
+        // Verificar quantos check-ins existem para esta agenda (de outros usuários)
+        const checkInsAgenda = await db
+          .select({
+            usuarioNome: checkIns.usuarioNome,
+            usuarioEmail: checkIns.usuarioEmail,
+          })
+          .from(checkIns)
+          .where(eq(checkIns.agendaId, input.agendaId));
+
+        const LIMITE_CHECKINS = 2;
+        if (checkInsAgenda.length >= LIMITE_CHECKINS) {
+          // Agenda já está com o limite de reguladores ativos
+          return {
+            action: "bloqueado" as const,
+            bloqueado: true,
+            reguladores: checkInsAgenda.map(c => c.usuarioNome),
+          };
         }
 
         // Fazer check-in
@@ -443,7 +462,7 @@ export const appRouter = router({
           usuarioNome,
         });
 
-        return { action: "checkin" as const };
+        return { action: "checkin" as const, bloqueado: false, reguladores: [] };
       }),
 
     // Remover todos os check-ins do usuário (chamado no logout)
