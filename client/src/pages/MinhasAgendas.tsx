@@ -1,4 +1,6 @@
+import React from 'react';
 import { LogIn, LogOut, Loader2, ClipboardList, RefreshCw, Send, CheckCircle2, Trash2, Flag, CheckCheck, XCircle } from 'lucide-react';
+import CheckInDetalhes from '@/components/CheckInDetalhes';
 import { trpc } from '@/lib/trpc';
 
 // ─── Componente de linha de agenda ───────────────────────────────────────────
@@ -403,27 +405,38 @@ export default function MinhasAgendas() {
                 />
                 <tbody>
                   {checkIns.map((ci) => (
-                    <AgendaRow
-                      key={ci.id}
-                      agendaId={ci.agendaId}
-                      agendaNome={ci.agendaNome}
-                      municipio={ci.municipio}
-                      central={ci.central}
-                      cotas={ci.cotas}
-                      saldo={ci.saldo}
-                      aguardando={ci.aguardando}
-                      indexRegula={ci.indexRegula}
-                      flags={ci.flags}
-                      temCheckIn={true}
-                      createdAt={ci.createdAt}
-                      onCheckIn={() => handleCheckOut(ci)}
-                      onConcluir={() => handleConcluir(ci)}
-                      isCheckInPending={checkInMutation.isPending}
-                      isRemoverPending={false}
-                      isConcluirPending={concluirMutation.isPending}
-                      showFlags={true}
-                      showConcluir={true}
-                    />
+                    <React.Fragment key={ci.id}>
+                      <AgendaRow
+                        agendaId={ci.agendaId}
+                        agendaNome={ci.agendaNome}
+                        municipio={ci.municipio}
+                        central={ci.central}
+                        cotas={ci.cotas}
+                        saldo={ci.saldo}
+                        aguardando={ci.aguardando}
+                        indexRegula={ci.indexRegula}
+                        flags={ci.flags}
+                        temCheckIn={true}
+                        createdAt={ci.createdAt}
+                        onCheckIn={() => handleCheckOut(ci)}
+                        onConcluir={() => handleConcluir(ci)}
+                        isCheckInPending={checkInMutation.isPending}
+                        isRemoverPending={false}
+                        isConcluirPending={concluirMutation.isPending}
+                        showFlags={true}
+                        showConcluir={true}
+                      />
+                      {/* Submenu de agendas relacionadas */}
+                      <tr key={`detalhes-${ci.id}`}>
+                        <td colSpan={9} className="p-0">
+                          <CheckInDetalhes
+                            agendaId={ci.agendaId}
+                            especialidade={ci.especialidade}
+                            central={ci.central}
+                          />
+                        </td>
+                      </tr>
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

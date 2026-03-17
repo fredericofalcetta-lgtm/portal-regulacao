@@ -78,3 +78,4 @@
 - [x] Check-out em Check-ins ativos retorna agenda para Encaminhadas para mim
 - [x] Nova caixa Agendas Concluídas com soma de Aguardando e botão Limpar
 - [x] Limite de 2 check-ins por agenda com alerta para terceiro usuário
+- [x] Submenu expansível nos check-ins ativos com agendas relacionadas (mesma especialidade + central) e protocolo/lista de prioridades

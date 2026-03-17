@@ -475,6 +475,81 @@ export const appRouter = router({
         .where(eq(checkIns.usuarioEmail, email));
       return { success: true };
     }),
+
+    // Buscar agendas relacionadas (mesma especialidade + central) e recursos da especialidade
+    getRelacionadas: protectedProcedure
+      .input(z.object({
+        especialidade: z.string(),
+        central: z.string().optional(),
+        agendaIdExcluir: z.number(), // excluir a agenda do próprio check-in
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { agendas: [], prioridades: [], protocolos: [] };
+
+        // Normalizar especialidade (pode ser composta, ex: "Fisiatria, Reumatologia")
+        const especialidades = input.especialidade
+          .split(/[,;/]+/)
+          .map(e => e.trim().toLowerCase())
+          .filter(Boolean);
+
+        // Buscar todas as agendas da mesma central
+        const todasAgendas = await db
+          .select()
+          .from(regulacaoData)
+          .orderBy(desc(regulacaoData.indexRegula));
+
+        // Filtrar por especialidade (match parcial) e central
+        const agendasRelacionadas = todasAgendas
+          .filter(a => {
+            if (a.id === input.agendaIdExcluir) return false;
+            // Filtro por central
+            if (input.central && a.central !== input.central) return false;
+            // Filtro por especialidade (suporta múltiplas)
+            const espAgenda = (a.especialidade ?? "").split(/[,;/]+/).map(e => e.trim().toLowerCase());
+            return especialidades.some(e => espAgenda.includes(e));
+          })
+          .slice(0, 20) // limitar a 20 agendas
+          .map(a => ({
+            id: a.id,
+            agenda: a.agenda,
+            municipio: a.municipio,
+            central: a.central,
+            cotas: a.cotas,
+            saldo: a.saldo,
+            aguardando: a.aguardando,
+            indexRegula: a.indexRegula,
+            especialidade: a.especialidade,
+          }));
+
+        // Buscar prioridades da especialidade (match por grandeGrupo)
+        const todasPrioridades = await db
+          .select()
+          .from(prioridades)
+          .orderBy(asc(prioridades.nomeArquivo));
+
+        const prioridadesRelacionadas = todasPrioridades.filter(p => {
+          const grupo = (p.grandeGrupo ?? "").toLowerCase();
+          return especialidades.some(e => grupo.includes(e) || e.includes(grupo));
+        });
+
+        // Buscar protocolos da especialidade (match por nome)
+        const todosProtocolos = await db
+          .select()
+          .from(protocolos)
+          .orderBy(asc(protocolos.nome));
+
+        const protocolosRelacionados = todosProtocolos.filter(p => {
+          const nome = (p.nome ?? "").toLowerCase();
+          return especialidades.some(e => nome.includes(e) || e.includes(nome.split(" ")[0]));
+        });
+
+        return {
+          agendas: agendasRelacionadas,
+          prioridades: prioridadesRelacionadas,
+          protocolos: protocolosRelacionados,
+        };
+      }),
   }),
 
   // ─── Agendas Concluídas ──────────────────────────────────────────────────────
