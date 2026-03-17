@@ -207,17 +207,24 @@ export default function DataTable({
     refetchCheckIns();
   }, [refetchEncaminhamentos, refetchCheckIns]);
 
+  // Expande especialidades compostas (ex: "Fisiatria, Reumatologia") em partes individuais
+  const expandirEspecialidades = (valor: string): string[] =>
+    valor.split(/[,;]/).map(e => e.trim()).filter(Boolean);
+
   // Filter and sort data
   const filteredAndSortedRows = useMemo(() => {
     let filtered = rows.filter(row => {
       const agenda = String(row[0]);
       const central = String(row[8]);
-      const especialidade = String(row[9]);
+      const especialidadeBruta = String(row[9]);
 
       const matchesAgenda = selectedAgendas.size === 0 || selectedAgendas.has(agenda);
       const matchesCentral = selectedCentrais.size === 0 || selectedCentrais.has(central);
+      // Verifica se qualquer das especialidades da linha está no filtro selecionado
+      const partesEsp = expandirEspecialidades(especialidadeBruta);
       const matchesEspecialidade =
-        selectedEspecialidades.size === 0 || selectedEspecialidades.has(especialidade);
+        selectedEspecialidades.size === 0 ||
+        partesEsp.some(p => selectedEspecialidades.has(p));
 
       return matchesAgenda && matchesCentral && matchesEspecialidade;
     });

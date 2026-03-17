@@ -73,3 +73,4 @@
 - [x] Filtrar agendas na aba Regulação por responsabilidade do regulador (coluna E da planilha Reguladores)
 - [x] Troca de perfil ativo (Regulador ↔ Monitoramento) para usuários com múltiplos perfis via botão no canto inferior esquerdo
 - [x] Persistir filtros da aba Regulação ao navegar entre páginas (localStorage)
+- [x] Suporte a múltiplas especialidades por agenda na aba Regulação (coluna J da planilha)

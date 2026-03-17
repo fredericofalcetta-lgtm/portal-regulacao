@@ -94,14 +94,25 @@ export default function Regulation({ data }: RegulationProps) {
     });
   };
 
+  // Utilitário: expande um valor de especialidade composto em partes individuais
+  // Suporta separadores: vírgula e ponto-e-vírgula
+  const expandirEspecialidades = (valor: string): string[] => {
+    return valor
+      .split(/[,;]/)
+      .map(e => e.trim())
+      .filter(Boolean);
+  };
+
   // Todas as opções únicas de filtro (sem cascata) — base para Especialidade e Central
+  // Especialidades compostas (ex: "Fisiatria, Reumatologia") são expandidas em itens individuais
   const { centrais, especialidades } = useMemo(() => {
     const centraisSet = new Set<string>();
     const especialidadesSet = new Set<string>();
 
     dadosFiltradosPorPerfil.forEach(row => {
       centraisSet.add(String(row[8]));
-      especialidadesSet.add(String(row[9]));
+      // Expande especialidades compostas
+      expandirEspecialidades(String(row[9])).forEach(esp => especialidadesSet.add(esp));
     });
 
     return {
@@ -111,15 +122,18 @@ export default function Regulation({ data }: RegulationProps) {
   }, [dadosFiltradosPorPerfil]);
 
   // Agendas em cascata: filtradas pelas especialidades selecionadas (e centrais selecionadas)
+  // Considera que uma linha pode ter múltiplas especialidades separadas por vírgula
   const agendas = useMemo(() => {
     const agendasSet = new Set<string>();
 
     dadosFiltradosPorPerfil.forEach(row => {
-      const especialidade = String(row[9]);
+      const especialidadesBruto = String(row[9]);
       const central = String(row[8]);
 
+      const partes = expandirEspecialidades(especialidadesBruto);
       const matchEsp =
-        selectedEspecialidades.size === 0 || selectedEspecialidades.has(especialidade);
+        selectedEspecialidades.size === 0 ||
+        partes.some(p => selectedEspecialidades.has(p));
       const matchCentral =
         selectedCentrais.size === 0 || selectedCentrais.has(central);
 
