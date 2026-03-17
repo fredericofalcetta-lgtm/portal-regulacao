@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import FilterPanel from '@/components/FilterPanel';
 import DataTable from '@/components/DataTable';
 import { useRegulador } from '@/contexts/ReguladorContext';
+import { usePersistedFilters } from '@/hooks/usePersistedFilters';
 
 interface RegulationProps {
   data: (string | number)[][];
@@ -12,11 +13,18 @@ const PERFIS_IRRESTRITO = ['monitoramento', 'administrador'];
 
 export default function Regulation({ data }: RegulationProps) {
   const { regulador, perfilAtivo } = useRegulador();
-  const [selectedAgendas, setSelectedAgendas] = useState<Set<string>>(new Set());
-  const [selectedCentrais, setSelectedCentrais] = useState<Set<string>>(new Set());
-  const [selectedEspecialidades, setSelectedEspecialidades] = useState<Set<string>>(new Set());
-  const [sortColumn, setSortColumn] = useState(7); // Default sort by IndexRegula
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const {
+    selectedAgendas,
+    selectedCentrais,
+    selectedEspecialidades,
+    sortColumn,
+    sortOrder,
+    setSelectedAgendas,
+    setSelectedCentrais,
+    setSelectedEspecialidades,
+    setSortColumn,
+    setSortOrder,
+  } = usePersistedFilters();
 
   // Verifica se o perfil ATIVO tem acesso irrestrito
   const isIrrestrito = useMemo(() => {
@@ -141,7 +149,7 @@ export default function Regulation({ data }: RegulationProps) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortColumn(column);
-      setSortOrder('desc');
+      setSortOrder('desc' as const);
     }
   };
 
