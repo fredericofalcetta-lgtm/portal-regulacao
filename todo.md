@@ -71,3 +71,4 @@
 - [x] Adicionar campo de busca por digitação no dropdown de encaminhamento da aba Regulação
 - [x] Ordenar filtro de Centrais na ordem: CRA, 1CRS, 2CRS, ..., 18CRS
 - [x] Filtrar agendas na aba Regulação por responsabilidade do regulador (coluna E da planilha Reguladores)
+- [x] Troca de perfil ativo (Regulador ↔ Monitoramento) para usuários com múltiplos perfis via botão no canto inferior esquerdo

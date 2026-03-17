@@ -11,18 +11,19 @@ interface RegulationProps {
 const PERFIS_IRRESTRITO = ['monitoramento', 'administrador'];
 
 export default function Regulation({ data }: RegulationProps) {
-  const { regulador } = useRegulador();
+  const { regulador, perfilAtivo } = useRegulador();
   const [selectedAgendas, setSelectedAgendas] = useState<Set<string>>(new Set());
   const [selectedCentrais, setSelectedCentrais] = useState<Set<string>>(new Set());
   const [selectedEspecialidades, setSelectedEspecialidades] = useState<Set<string>>(new Set());
   const [sortColumn, setSortColumn] = useState(7); // Default sort by IndexRegula
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Verifica se o perfil do regulador tem acesso irrestrito
+  // Verifica se o perfil ATIVO tem acesso irrestrito
   const isIrrestrito = useMemo(() => {
-    if (!regulador?.perfil) return false;
-    return PERFIS_IRRESTRITO.includes(regulador.perfil.toLowerCase());
-  }, [regulador]);
+    const perfil = perfilAtivo ?? regulador?.perfil ?? null;
+    if (!perfil) return false;
+    return PERFIS_IRRESTRITO.includes(perfil.toLowerCase());
+  }, [regulador, perfilAtivo]);
 
   // Parseia a lista de agendas responsáveis do regulador (campo agendas, coluna E da planilha)
   // Suporta separadores: vírgula, ponto-e-vírgula, barra, ou múltiplos espaços

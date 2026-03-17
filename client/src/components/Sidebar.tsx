@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Menu, X, BarChart3, Table2, ListChecks, Home, LogOut, UserCircle2, ScrollText, Sun, Moon, ClipboardList, Activity } from 'lucide-react';
+import { Menu, X, BarChart3, Table2, ListChecks, Home, LogOut, UserCircle2, ScrollText, Sun, Moon, ClipboardList, Activity, RefreshCw } from 'lucide-react';
 import { Link } from 'wouter';
 import { useRegulador } from '@/contexts/ReguladorContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -10,10 +10,22 @@ interface SidebarProps {
   onToggle?: (isOpen: boolean) => void;
 }
 
+// Mapa de label amigável para cada perfil
+const PERFIL_LABELS: Record<string, string> = {
+  regulador: 'Regulador',
+  monitoramento: 'Monitoramento',
+  administrador: 'Administrador',
+};
+
+function perfilLabel(perfil: string | null): string {
+  if (!perfil) return '';
+  return PERFIL_LABELS[perfil.toLowerCase()] ?? (perfil.charAt(0).toUpperCase() + perfil.slice(1).toLowerCase());
+}
+
 export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const { regulador } = useRegulador();
+  const { regulador, perfilAtivo, perfisDisponiveis, temMultiplosPerfis, trocarPerfil } = useRegulador();
   const { theme, toggleTheme } = useTheme();
   const clearCheckInsMutation = trpc.checkIns.clearMeus.useMutation();
 
@@ -57,8 +69,14 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
 
   const toggleSidebar = () => setOpen(!isOpen);
 
-  const isAdminOrMonitor = regulador?.perfil?.toLowerCase() === 'administrador' ||
-    regulador?.perfil?.toLowerCase() === 'monitoramento';
+  // Visibilidade do Monitor de Check-ins: monitoramento ou administrador
+  const isAdminOrMonitor =
+    perfilAtivo === 'monitoramento' ||
+    perfilAtivo === 'administrador' ||
+    (!perfilAtivo && (
+      regulador?.perfil?.toLowerCase() === 'administrador' ||
+      regulador?.perfil?.toLowerCase() === 'monitoramento'
+    ));
 
   const navItems = [
     { href: '/', page: 'inicio', icon: Home, label: 'Início', visible: true },
@@ -70,17 +88,14 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     { href: '/protocolos', page: 'protocolos', icon: ScrollText, label: 'Protocolos', visible: true },
   ].filter(item => item.visible);
 
-  const navItemClass = (page: string) =>
-    `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-      currentPage === page
-        ? 'bg-blue-600 text-white'
-        : 'text-slate-300 hover:bg-slate-700'
-    }`;
-
-  // Formata o perfil para exibição
-  const perfilLabel = regulador?.perfil
-    ? regulador.perfil.charAt(0).toUpperCase() + regulador.perfil.slice(1).toLowerCase()
+  // Próximo perfil para troca rápida (alterna entre os disponíveis)
+  const proximoPerfil = temMultiplosPerfis
+    ? perfisDisponiveis.find(p => p !== perfilAtivo) ?? null
     : null;
+
+  const handleTrocarPerfil = () => {
+    if (proximoPerfil) trocarPerfil(proximoPerfil);
+  };
 
   return (
     <div
@@ -139,11 +154,24 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
                   <p className="text-sm font-semibold text-white truncate leading-tight">
                     {regulador.nome}
                   </p>
-                  {perfilLabel && (
-                    <span className="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full bg-blue-600/30 text-blue-300 border border-blue-500/30">
-                      {perfilLabel}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    {perfilAtivo && (
+                      <span className="inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-blue-600/30 text-blue-300 border border-blue-500/30">
+                        {perfilLabel(perfilAtivo)}
+                      </span>
+                    )}
+                    {/* Botão de troca de perfil — visível apenas para usuários com múltiplos perfis */}
+                    {temMultiplosPerfis && proximoPerfil && (
+                      <button
+                        onClick={handleTrocarPerfil}
+                        className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 hover:text-white transition-colors"
+                        title={`Trocar para perfil ${perfilLabel(proximoPerfil)}`}
+                      >
+                        <RefreshCw size={10} className="shrink-0" />
+                        {perfilLabel(proximoPerfil)}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -191,14 +219,25 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
             </div>
           </div>
         ) : (
-          /* Sidebar recolhido — exibe apenas avatar, botão de tema e sair */
+          /* Sidebar recolhido — exibe apenas avatar, botão de troca (se houver), tema e sair */
           <div className="px-2 py-3 space-y-2 flex flex-col items-center">
             <div
               className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center cursor-default"
-              title={regulador ? `${regulador.nome} — ${perfilLabel ?? ''}` : 'Usuário'}
+              title={regulador ? `${regulador.nome} — ${perfilLabel(perfilAtivo)}` : 'Usuário'}
             >
               <UserCircle2 size={20} className="text-white" />
             </div>
+
+            {/* Botão compacto de troca de perfil */}
+            {temMultiplosPerfis && proximoPerfil && (
+              <button
+                onClick={handleTrocarPerfil}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                title={`Trocar para ${perfilLabel(proximoPerfil)}`}
+              >
+                <RefreshCw size={16} />
+              </button>
+            )}
 
             {/* Botão de tema compacto */}
             {toggleTheme && (
