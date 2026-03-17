@@ -74,3 +74,6 @@
 - [x] Troca de perfil ativo (Regulador ↔ Monitoramento) para usuários com múltiplos perfis via botão no canto inferior esquerdo
 - [x] Persistir filtros da aba Regulação ao navegar entre páginas (localStorage)
 - [x] Suporte a múltiplas especialidades por agenda na aba Regulação (coluna J da planilha)
+- [x] Remover botão Concluído de Encaminhadas para mim e mover para Check-ins ativos
+- [x] Check-out em Check-ins ativos retorna agenda para Encaminhadas para mim
+- [x] Nova caixa Agendas Concluídas com soma de Aguardando e botão Limpar

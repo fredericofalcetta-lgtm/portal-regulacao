@@ -143,3 +143,27 @@ export const checkIns = mysqlTable("check_ins", {
 
 export type CheckIn = typeof checkIns.$inferSelect;
 export type InsertCheckIn = typeof checkIns.$inferInsert;
+
+/**
+ * Tabela para agendas concluídas pelo regulador.
+ * Criada ao clicar em "Concluído" após um check-in ativo.
+ * Pode ser limpa manualmente pelo regulador.
+ */
+export const agendasConcluidas = mysqlTable("agendas_concluidas", {
+  id: int("id").autoincrement().primaryKey(),
+  agendaId: int("agenda_id").notNull(),
+  agendaNome: varchar("agenda_nome", { length: 255 }).notNull(),
+  municipio: varchar("municipio", { length: 255 }),
+  especialidade: varchar("especialidade", { length: 255 }).notNull(),
+  central: varchar("central", { length: 100 }),
+  cotas: int("cotas"),
+  saldo: int("saldo"),
+  aguardando: int("aguardando"),
+  indexRegula: double("index_regula"),
+  usuarioEmail: varchar("usuario_email", { length: 320 }).notNull(),
+  usuarioNome: varchar("usuario_nome", { length: 255 }).notNull(),
+  concluidoEm: timestamp("concluido_em").defaultNow().notNull(),
+});
+
+export type AgendaConcluida = typeof agendasConcluidas.$inferSelect;
+export type InsertAgendaConcluida = typeof agendasConcluidas.$inferInsert;

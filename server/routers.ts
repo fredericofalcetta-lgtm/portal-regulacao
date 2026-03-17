@@ -11,6 +11,7 @@ import {
   protocolos,
   encaminhamentos,
   checkIns,
+  agendasConcluidas,
 } from "../drizzle/schema";
 import { asc, desc, eq, and } from "drizzle-orm";
 import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb, syncProtocolosToDb } from "./syncSheets";
@@ -453,6 +454,78 @@ export const appRouter = router({
       await db
         .delete(checkIns)
         .where(eq(checkIns.usuarioEmail, email));
+      return { success: true };
+    }),
+  }),
+
+  // ─── Agendas Concluídas ──────────────────────────────────────────────────────
+  agendasConcluidas: router({
+    // Buscar agendas concluídas do usuário logado
+    getMeus: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const email = ctx.user?.email ?? "";
+      return db
+        .select()
+        .from(agendasConcluidas)
+        .where(eq(agendasConcluidas.usuarioEmail, email))
+        .orderBy(desc(agendasConcluidas.concluidoEm));
+    }),
+
+    // Registrar agenda como concluída (após check-out do check-in ativo)
+    concluir: protectedProcedure
+      .input(z.object({
+        agendaId: z.number(),
+        agendaNome: z.string(),
+        municipio: z.string().optional(),
+        especialidade: z.string(),
+        central: z.string().optional(),
+        cotas: z.number().optional(),
+        saldo: z.number().optional(),
+        aguardando: z.number().optional(),
+        indexRegula: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco de dados não disponível");
+
+        const usuarioEmail = ctx.user?.email ?? "";
+        const usuarioNome = ctx.user?.name ?? "";
+
+        // 1. Fazer check-out (remover check-in ativo)
+        await db
+          .delete(checkIns)
+          .where(and(
+            eq(checkIns.agendaId, input.agendaId),
+            eq(checkIns.usuarioEmail, usuarioEmail)
+          ));
+
+        // 2. Registrar na tabela de concluídas
+        await db.insert(agendasConcluidas).values({
+          agendaId: input.agendaId,
+          agendaNome: input.agendaNome,
+          municipio: input.municipio,
+          especialidade: input.especialidade,
+          central: input.central,
+          cotas: input.cotas,
+          saldo: input.saldo,
+          aguardando: input.aguardando,
+          indexRegula: input.indexRegula,
+          usuarioEmail,
+          usuarioNome,
+        });
+
+        return { success: true };
+      }),
+
+    // Limpar todas as agendas concluídas do usuário
+    limpar: protectedProcedure.mutation(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return { success: false };
+      const email = ctx.user?.email ?? "";
+      await db
+        .delete(agendasConcluidas)
+        .where(eq(agendasConcluidas.usuarioEmail, email));
       return { success: true };
     }),
   }),
