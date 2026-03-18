@@ -594,7 +594,15 @@ export const appRouter = router({
             eq(checkIns.usuarioEmail, usuarioEmail)
           ));
 
-        // 2. Registrar na tabela de concluídas
+        // 2. Remover o encaminhamento associado (sai de "Encaminhadas para mim")
+        await db
+          .delete(encaminhamentos)
+          .where(and(
+            eq(encaminhamentos.agendaId, input.agendaId),
+            eq(encaminhamentos.reguladorEmail, usuarioEmail)
+          ));
+
+        // 3. Registrar na tabela de concluídas
         await db.insert(agendasConcluidas).values({
           agendaId: input.agendaId,
           agendaNome: input.agendaNome,
