@@ -80,3 +80,4 @@
 - [x] Limite de 2 check-ins por agenda com alerta para terceiro usuário
 - [x] Submenu expansível nos check-ins ativos com agendas relacionadas (mesma especialidade + central) e protocolo/lista de prioridades
 - [x] Botão Concluído remove agenda de Encaminhadas para mim além de mover para Agendas Concluídas
+- [x] Filtrar dropdown de Agendas na aba Regulação pelas agendas permitidas do regulador (coluna E da planilha)

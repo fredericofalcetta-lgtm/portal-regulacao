@@ -51,10 +51,11 @@ export default function Regulation({ data }: RegulationProps) {
     let resultado = data;
 
     // Filtro por agendas responsáveis (coluna E da planilha Reguladores)
+    // Usa correspondência exata (normalizada) para evitar que agendas com nomes similares aparecem
     if (agendasDoRegulador && agendasDoRegulador.length > 0) {
       resultado = resultado.filter(row => {
-        const nomeAgenda = String(row[0]).toLowerCase();
-        return agendasDoRegulador.some(ag => nomeAgenda.includes(ag) || ag.includes(nomeAgenda));
+        const nomeAgenda = String(row[0]).trim().toLowerCase();
+        return agendasDoRegulador.some(ag => ag === nomeAgenda);
       });
       return resultado;
     }
