@@ -82,3 +82,5 @@
 - [x] Botão Concluído remove agenda de Encaminhadas para mim além de mover para Agendas Concluídas
 - [x] Filtrar dropdown de Agendas na aba Regulação pelas agendas permitidas do regulador (coluna E da planilha)
 - [x] Persistir perfil ativo do usuário no localStorage entre sessões
+- [x] Liberar Monitor de Check-ins para o perfil regulador
+- [x] Botão Encaminhar na aba Regulação encaminha automaticamente para o próprio usuário logado

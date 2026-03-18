@@ -69,13 +69,15 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
 
   const toggleSidebar = () => setOpen(!isOpen);
 
-  // Visibilidade do Monitor de Check-ins: monitoramento ou administrador
+  // Visibilidade do Monitor de Check-ins: regulador, monitoramento ou administrador
   const isAdminOrMonitor =
     perfilAtivo === 'monitoramento' ||
     perfilAtivo === 'administrador' ||
+    perfilAtivo === 'regulador' ||
     (!perfilAtivo && (
       regulador?.perfil?.toLowerCase() === 'administrador' ||
-      regulador?.perfil?.toLowerCase() === 'monitoramento'
+      regulador?.perfil?.toLowerCase() === 'monitoramento' ||
+      regulador?.perfil?.toLowerCase() === 'regulador'
     ));
 
   const navItems = [
