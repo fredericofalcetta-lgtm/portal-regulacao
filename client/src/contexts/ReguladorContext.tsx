@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode, useMemo } from 'react';
+import { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
 
 export interface ReguladorInfo {
   nome: string;
@@ -33,6 +33,11 @@ function parsePerfis(perfil: string | null): string[] {
     .filter(Boolean);
 }
 
+// Chave usada no localStorage — inclui o email para isolar por usuário
+function getStorageKey(email: string): string {
+  return `portal-regulacao:perfil-ativo:${email}`;
+}
+
 export function ReguladorProvider({
   children,
   regulador,
@@ -42,16 +47,67 @@ export function ReguladorProvider({
 }) {
   const perfisDisponiveis = useMemo(() => parsePerfis(regulador?.perfil ?? null), [regulador]);
 
-  // Perfil ativo padrão: primeiro perfil disponível
-  const [perfilAtivo, setPerfilAtivo] = useState<string | null>(
-    perfisDisponiveis.length > 0 ? perfisDisponiveis[0] : null
-  );
+  // Inicializa o perfil ativo: tenta restaurar do localStorage, senão usa o primeiro disponível
+  const [perfilAtivo, setPerfilAtivo] = useState<string | null>(() => {
+    if (perfisDisponiveis.length === 0) return null;
+
+    // Tenta recuperar o perfil salvo para este usuário
+    if (regulador?.email) {
+      try {
+        const salvo = localStorage.getItem(getStorageKey(regulador.email));
+        if (salvo && perfisDisponiveis.includes(salvo)) {
+          return salvo;
+        }
+      } catch {
+        // localStorage pode não estar disponível em alguns contextos
+      }
+    }
+
+    return perfisDisponiveis[0];
+  });
+
+  // Quando os perfis disponíveis mudam (ex: troca de usuário), revalida o perfil ativo
+  useEffect(() => {
+    if (perfisDisponiveis.length === 0) {
+      setPerfilAtivo(null);
+      return;
+    }
+
+    setPerfilAtivo(prev => {
+      // Tenta restaurar do localStorage
+      if (regulador?.email) {
+        try {
+          const salvo = localStorage.getItem(getStorageKey(regulador.email));
+          if (salvo && perfisDisponiveis.includes(salvo)) {
+            return salvo;
+          }
+        } catch {
+          // ignora erros de localStorage
+        }
+      }
+
+      // Se o perfil atual ainda é válido, mantém
+      if (prev && perfisDisponiveis.includes(prev)) return prev;
+
+      // Caso contrário, usa o primeiro disponível
+      return perfisDisponiveis[0];
+    });
+  }, [perfisDisponiveis, regulador?.email]);
 
   const temMultiplosPerfis = perfisDisponiveis.length > 1;
 
   const trocarPerfil = (perfil: string) => {
-    if (perfisDisponiveis.includes(perfil.toLowerCase())) {
-      setPerfilAtivo(perfil.toLowerCase());
+    const normalizado = perfil.toLowerCase();
+    if (perfisDisponiveis.includes(normalizado)) {
+      setPerfilAtivo(normalizado);
+      // Persiste no localStorage vinculado ao email do usuário
+      if (regulador?.email) {
+        try {
+          localStorage.setItem(getStorageKey(regulador.email), normalizado);
+        } catch {
+          // ignora erros de localStorage
+        }
+      }
     }
   };
 
