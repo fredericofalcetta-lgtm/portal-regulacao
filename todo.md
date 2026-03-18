@@ -84,3 +84,4 @@
 - [x] Persistir perfil ativo do usuário no localStorage entre sessões
 - [x] Liberar Monitor de Check-ins para o perfil regulador
 - [x] Botão Encaminhar na aba Regulação encaminha automaticamente para o próprio usuário logado
+- [x] Botão Encaminhar para si mesmo visível na tabela da aba Regulação para perfil regulador

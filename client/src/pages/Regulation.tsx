@@ -205,7 +205,7 @@ export default function Regulation({ data }: RegulationProps) {
         sortColumn={sortColumn}
         sortOrder={sortOrder}
         onSort={handleSort}
-        perfilUsuario={regulador?.perfil ?? ''}
+        perfilUsuario={perfilAtivo ?? regulador?.perfil ?? ''}
         emailUsuario={regulador?.email ?? ''}
       />
     </div>
