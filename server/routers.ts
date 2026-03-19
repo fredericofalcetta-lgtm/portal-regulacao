@@ -225,7 +225,7 @@ export const appRouter = router({
         .from(encaminhamentos)
         .leftJoin(regulacaoData, eq(encaminhamentos.agendaId, regulacaoData.id))
         .where(eq(encaminhamentos.reguladorEmail, email))
-        .orderBy(desc(encaminhamentos.createdAt));
+        .orderBy(desc(regulacaoData.indexRegula), desc(encaminhamentos.createdAt));
 
       return result;
     }),

@@ -86,3 +86,4 @@
 - [x] Botão Encaminhar na aba Regulação encaminha automaticamente para o próprio usuário logado
 - [x] Botão Encaminhar para si mesmo visível na tabela da aba Regulação para perfil regulador
 - [x] Sidebar permanece aberto com cursor sobre ele e recolhe 3s após cursor sair
+- [x] Ordenar agendas encaminhadas para mim por índice decrescente em Minhas Agendas
