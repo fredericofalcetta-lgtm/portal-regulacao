@@ -87,3 +87,4 @@
 - [x] Botão Encaminhar para si mesmo visível na tabela da aba Regulação para perfil regulador
 - [x] Sidebar permanece aberto com cursor sobre ele e recolhe 3s após cursor sair
 - [x] Ordenar agendas encaminhadas para mim por índice decrescente em Minhas Agendas
+- [x] Atualizar ordenação do menu de Centrais: CRA, 1CRS a 18CRS (incluindo 4CRS)

@@ -79,7 +79,7 @@ export default function Regulation({ data }: RegulationProps) {
   }, [data, regulador, isIrrestrito, agendasDoRegulador]);
 
   // Ordem personalizada das Centrais: CRA primeiro, depois NºCRS em ordem numérica
-  const ORDEM_CENTRAIS = ['CRA', '1CRS', '2CRS', '3CRS', '5CRS', '6CRS', '7CRS', '8CRS', '9CRS', '10CRS', '11CRS', '12CRS', '13CRS', '14CRS', '15CRS', '16CRS', '17CRS', '18CRS'];
+  const ORDEM_CENTRAIS = ['CRA', '1CRS', '2CRS', '3CRS', '4CRS', '5CRS', '6CRS', '7CRS', '8CRS', '9CRS', '10CRS', '11CRS', '12CRS', '13CRS', '14CRS', '15CRS', '16CRS', '17CRS', '18CRS'];
 
   const sortCentrais = (lista: string[]): string[] => {
     return [...lista].sort((a, b) => {
