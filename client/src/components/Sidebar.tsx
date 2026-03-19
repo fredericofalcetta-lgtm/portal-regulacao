@@ -49,23 +49,24 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     onToggle?.(value);
   }, [onToggle]);
 
-  // Auto-collapse after 3 seconds of mouse inactivity
-  useEffect(() => {
+  // Inicia o timer de 3s para recolher quando o cursor sai do sidebar
+  const handleMouseLeave = useCallback(() => {
     if (!isOpen) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setOpen(false), 3000);
+  }, [isOpen, setOpen]);
 
-    const resetTimer = () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => setOpen(false), 3000);
-    };
+  // Cancela o timer enquanto o cursor estiver sobre o sidebar
+  const handleMouseEnter = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }, []);
 
-    resetTimer();
-    window.addEventListener('mousemove', resetTimer);
-
+  // Limpar timer ao desmontar
+  useEffect(() => {
     return () => {
-      window.removeEventListener('mousemove', resetTimer);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [isOpen]);
+  }, []);
 
   const toggleSidebar = () => setOpen(!isOpen);
 
@@ -104,6 +105,8 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
       className={`relative h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white transition-all duration-300 ease-in-out z-40 flex flex-col shrink-0 ${
         isOpen ? 'w-64' : 'w-16'
       }`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Header */}
       <div className={`flex items-center h-16 border-b border-slate-700 shrink-0 ${isOpen ? 'justify-between px-4' : 'justify-center px-2'}`}>

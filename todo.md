@@ -85,3 +85,4 @@
 - [x] Liberar Monitor de Check-ins para o perfil regulador
 - [x] Botão Encaminhar na aba Regulação encaminha automaticamente para o próprio usuário logado
 - [x] Botão Encaminhar para si mesmo visível na tabela da aba Regulação para perfil regulador
+- [x] Sidebar permanece aberto com cursor sobre ele e recolhe 3s após cursor sair
