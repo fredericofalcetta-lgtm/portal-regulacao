@@ -12,9 +12,10 @@ import {
   encaminhamentos,
   checkIns,
   agendasConcluidas,
+  dicionarioEspecialidades,
 } from "../drizzle/schema";
 import { asc, desc, eq, and } from "drizzle-orm";
-import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb, syncProtocolosToDb } from "./syncSheets";
+import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb, syncProtocolosToDb, syncDicionarioToDb } from "./syncSheets";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -191,6 +192,29 @@ export const appRouter = router({
         .from(reguladores)
         .where(eq(reguladores.ativo, "sim"))
         .orderBy(asc(reguladores.nome));
+    }),
+  }),
+
+  dicionario: router({
+    // Buscar todo o dicionário agenda → especialidade
+    getAll: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db
+        .select({ agenda: dicionarioEspecialidades.agenda, especialidade: dicionarioEspecialidades.especialidade })
+        .from(dicionarioEspecialidades)
+        .orderBy(asc(dicionarioEspecialidades.agenda));
+    }),
+
+    // Sincronizar dicionário manualmente
+    sync: protectedProcedure.mutation(async () => {
+      try {
+        const count = await syncDicionarioToDb();
+        return { success: true, count };
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Erro desconhecido";
+        throw new Error(message);
+      }
     }),
   }),
 

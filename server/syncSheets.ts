@@ -1,6 +1,6 @@
 import axios from "axios";
 import { getDb } from "./db";
-import { regulacaoData, syncLog, prioridades, reguladores, protocolos } from "../drizzle/schema";
+import { regulacaoData, syncLog, prioridades, reguladores, protocolos, dicionarioEspecialidades } from "../drizzle/schema";
 import { count } from "drizzle-orm";
 
 const SPREADSHEET_ID = "1cZ9aGm307pgF5tug8ScZFqncKy9BF1BHo7Dah9Rgm9k";
@@ -187,6 +187,41 @@ export async function syncProtocolosToDb(): Promise<number> {
   return insertRows.length;
 }
 
+export async function syncDicionarioToDb(): Promise<number> {
+  const apiKey = process.env.GOOGLE_SHEETS_API_KEY;
+  if (!apiKey) throw new Error("GOOGLE_SHEETS_API_KEY n\u00e3o est\u00e1 definida");
+
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados n\u00e3o dispon\u00edvel");
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Dicion%C3%A1rio%20-%20Especialidades!A:B?key=${apiKey}&majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`;
+  const response = await axios.get(url, { timeout: 30000 });
+  const rows: string[][] = response.data.values || [];
+
+  // Pular cabe\u00e7alho (linha 0)
+  const dataRows = rows.slice(1);
+
+  // Limpar dados existentes
+  await db.delete(dicionarioEspecialidades);
+
+  const insertRows = dataRows
+    .filter(row => row[0]?.trim() && row[1]?.trim())
+    .map(row => ({
+      agenda: row[0].trim(),
+      especialidade: row[1].trim(),
+    }));
+
+  if (insertRows.length > 0) {
+    const batchSize = 500;
+    for (let i = 0; i < insertRows.length; i += batchSize) {
+      await db.insert(dicionarioEspecialidades).values(insertRows.slice(i, i + batchSize));
+    }
+  }
+
+  console.log(`[Sync] ${insertRows.length} entradas do dicion\u00e1rio de especialidades sincronizadas`);
+  return insertRows.length;
+}
+
 /**
  * Sincroniza se o banco estiver vazio (primeira carga) ou se forceSync for true.
  */
@@ -211,6 +246,7 @@ export async function syncAndSeedIfEmpty(forceSync = false): Promise<void> {
     await syncSheetsToDb();
     await syncPrioridadesToDb();
     await syncReguladoresToDb();
+    await syncDicionarioToDb();
   } catch (err) {
     console.error("[Sync] Erro durante sincronização:", err);
   }

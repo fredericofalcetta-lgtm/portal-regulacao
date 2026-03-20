@@ -3,6 +3,7 @@ import FilterPanel from '@/components/FilterPanel';
 import DataTable from '@/components/DataTable';
 import { useRegulador } from '@/contexts/ReguladorContext';
 import { usePersistedFilters } from '@/hooks/usePersistedFilters';
+import { trpc } from '@/lib/trpc';
 
 interface RegulationProps {
   data: (string | number)[][];
@@ -44,39 +45,80 @@ export default function Regulation({ data }: RegulationProps) {
     return lista.length > 0 ? lista : null;
   }, [regulador]);
 
+  // Buscar dicionário de especialidades (agenda → especialidade)
+  const { data: dicionario = [] } = trpc.dicionario.getAll.useQuery();
+
+  // Mapa normalizado: nome_agenda_lower → especialidade_lower
+  const mapaAgendaEspecialidade = useMemo(() => {
+    const mapa = new Map<string, string>();
+    dicionario.forEach(d => {
+      mapa.set(d.agenda.trim().toLowerCase(), d.especialidade.trim().toLowerCase());
+    });
+    return mapa;
+  }, [dicionario]);
+
   // Filtra os dados com base nas agendas responsáveis (se houver) e no Grande Grupo
   const dadosFiltradosPorPerfil = useMemo(() => {
     if (isIrrestrito) return data;
 
-    let resultado = data;
+    // Parsear os grupos do regulador
+    const gruposDoRegulador = regulador?.grandeGrupo
+      ? regulador.grandeGrupo.split(/[,;\/]/).map(g => g.trim().toLowerCase()).filter(Boolean)
+      : [];
 
-    // Filtro por agendas responsáveis (coluna E da planilha Reguladores)
-    // Usa correspondência exata (normalizada) para evitar que agendas com nomes similares aparecem
-    if (agendasDoRegulador && agendasDoRegulador.length > 0) {
-      resultado = resultado.filter(row => {
-        const nomeAgenda = String(row[0]).trim().toLowerCase();
-        return agendasDoRegulador.some(ag => ag === nomeAgenda);
+    if (gruposDoRegulador.length === 0 && !agendasDoRegulador) return data;
+
+    // Se há agendas específicas E dicionário carregado, aplicar lógica por grupo
+    if (agendasDoRegulador && agendasDoRegulador.length > 0 && mapaAgendaEspecialidade.size > 0) {
+      // Descobrir quais grupos têm agendas específicas definidas
+      // Para cada agenda específica, encontrar sua especialidade no dicionário
+      const gruposComAgendaEspecifica = new Set<string>();
+      agendasDoRegulador.forEach(nomeAgenda => {
+        const esp = mapaAgendaEspecialidade.get(nomeAgenda);
+        if (esp) {
+          // Encontrar qual grupo do regulador corresponde a essa especialidade
+          gruposDoRegulador.forEach(grupo => {
+            if (esp.includes(grupo) || grupo.includes(esp)) {
+              gruposComAgendaEspecifica.add(grupo);
+            }
+          });
+        }
       });
-      return resultado;
-    }
 
-    // Fallback: filtro por Grande Grupo (especialidade) se não houver agendas definidas
-    if (regulador?.grandeGrupo) {
-      const gruposDoRegulador = regulador.grandeGrupo
-        .split(/[,;\/]/)
-        .map(g => g.trim().toLowerCase())
-        .filter(Boolean);
+      return data.filter(row => {
+        const nomeAgenda = String(row[0]).trim().toLowerCase();
+        const especialidade = String(row[9]).trim().toLowerCase();
 
-      if (gruposDoRegulador.length > 0) {
-        resultado = resultado.filter(row => {
-          const especialidade = String(row[9]).toLowerCase();
-          return gruposDoRegulador.some(grupo => especialidade.includes(grupo));
+        // Verificar a qual grupo do regulador esta linha pertence
+        const gruposDaLinha = gruposDoRegulador.filter(grupo =>
+          especialidade.includes(grupo) || grupo.includes(especialidade)
+        );
+
+        if (gruposDaLinha.length === 0) return false;
+
+        // Para cada grupo da linha, verificar se tem agendas específicas
+        return gruposDaLinha.some(grupo => {
+          if (gruposComAgendaEspecifica.has(grupo)) {
+            // Grupo tem agendas específicas: mostrar apenas as listadas
+            return agendasDoRegulador.some(ag => ag === nomeAgenda);
+          } else {
+            // Grupo sem agendas específicas: mostrar todas as agendas do grupo
+            return true;
+          }
         });
-      }
+      });
     }
 
-    return resultado;
-  }, [data, regulador, isIrrestrito, agendasDoRegulador]);
+    // Sem agendas específicas: filtrar apenas por Grande Grupo
+    if (gruposDoRegulador.length > 0) {
+      return data.filter(row => {
+        const especialidade = String(row[9]).toLowerCase();
+        return gruposDoRegulador.some(grupo => especialidade.includes(grupo));
+      });
+    }
+
+    return data;
+  }, [data, regulador, isIrrestrito, agendasDoRegulador, mapaAgendaEspecialidade]);
 
   // Ordem personalizada das Centrais: CRA primeiro, depois NºCRS em ordem numérica
   const ORDEM_CENTRAIS = ['CRA', '1CRS', '2CRS', '3CRS', '4CRS', '5CRS', '6CRS', '7CRS', '8CRS', '9CRS', '10CRS', '11CRS', '12CRS', '13CRS', '14CRS', '15CRS', '16CRS', '17CRS', '18CRS'];

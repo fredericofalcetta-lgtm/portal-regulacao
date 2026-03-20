@@ -167,3 +167,16 @@ export const agendasConcluidas = mysqlTable("agendas_concluidas", {
 
 export type AgendaConcluida = typeof agendasConcluidas.$inferSelect;
 export type InsertAgendaConcluida = typeof agendasConcluidas.$inferInsert;
+
+/**
+ * Dicionário de especialidades: mapeia agenda → especialidade.
+ * Sincronizado da aba 'Dicionário - Especialidades' da planilha.
+ */
+export const dicionarioEspecialidades = mysqlTable("dicionario_especialidades", {
+  id: int("id").autoincrement().primaryKey(),
+  agenda: varchar("agenda", { length: 255 }).notNull(),
+  especialidade: varchar("especialidade", { length: 255 }).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DicionarioEspecialidade = typeof dicionarioEspecialidades.$inferSelect;
