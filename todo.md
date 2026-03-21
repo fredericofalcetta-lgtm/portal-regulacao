@@ -92,3 +92,4 @@
 - [x] Atualizar valores numéricos das agendas encaminhadas (Cotas, Saldo, Aguardando) com dados mais recentes do banco
 - [x] Corrigir JOIN de encaminhamentos/check-ins para usar nome + município como chave composta (evitar duplicatas)
 - [x] Botão Limpar na seção Encaminhadas para mim em Minhas Agendas (remove todos os encaminhamentos do usuário)
+- [x] Diálogo de confirmação antes de limpar encaminhadas e agendas concluídas

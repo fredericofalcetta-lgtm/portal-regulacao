@@ -2,6 +2,17 @@ import React from 'react';
 import { LogIn, LogOut, Loader2, ClipboardList, RefreshCw, Send, CheckCircle2, Trash2, Flag, CheckCheck, XCircle } from 'lucide-react';
 import CheckInDetalhes from '@/components/CheckInDetalhes';
 import { trpc } from '@/lib/trpc';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 // ─── Componente de linha de agenda ───────────────────────────────────────────
 
@@ -461,18 +472,38 @@ export default function MinhasAgendas() {
               </span>
             </div>
             {encaminhadas.length > 0 && (
-              <button
-                onClick={() => limparEncaminhadasMutation.mutate()}
-                disabled={limparEncaminhadasMutation.isPending}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md transition-colors disabled:opacity-50"
-              >
-                {limparEncaminhadasMutation.isPending ? (
-                  <Loader2 size={12} className="animate-spin" />
-                ) : (
-                  <XCircle size={12} />
-                )}
-                Limpar encaminhadas
-              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    disabled={limparEncaminhadasMutation.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md transition-colors disabled:opacity-50"
+                  >
+                    {limparEncaminhadasMutation.isPending ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                      <XCircle size={12} />
+                    )}
+                    Limpar encaminhadas
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Limpar agendas encaminhadas?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação removerá todas as {encaminhadas.length} agenda{encaminhadas.length !== 1 ? 's' : ''} encaminhada{encaminhadas.length !== 1 ? 's' : ''} para você. Esta operação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => limparEncaminhadasMutation.mutate()}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      Sim, limpar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
 
@@ -546,18 +577,38 @@ export default function MinhasAgendas() {
               </span>
             </div>
             {concluidas.length > 0 && (
-              <button
-                onClick={() => limparConcluidasMutation.mutate()}
-                disabled={limparConcluidasMutation.isPending}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md transition-colors disabled:opacity-50"
-              >
-                {limparConcluidasMutation.isPending ? (
-                  <Loader2 size={12} className="animate-spin" />
-                ) : (
-                  <XCircle size={12} />
-                )}
-                Limpar agendas concluídas
-              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    disabled={limparConcluidasMutation.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md transition-colors disabled:opacity-50"
+                  >
+                    {limparConcluidasMutation.isPending ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                      <XCircle size={12} />
+                    )}
+                    Limpar agendas concluídas
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Limpar agendas concluídas?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação removerá todas as {concluidas.length} agenda{concluidas.length !== 1 ? 's' : ''} concluída{concluidas.length !== 1 ? 's' : ''} do seu histórico. Esta operação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => limparConcluidasMutation.mutate()}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      Sim, limpar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
 
