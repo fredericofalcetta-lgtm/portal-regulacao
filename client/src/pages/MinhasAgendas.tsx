@@ -251,6 +251,12 @@ export default function MinhasAgendas() {
     },
   });
 
+  const limparEncaminhadasMutation = trpc.encaminhamentos.removerTodos.useMutation({
+    onSuccess: () => {
+      refetchEncaminhadas();
+    },
+  });
+
   // Fazer check-in ou check-out em uma agenda das encaminhadas
   const handleCheckIn = (enc: {
     agendaId: number;
@@ -446,12 +452,28 @@ export default function MinhasAgendas() {
 
         {/* ── Seção 2: Encaminhadas para mim ── */}
         <section>
-          <div className="flex items-center gap-2 mb-3">
-            <Send size={18} className="text-blue-600 dark:text-blue-400" />
-            <h2 className="text-lg font-semibold text-foreground">Encaminhadas para mim</h2>
-            <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300">
-              {encaminhadas.length}
-            </span>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Send size={18} className="text-blue-600 dark:text-blue-400" />
+              <h2 className="text-lg font-semibold text-foreground">Encaminhadas para mim</h2>
+              <span className="ml-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300">
+                {encaminhadas.length}
+              </span>
+            </div>
+            {encaminhadas.length > 0 && (
+              <button
+                onClick={() => limparEncaminhadasMutation.mutate()}
+                disabled={limparEncaminhadasMutation.isPending}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md transition-colors disabled:opacity-50"
+              >
+                {limparEncaminhadasMutation.isPending ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <XCircle size={12} />
+                )}
+                Limpar encaminhadas
+              </button>
+            )}
           </div>
 
           {loadingEncaminhadas ? (

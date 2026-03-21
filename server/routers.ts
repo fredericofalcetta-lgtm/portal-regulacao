@@ -291,6 +291,18 @@ export const appRouter = router({
         return { success: true };
       }),
 
+    // Remover todos os encaminhamentos destinados ao usuário logado
+    removerTodos: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco de dados não disponível");
+        const email = ctx.user?.email ?? "";
+        await db
+          .delete(encaminhamentos)
+          .where(eq(encaminhamentos.reguladorEmail, email));
+        return { success: true };
+      }),
+
     // Encaminhar agenda para reguladores (admin/monitor)
     encaminhar: protectedProcedure
       .input(z.object({

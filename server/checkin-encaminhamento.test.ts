@@ -163,3 +163,50 @@ describe('encaminhar', () => {
     expect(da1).toHaveLength(2);
   });
 });
+
+/**
+ * Simula a remoção de todos os encaminhamentos destinados a um usuário.
+ * Equivale à procedure removerTodos no backend.
+ */
+function removerTodosEncaminhamentos(
+  encaminhamentos: { agendaId: number; reguladorEmail: string }[],
+  reguladorEmail: string
+): { agendaId: number; reguladorEmail: string }[] {
+  return encaminhamentos.filter(e => e.reguladorEmail !== reguladorEmail);
+}
+
+describe('removerTodosEncaminhamentos', () => {
+  const encaminhamentos = [
+    { agendaId: 1, reguladorEmail: 'reg@test.com' },
+    { agendaId: 2, reguladorEmail: 'reg@test.com' },
+    { agendaId: 3, reguladorEmail: 'reg@test.com' },
+    { agendaId: 1, reguladorEmail: 'outro@test.com' },
+    { agendaId: 4, reguladorEmail: 'outro@test.com' },
+  ];
+
+  it('remove todos os encaminhamentos do regulador logado', () => {
+    const resultado = removerTodosEncaminhamentos(encaminhamentos, 'reg@test.com');
+    expect(resultado.filter(e => e.reguladorEmail === 'reg@test.com')).toHaveLength(0);
+  });
+
+  it('não remove encaminhamentos de outros reguladores', () => {
+    const resultado = removerTodosEncaminhamentos(encaminhamentos, 'reg@test.com');
+    expect(resultado.filter(e => e.reguladorEmail === 'outro@test.com')).toHaveLength(2);
+  });
+
+  it('retorna lista vazia quando todos os encaminhamentos são do usuário', () => {
+    const soReg = encaminhamentos.filter(e => e.reguladorEmail === 'reg@test.com');
+    const resultado = removerTodosEncaminhamentos(soReg, 'reg@test.com');
+    expect(resultado).toHaveLength(0);
+  });
+
+  it('retorna lista inalterada quando usuário não tem encaminhamentos', () => {
+    const resultado = removerTodosEncaminhamentos(encaminhamentos, 'semenc@test.com');
+    expect(resultado).toHaveLength(5);
+  });
+
+  it('retorna lista vazia quando lista de entrada está vazia', () => {
+    const resultado = removerTodosEncaminhamentos([], 'reg@test.com');
+    expect(resultado).toHaveLength(0);
+  });
+});
