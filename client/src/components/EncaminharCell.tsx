@@ -5,6 +5,7 @@ import { trpc } from '@/lib/trpc';
 interface EncaminharCellProps {
   agendaId: number;
   agendaNome: string;
+  municipio?: string;
   especialidade: string;
   encaminhadosAtuais: { reguladorEmail: string; reguladorNome: string }[];
   reguladoresList: { email: string; nome: string }[];
@@ -14,6 +15,7 @@ interface EncaminharCellProps {
 export default function EncaminharCell({
   agendaId,
   agendaNome,
+  municipio,
   especialidade,
   encaminhadosAtuais,
   reguladoresList,
@@ -83,6 +85,7 @@ export default function EncaminharCell({
     encaminharMutation.mutate({
       agendaId,
       agendaNome,
+      municipio,
       especialidade,
       reguladores: reguladoresSelecionados,
     });

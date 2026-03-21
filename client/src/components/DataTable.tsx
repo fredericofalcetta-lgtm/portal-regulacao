@@ -70,6 +70,7 @@ const TableRow = memo(function TableRow({
               <EncaminharCell
                 agendaId={agendaId}
                 agendaNome={String(row[0])}
+                municipio={String(row[1])}
                 especialidade={String(row[9])}
                 encaminhadosAtuais={encaminhadosAtuais}
                 reguladoresList={reguladoresList}
@@ -79,6 +80,7 @@ const TableRow = memo(function TableRow({
               <AutoEncaminharCell
                 agendaId={agendaId}
                 agendaNome={String(row[0])}
+                municipio={String(row[1])}
                 especialidade={String(row[9])}
                 emailUsuario={emailUsuario}
                 encaminhadosAtuais={encaminhadosAtuais}

@@ -109,6 +109,7 @@ export const encaminhamentos = mysqlTable("encaminhamentos", {
   id: int("id").autoincrement().primaryKey(),
   agendaId: int("agenda_id").notNull(),
   agendaNome: varchar("agenda_nome", { length: 255 }).notNull(),
+  municipio: varchar("municipio", { length: 255 }),
   especialidade: varchar("especialidade", { length: 255 }).notNull(),
   reguladorEmail: varchar("regulador_email", { length: 320 }).notNull(),
   reguladorNome: varchar("regulador_nome", { length: 255 }).notNull(),

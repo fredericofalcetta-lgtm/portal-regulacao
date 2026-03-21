@@ -1,0 +1,1 @@
+ALTER TABLE `encaminhamentos` ADD `municipio` varchar(255);

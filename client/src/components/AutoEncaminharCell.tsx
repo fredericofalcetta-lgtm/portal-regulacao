@@ -4,6 +4,7 @@ import { trpc } from '@/lib/trpc';
 interface AutoEncaminharCellProps {
   agendaId: number;
   agendaNome: string;
+  municipio?: string;
   especialidade: string;
   emailUsuario: string;
   encaminhadosAtuais: { reguladorEmail: string; reguladorNome: string }[];
@@ -13,6 +14,7 @@ interface AutoEncaminharCellProps {
 export default function AutoEncaminharCell({
   agendaId,
   agendaNome,
+  municipio,
   especialidade,
   emailUsuario,
   encaminhadosAtuais,
@@ -27,7 +29,7 @@ export default function AutoEncaminharCell({
   });
 
   const handleClick = () => {
-    autoEncaminharMutation.mutate({ agendaId, agendaNome, especialidade });
+    autoEncaminharMutation.mutate({ agendaId, agendaNome, municipio, especialidade });
   };
 
   return (

@@ -90,3 +90,4 @@
 - [x] Atualizar ordenação do menu de Centrais: CRA, 1CRS a 18CRS (incluindo 4CRS)
 - [x] Filtro de agendas específicas (coluna E) atua apenas dentro do Grande Grupo correspondente, sem restringir outros grupos
 - [x] Atualizar valores numéricos das agendas encaminhadas (Cotas, Saldo, Aguardando) com dados mais recentes do banco
+- [x] Corrigir JOIN de encaminhamentos/check-ins para usar nome + município como chave composta (evitar duplicatas)

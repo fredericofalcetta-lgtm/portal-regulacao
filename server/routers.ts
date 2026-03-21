@@ -14,7 +14,7 @@ import {
   agendasConcluidas,
   dicionarioEspecialidades,
 } from "../drizzle/schema";
-import { asc, desc, eq, and } from "drizzle-orm";
+import { asc, desc, eq, and, or, isNull } from "drizzle-orm";
 import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb, syncProtocolosToDb, syncDicionarioToDb } from "./syncSheets";
 import { z } from "zod";
 
@@ -226,6 +226,7 @@ export const appRouter = router({
       const email = ctx.user?.email ?? "";
 
       // Buscar encaminhamentos com JOIN na tabela de dados para pegar informações atualizadas
+      // JOIN usa agendaNome + municipio como chave composta para evitar duplicatas
       const result = await db
         .select({
           id: encaminhamentos.id,
@@ -247,7 +248,16 @@ export const appRouter = router({
           flags: regulacaoData.flags,
         })
         .from(encaminhamentos)
-        .leftJoin(regulacaoData, eq(encaminhamentos.agendaNome, regulacaoData.agenda))
+        .leftJoin(
+          regulacaoData,
+          and(
+            eq(encaminhamentos.agendaNome, regulacaoData.agenda),
+            or(
+              isNull(encaminhamentos.municipio),
+              eq(encaminhamentos.municipio, regulacaoData.municipio)
+            )
+          )
+        )
         .where(eq(encaminhamentos.reguladorEmail, email))
         .orderBy(desc(regulacaoData.indexRegula), desc(encaminhamentos.createdAt));
 
@@ -286,6 +296,7 @@ export const appRouter = router({
       .input(z.object({
         agendaId: z.number(),
         agendaNome: z.string(),
+        municipio: z.string().optional(),
         especialidade: z.string(),
         reguladores: z.array(z.object({
           email: z.string(),
@@ -311,6 +322,7 @@ export const appRouter = router({
           input.reguladores.map(reg => ({
             agendaId: input.agendaId,
             agendaNome: input.agendaNome,
+            municipio: input.municipio ?? null,
             especialidade: input.especialidade,
             reguladorEmail: reg.email,
             reguladorNome: reg.nome,
@@ -327,6 +339,7 @@ export const appRouter = router({
       .input(z.object({
         agendaId: z.number(),
         agendaNome: z.string(),
+        municipio: z.string().optional(),
         especialidade: z.string(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -360,6 +373,7 @@ export const appRouter = router({
           await db.insert(encaminhamentos).values({
             agendaId: input.agendaId,
             agendaNome: input.agendaNome,
+            municipio: input.municipio ?? null,
             especialidade: input.especialidade,
             reguladorEmail: email,
             reguladorNome: nome,
@@ -396,7 +410,16 @@ export const appRouter = router({
           createdAt: checkIns.createdAt,
         })
         .from(checkIns)
-        .leftJoin(regulacaoData, eq(checkIns.agendaNome, regulacaoData.agenda))
+        .leftJoin(
+          regulacaoData,
+          and(
+            eq(checkIns.agendaNome, regulacaoData.agenda),
+            or(
+              isNull(checkIns.municipio),
+              eq(checkIns.municipio, regulacaoData.municipio)
+            )
+          )
+        )
         .where(eq(checkIns.usuarioEmail, email))
         .orderBy(desc(checkIns.createdAt));
     }),
