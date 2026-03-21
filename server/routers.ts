@@ -247,7 +247,7 @@ export const appRouter = router({
           flags: regulacaoData.flags,
         })
         .from(encaminhamentos)
-        .leftJoin(regulacaoData, eq(encaminhamentos.agendaId, regulacaoData.id))
+        .leftJoin(regulacaoData, eq(encaminhamentos.agendaNome, regulacaoData.agenda))
         .where(eq(encaminhamentos.reguladorEmail, email))
         .orderBy(desc(regulacaoData.indexRegula), desc(encaminhamentos.createdAt));
 
@@ -385,18 +385,18 @@ export const appRouter = router({
           municipio: checkIns.municipio,
           especialidade: checkIns.especialidade,
           central: checkIns.central,
-          cotas: checkIns.cotas,
-          saldo: checkIns.saldo,
-          aguardando: checkIns.aguardando,
-          indexRegula: checkIns.indexRegula,
+          // Dados numéricos atualizados via JOIN com regulacao_data
+          cotas: regulacaoData.cotas,
+          saldo: regulacaoData.saldo,
+          aguardando: regulacaoData.aguardando,
+          indexRegula: regulacaoData.indexRegula,
+          flags: regulacaoData.flags,
           usuarioEmail: checkIns.usuarioEmail,
           usuarioNome: checkIns.usuarioNome,
           createdAt: checkIns.createdAt,
-          // Flags atualizadas da planilha via JOIN
-          flags: regulacaoData.flags,
         })
         .from(checkIns)
-        .leftJoin(regulacaoData, eq(checkIns.agendaId, regulacaoData.id))
+        .leftJoin(regulacaoData, eq(checkIns.agendaNome, regulacaoData.agenda))
         .where(eq(checkIns.usuarioEmail, email))
         .orderBy(desc(checkIns.createdAt));
     }),
