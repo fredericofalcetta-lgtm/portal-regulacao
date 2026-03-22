@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Menu, X, BarChart3, Table2, ListChecks, Home, LogOut, UserCircle2, ScrollText, Sun, Moon, ClipboardList, Activity, RefreshCw } from 'lucide-react';
+import { Menu, X, BarChart3, Table2, FolderOpen, Home, LogOut, UserCircle2, Sun, Moon, ClipboardList, Activity, RefreshCw } from 'lucide-react';
 import { Link } from 'wouter';
 import { useRegulador } from '@/contexts/ReguladorContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -87,8 +87,7 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     { href: '/minhas-agendas', page: 'minhas-agendas', icon: ClipboardList, label: 'Minhas Agendas', visible: true },
     { href: '/monitor-checkins', page: 'monitor-checkins', icon: Activity, label: 'Monitor de Check-ins', visible: isAdminOrMonitor },
     { href: '/dashboard', page: 'dashboard', icon: BarChart3, label: 'Dashboard', visible: true },
-    { href: '/prioridades', page: 'prioridades', icon: ListChecks, label: 'Listas de Prioridades', visible: true },
-    { href: '/protocolos', page: 'protocolos', icon: ScrollText, label: 'Protocolos', visible: true },
+    { href: '/documentos', page: 'documentos', icon: FolderOpen, label: 'Documentos', visible: true },
   ].filter(item => item.visible);
 
   // Próximo perfil para troca rápida (alterna entre os disponíveis)

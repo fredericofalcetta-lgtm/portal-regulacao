@@ -3,8 +3,7 @@ import { Route, Switch, useLocation } from 'wouter';
 import Sidebar from '@/components/Sidebar';
 import Regulation from './Regulation';
 import Dashboard from './Dashboard';
-import Prioridades from './Prioridades';
-import Protocolos from './Protocolos';
+import Documentos from './Documentos';
 import Landing from './Landing';
 import MinhasAgendas from './MinhasAgendas';
 import MonitorCheckIns from './MonitorCheckIns';
@@ -37,7 +36,10 @@ export default function Home() {
   // Derivar currentPage da URL sem setState no render
   const currentPage = (() => {
     if (location === '/' || location === '') return 'inicio';
-    return location.replace('/', '');
+    const page = location.replace('/', '');
+    // Redirecionar rotas legadas para a página unificada
+    if (page === 'prioridades' || page === 'protocolos') return 'documentos';
+    return page;
   })();
 
   if (isLoading) {
@@ -66,8 +68,9 @@ export default function Home() {
           <Route path="/dashboard">
             {() => <Dashboard data={rows} onRefresh={handleRefresh} />}
           </Route>
-          <Route path="/prioridades" component={Prioridades} />
-          <Route path="/protocolos" component={Protocolos} />
+          <Route path="/prioridades" component={Documentos} />
+          <Route path="/protocolos" component={Documentos} />
+          <Route path="/documentos" component={Documentos} />
           <Route path="/minhas-agendas" component={MinhasAgendas} />
           <Route path="/monitor-checkins" component={MonitorCheckIns} />
         </Switch>
