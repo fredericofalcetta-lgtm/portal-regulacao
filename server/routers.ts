@@ -226,7 +226,8 @@ export const appRouter = router({
       const email = ctx.user?.email ?? "";
 
       // Buscar encaminhamentos com JOIN na tabela de dados para pegar informações atualizadas
-      // JOIN usa agendaNome + municipio como chave composta para evitar duplicatas
+      // JOIN usa agendaNome + municipio + central como chave composta para evitar duplicatas
+      // Agendas com mesmo nome existem em centrais diferentes (ex: CIRURGIA GERAL ADULTO em 1CRS, 2CRS...)
       const result = await db
         .select({
           id: encaminhamentos.id,
@@ -255,6 +256,10 @@ export const appRouter = router({
             or(
               isNull(encaminhamentos.municipio),
               eq(encaminhamentos.municipio, regulacaoData.municipio)
+            ),
+            or(
+              isNull(encaminhamentos.central),
+              eq(encaminhamentos.central, regulacaoData.central)
             )
           )
         )
@@ -309,6 +314,7 @@ export const appRouter = router({
         agendaId: z.number(),
         agendaNome: z.string(),
         municipio: z.string().optional(),
+        central: z.string().optional(),
         especialidade: z.string(),
         reguladores: z.array(z.object({
           email: z.string(),
@@ -335,6 +341,7 @@ export const appRouter = router({
             agendaId: input.agendaId,
             agendaNome: input.agendaNome,
             municipio: input.municipio ?? null,
+            central: input.central ?? null,
             especialidade: input.especialidade,
             reguladorEmail: reg.email,
             reguladorNome: reg.nome,
@@ -352,6 +359,7 @@ export const appRouter = router({
         agendaId: z.number(),
         agendaNome: z.string(),
         municipio: z.string().optional(),
+        central: z.string().optional(),
         especialidade: z.string(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -386,6 +394,7 @@ export const appRouter = router({
             agendaId: input.agendaId,
             agendaNome: input.agendaNome,
             municipio: input.municipio ?? null,
+            central: input.central ?? null,
             especialidade: input.especialidade,
             reguladorEmail: email,
             reguladorNome: nome,
@@ -429,6 +438,10 @@ export const appRouter = router({
             or(
               isNull(checkIns.municipio),
               eq(checkIns.municipio, regulacaoData.municipio)
+            ),
+            or(
+              isNull(checkIns.central),
+              eq(checkIns.central, regulacaoData.central)
             )
           )
         )

@@ -94,3 +94,4 @@
 - [x] Botão Limpar na seção Encaminhadas para mim em Minhas Agendas (remove todos os encaminhamentos do usuário)
 - [x] Diálogo de confirmação antes de limpar encaminhadas e agendas concluídas
 - [x] Unificar abas Listas de Prioridades e Protocolos em uma única página com Tabs internas
+- [x] Corrigir duplicação de agendas em Encaminhadas para mim (LEFT JOIN retornando múltiplas linhas por encaminhamento)

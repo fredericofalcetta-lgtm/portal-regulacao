@@ -1,0 +1,1 @@
+ALTER TABLE `encaminhamentos` ADD `central` varchar(100);

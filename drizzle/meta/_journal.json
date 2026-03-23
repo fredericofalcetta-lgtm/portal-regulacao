@@ -71,6 +71,13 @@
       "when": 1774086118857,
       "tag": "0009_curvy_ultragirl",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1774274819267,
+      "tag": "0010_fuzzy_warbird",
+      "breakpoints": true
     }
   ]
 }

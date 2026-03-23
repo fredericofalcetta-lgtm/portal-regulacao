@@ -6,6 +6,7 @@ interface EncaminharCellProps {
   agendaId: number;
   agendaNome: string;
   municipio?: string;
+  central?: string;
   especialidade: string;
   encaminhadosAtuais: { reguladorEmail: string; reguladorNome: string }[];
   reguladoresList: { email: string; nome: string }[];
@@ -16,6 +17,7 @@ export default function EncaminharCell({
   agendaId,
   agendaNome,
   municipio,
+  central,
   especialidade,
   encaminhadosAtuais,
   reguladoresList,
@@ -86,6 +88,7 @@ export default function EncaminharCell({
       agendaId,
       agendaNome,
       municipio,
+      central,
       especialidade,
       reguladores: reguladoresSelecionados,
     });

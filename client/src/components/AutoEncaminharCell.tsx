@@ -5,6 +5,7 @@ interface AutoEncaminharCellProps {
   agendaId: number;
   agendaNome: string;
   municipio?: string;
+  central?: string;
   especialidade: string;
   emailUsuario: string;
   encaminhadosAtuais: { reguladorEmail: string; reguladorNome: string }[];
@@ -15,6 +16,7 @@ export default function AutoEncaminharCell({
   agendaId,
   agendaNome,
   municipio,
+  central,
   especialidade,
   emailUsuario,
   encaminhadosAtuais,
@@ -29,7 +31,7 @@ export default function AutoEncaminharCell({
   });
 
   const handleClick = () => {
-    autoEncaminharMutation.mutate({ agendaId, agendaNome, municipio, especialidade });
+    autoEncaminharMutation.mutate({ agendaId, agendaNome, municipio, central, especialidade });
   };
 
   return (

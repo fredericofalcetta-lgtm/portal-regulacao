@@ -1,0 +1,70 @@
+{
+  "query": "\nSELECT agenda, municipio, central, COUNT(*) as total\nFROM regulacao_data\nWHERE agenda = 'CIRURGIA GERAL ADULTO'\nGROUP BY agenda, municipio, central\nORDER BY municipio, central\nLIMIT 10;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user pYL55nDNDyx6afF.a1234ddf1d1d --database hXtc2JpcmaPLqpdM6HSR6t --execute \nSELECT agenda, municipio, central, COUNT(*) as total\nFROM regulacao_data\nWHERE agenda = 'CIRURGIA GERAL ADULTO'\nGROUP BY agenda, municipio, central\nORDER BY municipio, central\nLIMIT 10;\n",
+  "rows": [
+    {
+      "agenda": "CIRURGIA GERAL ADULTO",
+      "municipio": "",
+      "central": "10CRS",
+      "total": "1"
+    },
+    {
+      "agenda": "CIRURGIA GERAL ADULTO",
+      "municipio": "",
+      "central": "11CRS",
+      "total": "1"
+    },
+    {
+      "agenda": "CIRURGIA GERAL ADULTO",
+      "municipio": "",
+      "central": "12CRS",
+      "total": "1"
+    },
+    {
+      "agenda": "CIRURGIA GERAL ADULTO",
+      "municipio": "",
+      "central": "13CRS",
+      "total": "1"
+    },
+    {
+      "agenda": "CIRURGIA GERAL ADULTO",
+      "municipio": "",
+      "central": "14CRS",
+      "total": "1"
+    },
+    {
+      "agenda": "CIRURGIA GERAL ADULTO",
+      "municipio": "",
+      "central": "15CRS",
+      "total": "1"
+    },
+    {
+      "agenda": "CIRURGIA GERAL ADULTO",
+      "municipio": "",
+      "central": "16CRS",
+      "total": "1"
+    },
+    {
+      "agenda": "CIRURGIA GERAL ADULTO",
+      "municipio": "",
+      "central": "17CRS",
+      "total": "1"
+    },
+    {
+      "agenda": "CIRURGIA GERAL ADULTO",
+      "municipio": "",
+      "central": "18CRS",
+      "total": "1"
+    },
+    {
+      "agenda": "CIRURGIA GERAL ADULTO",
+      "municipio": "",
+      "central": "1CRS",
+      "total": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "agenda\tmunicipio\tcentral\ttotal\nCIRURGIA GERAL ADULTO\t\t10CRS\t1\nCIRURGIA GERAL ADULTO\t\t11CRS\t1\nCIRURGIA GERAL ADULTO\t\t12CRS\t1\nCIRURGIA GERAL ADULTO\t\t13CRS\t1\nCIRURGIA GERAL ADULTO\t\t14CRS\t1\nCIRURGIA GERAL ADULTO\t\t15CRS\t1\nCIRURGIA GERAL ADULTO\t\t16CRS\t1\nCIRURGIA GERAL ADULTO\t\t17CRS\t1\nCIRURGIA GERAL ADULTO\t\t18CRS\t1\nCIRURGIA GERAL ADULTO\t\t1CRS\t1\n",
+  "stderr": "",
+  "execution_time_ms": 72
+}
