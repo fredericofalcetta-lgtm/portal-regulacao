@@ -95,3 +95,6 @@
 - [x] Diálogo de confirmação antes de limpar encaminhadas e agendas concluídas
 - [x] Unificar abas Listas de Prioridades e Protocolos em uma única página com Tabs internas
 - [x] Corrigir duplicação de agendas em Encaminhadas para mim (LEFT JOIN retornando múltiplas linhas por encaminhamento)
+- [x] Botão Sincronizar na tela inicial (discreto, visível apenas para administrador/monitoramento)
+- [x] Restringir botão Sincronizar no Dashboard para administrador/monitoramento
+- [x] Expandir sincronização para incluir abas Final, Reguladores e Dicionário - Especialidades

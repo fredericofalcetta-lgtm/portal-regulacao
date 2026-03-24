@@ -14,7 +14,12 @@ export default function Dashboard({ data, onRefresh }: DashboardProps) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const syncMutation = trpc.sheets.sync.useMutation({
+  // Verificar perfil do usuário para controle de acesso ao botão de sincronização
+  const { data: accessData } = trpc.auth.checkAccess.useQuery();
+  const perfil = accessData?.regulador?.perfil?.toLowerCase() ?? '';
+  const podeSync = perfil === 'administrador' || perfil === 'monitoramento';
+
+  const syncMutation = trpc.sheets.syncAll.useMutation({
     onMutate: () => setSyncStatus('syncing'),
     onSuccess: () => {
       setSyncStatus('success');
@@ -112,14 +117,16 @@ export default function Dashboard({ data, onRefresh }: DashboardProps) {
           <p className="text-muted-foreground mt-2">Visão geral das regulações de encaminhamentos</p>
         </div>
         <div className="flex flex-col items-end gap-2">
-          <button
-            onClick={() => syncMutation.mutate()}
-            disabled={syncStatus === 'syncing'}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors ${syncButtonColor}`}
-          >
-            <RefreshCw size={16} className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
-            {syncButtonLabel}
-          </button>
+          {podeSync && (
+            <button
+              onClick={() => syncMutation.mutate()}
+              disabled={syncStatus === 'syncing'}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-colors ${syncButtonColor}`}
+            >
+              <RefreshCw size={16} className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
+              {syncButtonLabel}
+            </button>
+          )}
           <p className="text-xs text-muted-foreground">Atualização automática diária às 08:30</p>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { trpc } from '@/lib/trpc';
 import {
@@ -11,6 +11,7 @@ import {
   TrendingUp,
   AlertCircle,
   Clock,
+  RefreshCw,
 } from 'lucide-react';
 
 const NAV_CARDS = [
@@ -77,9 +78,29 @@ function StatCard({
 }
 
 export default function Landing() {
-  const { data: sheetsData } = trpc.sheets.getData.useQuery();
+  const { data: sheetsData, refetch: refetchData } = trpc.sheets.getData.useQuery();
   const { data: prioridades } = trpc.prioridades.getAll.useQuery();
-  const { data: syncHistory } = trpc.sheets.getSyncHistory.useQuery();
+  const { data: syncHistory, refetch: refetchHistory } = trpc.sheets.getSyncHistory.useQuery();
+
+  // Controle de acesso ao botão de sincronização
+  const { data: accessData } = trpc.auth.checkAccess.useQuery();
+  const perfil = accessData?.regulador?.perfil?.toLowerCase() ?? '';
+  const podeSync = perfil === 'administrador' || perfil === 'monitoramento';
+
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const syncMutation = trpc.sheets.syncAll.useMutation({
+    onMutate: () => setSyncStatus('syncing'),
+    onSuccess: () => {
+      setSyncStatus('success');
+      refetchData();
+      refetchHistory();
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    },
+    onError: () => {
+      setSyncStatus('error');
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    },
+  });
 
   const rows = sheetsData?.rows ?? [];
 
@@ -132,12 +153,35 @@ export default function Landing() {
             Plataforma centralizada para consulta, análise e gestão de encaminhamentos para
             consultas especializadas no sistema de saúde.
           </p>
-          {lastSyncDate && (
-            <div className="flex items-center gap-2 mt-5 text-slate-400 text-sm">
-              <Clock size={14} />
-              <span>Última atualização: {lastSyncDate}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-4 mt-5 flex-wrap">
+            {lastSyncDate && (
+              <div className="flex items-center gap-2 text-slate-400 text-sm">
+                <Clock size={14} />
+                <span>Última atualização: {lastSyncDate}</span>
+              </div>
+            )}
+            {podeSync && (
+              <button
+                onClick={() => syncMutation.mutate()}
+                disabled={syncStatus === 'syncing'}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all border ${
+                  syncStatus === 'syncing'
+                    ? 'border-slate-500 text-slate-400 cursor-not-allowed'
+                    : syncStatus === 'success'
+                    ? 'border-green-500/50 text-green-400 hover:bg-green-500/10'
+                    : syncStatus === 'error'
+                    ? 'border-red-500/50 text-red-400 hover:bg-red-500/10'
+                    : 'border-slate-500/50 text-slate-300 hover:bg-white/10 hover:border-slate-400'
+                }`}
+              >
+                <RefreshCw size={12} className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
+                {syncStatus === 'idle' && 'Sincronizar agora'}
+                {syncStatus === 'syncing' && 'Sincronizando...'}
+                {syncStatus === 'success' && 'Sincronizado!'}
+                {syncStatus === 'error' && 'Erro — tentar novamente'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

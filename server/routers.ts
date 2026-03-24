@@ -110,6 +110,48 @@ export const appRouter = router({
       }
     }),
 
+    // Sincronizar todos os bancos de dados de uma vez (Final + Reguladores + Dicionário)
+    syncAll: protectedProcedure.mutation(async () => {
+      const db = await getDb();
+      const results: Record<string, number> = {};
+      const errors: string[] = [];
+
+      // 1. Aba Final (agendas)
+      try {
+        results.agendas = await syncSheetsToDb();
+      } catch (e) {
+        errors.push(`Agendas: ${e instanceof Error ? e.message : 'erro desconhecido'}`);
+      }
+
+      // 2. Aba Reguladores
+      try {
+        results.reguladores = await syncReguladoresToDb();
+      } catch (e) {
+        errors.push(`Reguladores: ${e instanceof Error ? e.message : 'erro desconhecido'}`);
+      }
+
+      // 3. Dicionário de Especialidades
+      try {
+        results.dicionario = await syncDicionarioToDb();
+      } catch (e) {
+        errors.push(`Dicionário: ${e instanceof Error ? e.message : 'erro desconhecido'}`);
+      }
+
+      if (db && errors.length > 0) {
+        await db.insert(syncLog).values({
+          rowCount: 0,
+          status: 'error',
+          message: `Erros parciais: ${errors.join('; ')}`,
+        });
+      }
+
+      if (errors.length === 3) {
+        throw new Error(`Falha em todas as sincronizações: ${errors.join('; ')}`);
+      }
+
+      return { success: true, results, errors };
+    }),
+
     // Buscar histórico de sincronizações
     getSyncHistory: protectedProcedure.query(async () => {
       const db = await getDb();
