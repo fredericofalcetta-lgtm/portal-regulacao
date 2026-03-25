@@ -32,6 +32,9 @@ export default function MonitorCheckIns() {
       cotas?: number | null;
       saldo?: number | null;
       aguardando?: number | null;
+      aguardando28d?: number | null;
+      aguardando60d?: number | null;
+      aguardando90d?: number | null;
       indexRegula?: number | null;
       reguladores: { nome: string; email: string; desde: Date }[];
     }>();
@@ -46,6 +49,9 @@ export default function MonitorCheckIns() {
           cotas: ci.cotas,
           saldo: ci.saldo,
           aguardando: ci.aguardando,
+          aguardando28d: ci.aguardando28d,
+          aguardando60d: ci.aguardando60d,
+          aguardando90d: ci.aguardando90d,
           indexRegula: ci.indexRegula,
           reguladores: [],
         });
@@ -135,6 +141,9 @@ export default function MonitorCheckIns() {
                   <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Cotas</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Saldo</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aguardando</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;28d</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;60d</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;90d</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Index</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Regulando</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Check-in em</th>
@@ -153,6 +162,9 @@ export default function MonitorCheckIns() {
                     <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{agenda.cotas ?? '—'}</td>
                     <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{agenda.saldo ?? '—'}</td>
                     <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{agenda.aguardando ?? '—'}</td>
+                    <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{agenda.aguardando28d ?? '—'}</td>
+                    <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{agenda.aguardando60d ?? '—'}</td>
+                    <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{agenda.aguardando90d ?? '—'}</td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-block px-2 py-0.5 rounded text-sm ${getBadgeColor(agenda.indexRegula)}`}>
                         {agenda.indexRegula != null ? agenda.indexRegula.toFixed(2) : '—'}

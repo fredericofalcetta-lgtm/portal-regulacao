@@ -23,6 +23,10 @@ export async function syncSheetsToDb(): Promise<number> {
   // Limpar dados existentes e inserir novos
   await db.delete(regulacaoData);
 
+  // Novo cabeçalho (a partir de 2026-03):
+  // [0] Agenda, [1] Município, [2] Cotas, [3] Saldo, [4] Aguardando,
+  // [5] Autorizadas, [6] Aut/Cotas, [7] IndexRegula,
+  // [8] >28, [9] >60d, [10] >90d, [11] Central, [12] Especialidade, [13] Flags
   const insertRows = dataRows
     .filter(row => row.length >= 8)
     .map(row => ({
@@ -34,9 +38,12 @@ export async function syncSheetsToDb(): Promise<number> {
       autorizadas: row[5] != null ? parseInt(String(row[5])) || null : null,
       autCotas: row[6] != null ? String(row[6]) : null,
       indexRegula: row[7] != null ? parseFloat(String(row[7])) || null : null,
-      central: row[8] != null ? String(row[8]) : null,
-      especialidade: row[9] != null ? String(row[9]) : null,
-      flags: row[10] != null ? String(row[10]) : null,
+      aguardando28d: row[8] != null ? parseInt(String(row[8])) || null : null,
+      aguardando60d: row[9] != null ? parseInt(String(row[9])) || null : null,
+      aguardando90d: row[10] != null ? parseInt(String(row[10])) || null : null,
+      central: row[11] != null ? String(row[11]) : null,
+      especialidade: row[12] != null ? String(row[12]) : null,
+      flags: row[13] != null ? String(row[13]) : null,
     }));
 
   if (insertRows.length > 0) {

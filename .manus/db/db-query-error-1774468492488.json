@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE regulacao_data \n  ADD COLUMN aguardando_28d INT NULL AFTER index_regula,\n  ADD COLUMN aguardando_60d INT NULL AFTER aguardando_28d,\n  ADD COLUMN aguardando_90d INT NULL AFTER aguardando_60d;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user pYL55nDNDyx6afF.a1234ddf1d1d --database hXtc2JpcmaPLqpdM6HSR6t --execute ALTER TABLE regulacao_data \n  ADD COLUMN aguardando_28d INT NULL AFTER index_regula,\n  ADD COLUMN aguardando_60d INT NULL AFTER aguardando_28d,\n  ADD COLUMN aguardando_90d INT NULL AFTER aguardando_60d;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'aguardando_28d' in 'regulacao_data'"
+  ]
+}

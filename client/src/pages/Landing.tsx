@@ -113,7 +113,7 @@ export default function Landing() {
     const totalAguardando = rows.reduce((sum, r) => sum + (Number(r[4]) || 0), 0);
     const totalAlta = rows.filter(r => Number(r[7]) > 3).length;
 
-    const especialidades = new Set(rows.map(r => r[9]).filter(Boolean));
+    const especialidades = new Set(rows.map(r => r[12]).filter(Boolean));
 
     return {
       totalAgendas: rows.length,

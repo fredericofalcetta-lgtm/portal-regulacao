@@ -74,18 +74,27 @@ export const appRouter = router({
         .from(regulacaoData)
         .orderBy(desc(regulacaoData.indexRegula));
 
+      // Layout de índices (novo cabeçalho a partir de 2026-03):
+      // [0] agenda, [1] municipio, [2] cotas, [3] saldo, [4] aguardando,
+      // [5] autorizadas, [6] autCotas, [7] indexRegula,
+      // [8] aguardando28d, [9] aguardando60d, [10] aguardando90d,
+      // [11] central, [12] especialidade, [13] flags, [14] id
       const rows = data.map(row => [
-        row.agenda ?? "",
-        row.municipio ?? "",
-        row.cotas ?? 0,
-        row.saldo ?? 0,
-        row.aguardando ?? 0,
-        row.autorizadas ?? 0,
-        row.autCotas ?? "",
-        row.indexRegula ?? 0,
-        row.central ?? "",
-        row.especialidade ?? "",
-        row.id, // índice 10: id da linha para encaminhamentos e check-ins
+        row.agenda ?? "",          // 0
+        row.municipio ?? "",       // 1
+        row.cotas ?? 0,            // 2
+        row.saldo ?? 0,            // 3
+        row.aguardando ?? 0,       // 4
+        row.autorizadas ?? 0,      // 5
+        row.autCotas ?? "",        // 6
+        row.indexRegula ?? 0,      // 7
+        row.aguardando28d ?? 0,    // 8
+        row.aguardando60d ?? 0,    // 9
+        row.aguardando90d ?? 0,    // 10
+        row.central ?? "",         // 11
+        row.especialidade ?? "",   // 12
+        row.flags ?? "",           // 13
+        row.id,                    // 14: id para encaminhamentos e check-ins
       ]);
 
       return { rows };
@@ -287,6 +296,9 @@ export const appRouter = router({
           cotas: regulacaoData.cotas,
           saldo: regulacaoData.saldo,
           aguardando: regulacaoData.aguardando,
+          aguardando28d: regulacaoData.aguardando28d,
+          aguardando60d: regulacaoData.aguardando60d,
+          aguardando90d: regulacaoData.aguardando90d,
           indexRegula: regulacaoData.indexRegula,
           flags: regulacaoData.flags,
         })
@@ -466,6 +478,9 @@ export const appRouter = router({
           cotas: regulacaoData.cotas,
           saldo: regulacaoData.saldo,
           aguardando: regulacaoData.aguardando,
+          aguardando28d: regulacaoData.aguardando28d,
+          aguardando60d: regulacaoData.aguardando60d,
+          aguardando90d: regulacaoData.aguardando90d,
           indexRegula: regulacaoData.indexRegula,
           flags: regulacaoData.flags,
           usuarioEmail: checkIns.usuarioEmail,
@@ -496,8 +511,41 @@ export const appRouter = router({
       const db = await getDb();
       if (!db) return [];
       return db
-        .select()
+        .select({
+          id: checkIns.id,
+          agendaId: checkIns.agendaId,
+          agendaNome: checkIns.agendaNome,
+          municipio: checkIns.municipio,
+          especialidade: checkIns.especialidade,
+          central: checkIns.central,
+          // Dados numéricos atualizados via JOIN com regulacao_data
+          cotas: regulacaoData.cotas,
+          saldo: regulacaoData.saldo,
+          aguardando: regulacaoData.aguardando,
+          aguardando28d: regulacaoData.aguardando28d,
+          aguardando60d: regulacaoData.aguardando60d,
+          aguardando90d: regulacaoData.aguardando90d,
+          indexRegula: regulacaoData.indexRegula,
+          flags: regulacaoData.flags,
+          usuarioEmail: checkIns.usuarioEmail,
+          usuarioNome: checkIns.usuarioNome,
+          createdAt: checkIns.createdAt,
+        })
         .from(checkIns)
+        .leftJoin(
+          regulacaoData,
+          and(
+            eq(checkIns.agendaNome, regulacaoData.agenda),
+            or(
+              isNull(checkIns.municipio),
+              eq(checkIns.municipio, regulacaoData.municipio)
+            ),
+            or(
+              isNull(checkIns.central),
+              eq(checkIns.central, regulacaoData.central)
+            )
+          )
+        )
         .orderBy(desc(checkIns.createdAt));
     }),
 

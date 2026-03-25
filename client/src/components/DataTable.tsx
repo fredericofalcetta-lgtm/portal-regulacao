@@ -40,7 +40,10 @@ const TableRow = memo(function TableRow({
   emailUsuario: string;
   onUpdate: () => void;
 }) {
-  const agendaId = typeof row[10] === 'number' ? row[10] : 0;
+  // Layout de índices: [0]agenda [1]municipio [2]cotas [3]saldo [4]aguardando
+  // [5]autorizadas [6]autCotas [7]indexRegula [8]>28d [9]>60d [10]>90d
+  // [11]central [12]especialidade [13]flags [14]id
+  const agendaId = typeof row[14] === 'number' ? row[14] : 0;
   const indexValue = parseFloat(String(row[7])) || 0;
 
   const getIndexRegulaColor = (value: number): string => {
@@ -71,8 +74,8 @@ const TableRow = memo(function TableRow({
                 agendaId={agendaId}
                 agendaNome={String(row[0])}
                 municipio={String(row[1])}
-                central={String(row[8])}
-                especialidade={String(row[9])}
+                central={String(row[11])}
+                especialidade={String(row[12])}
                 encaminhadosAtuais={encaminhadosAtuais}
                 reguladoresList={reguladoresList}
                 onUpdate={onUpdate}
@@ -82,8 +85,8 @@ const TableRow = memo(function TableRow({
                 agendaId={agendaId}
                 agendaNome={String(row[0])}
                 municipio={String(row[1])}
-                central={String(row[8])}
-                especialidade={String(row[9])}
+                central={String(row[11])}
+                especialidade={String(row[12])}
                 emailUsuario={emailUsuario}
                 encaminhadosAtuais={encaminhadosAtuais}
                 onUpdate={onUpdate}
@@ -102,8 +105,8 @@ const TableRow = memo(function TableRow({
             agendaId={agendaId}
             agendaNome={String(row[0])}
             municipio={String(row[1])}
-            especialidade={String(row[9])}
-            central={String(row[8])}
+            especialidade={String(row[12])}
+            central={String(row[11])}
             cotas={typeof row[2] === 'number' ? row[2] : undefined}
             saldo={typeof row[3] === 'number' ? row[3] : undefined}
             aguardando={typeof row[4] === 'number' ? row[4] : undefined}
@@ -143,9 +146,21 @@ const TableRow = memo(function TableRow({
           {indexValue.toFixed(2)}
         </span>
       </td>
+      {/* >28d */}
+      <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
+        {row[8] ? String(row[8]) : '—'}
+      </td>
+      {/* >60d */}
+      <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
+        {row[9] ? String(row[9]) : '—'}
+      </td>
+      {/* >90d */}
+      <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
+        {row[10] ? String(row[10]) : '—'}
+      </td>
       {/* Central */}
       <td className="px-3 py-3 text-center text-xs font-medium text-foreground">
-        {String(row[8])}
+        {String(row[11])}
       </td>
     </tr>
   );
@@ -219,8 +234,8 @@ export default function DataTable({
   const filteredAndSortedRows = useMemo(() => {
     let filtered = rows.filter(row => {
       const agenda = String(row[0]);
-      const central = String(row[8]);
-      const especialidadeBruta = String(row[9]);
+      const central = String(row[11]);
+      const especialidadeBruta = String(row[12]);
 
       const matchesAgenda = selectedAgendas.size === 0 || selectedAgendas.has(agenda);
       const matchesCentral = selectedCentrais.size === 0 || selectedCentrais.has(central);
@@ -234,7 +249,7 @@ export default function DataTable({
     });
 
     filtered.sort((a, b) => {
-      const numericColumns = [2, 3, 4, 5, 6, 7];
+      const numericColumns = [2, 3, 4, 5, 6, 7, 8, 9, 10];
       if (numericColumns.includes(sortColumn)) {
         const aVal = parseFloat(String(a[sortColumn])) || 0;
         const bVal = parseFloat(String(b[sortColumn])) || 0;
@@ -349,14 +364,44 @@ export default function DataTable({
                   <SortIcon col={7} />
                 </div>
               </th>
-              {/* Central */}
+              {/* >28d */}
               <th
                 onClick={() => onSort(8)}
                 className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
               >
                 <div className="flex items-center justify-center space-x-1">
-                  <span>Central</span>
+                  <span>&gt;28d</span>
                   <SortIcon col={8} />
+                </div>
+              </th>
+              {/* >60d */}
+              <th
+                onClick={() => onSort(9)}
+                className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
+              >
+                <div className="flex items-center justify-center space-x-1">
+                  <span>&gt;60d</span>
+                  <SortIcon col={9} />
+                </div>
+              </th>
+              {/* >90d */}
+              <th
+                onClick={() => onSort(10)}
+                className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
+              >
+                <div className="flex items-center justify-center space-x-1">
+                  <span>&gt;90d</span>
+                  <SortIcon col={10} />
+                </div>
+              </th>
+              {/* Central */}
+              <th
+                onClick={() => onSort(11)}
+                className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
+              >
+                <div className="flex items-center justify-center space-x-1">
+                  <span>Central</span>
+                  <SortIcon col={11} />
                 </div>
               </th>
             </tr>
@@ -364,13 +409,13 @@ export default function DataTable({
           <tbody>
             {filteredAndSortedRows.length === 0 ? (
               <tr>
-                <td colSpan={(isAdminOuMonitor || isRegulador) ? 9 : 8} className="px-6 py-8 text-center">
+                <td colSpan={(isAdminOuMonitor || isRegulador) ? 12 : 11} className="px-6 py-8 text-center">
                   <p className="text-muted-foreground">Nenhum resultado encontrado</p>
                 </td>
               </tr>
             ) : (
               filteredAndSortedRows.map((row, rowIndex) => {
-                const agendaId = typeof row[10] === 'number' ? row[10] : 0;
+                const agendaId = typeof row[14] === 'number' ? row[14] : 0;
                 return (
                   <TableRow
                     key={agendaId > 0 ? agendaId : rowIndex}

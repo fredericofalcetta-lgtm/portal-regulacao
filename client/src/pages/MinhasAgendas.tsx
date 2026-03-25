@@ -24,6 +24,9 @@ interface AgendaRowProps {
   cotas?: number | null;
   saldo?: number | null;
   aguardando?: number | null;
+  aguardando28d?: number | null;
+  aguardando60d?: number | null;
+  aguardando90d?: number | null;
   indexRegula?: number | null;
   flags?: string | null;
   temCheckIn: boolean;
@@ -50,6 +53,9 @@ function AgendaRow({
   cotas,
   saldo,
   aguardando,
+  aguardando28d,
+  aguardando60d,
+  aguardando90d,
   indexRegula,
   flags,
   temCheckIn,
@@ -88,6 +94,9 @@ function AgendaRow({
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{cotas ?? '—'}</td>
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{saldo ?? '—'}</td>
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando ?? '—'}</td>
+      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando28d ?? '—'}</td>
+      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando60d ?? '—'}</td>
+      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando90d ?? '—'}</td>
       <td className="px-4 py-3 text-center">
         <span className={`inline-block px-2 py-0.5 rounded text-sm ${getBadgeColor(indexRegula)}`}>
           {indexRegula != null ? indexRegula.toFixed(2) : '—'}
@@ -205,6 +214,9 @@ function TableHeader({
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Cotas</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Saldo</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aguardando</th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;28d</th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;60d</th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;90d</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Index</th>
         {showFlags && (
           <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Flags</th>
@@ -431,6 +443,9 @@ export default function MinhasAgendas() {
                         cotas={ci.cotas}
                         saldo={ci.saldo}
                         aguardando={ci.aguardando}
+                        aguardando28d={ci.aguardando28d}
+                        aguardando60d={ci.aguardando60d}
+                        aguardando90d={ci.aguardando90d}
                         indexRegula={ci.indexRegula}
                         flags={ci.flags}
                         temCheckIn={true}
@@ -445,7 +460,7 @@ export default function MinhasAgendas() {
                       />
                       {/* Submenu de agendas relacionadas */}
                       <tr key={`detalhes-${ci.id}`}>
-                        <td colSpan={9} className="p-0">
+                        <td colSpan={12} className="p-0">
                           <CheckInDetalhes
                             agendaId={ci.agendaId}
                             especialidade={ci.especialidade}
@@ -539,6 +554,9 @@ export default function MinhasAgendas() {
                       cotas={enc.cotas}
                       saldo={enc.saldo}
                       aguardando={enc.aguardando}
+                      aguardando28d={enc.aguardando28d}
+                      aguardando60d={enc.aguardando60d}
+                      aguardando90d={enc.aguardando90d}
                       indexRegula={enc.indexRegula}
                       temCheckIn={checkInIds.has(enc.agendaId)}
                       encaminhadoPor={enc.encaminhadoPorNome}

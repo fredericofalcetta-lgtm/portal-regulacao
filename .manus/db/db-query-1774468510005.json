@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE regulacao_data ADD COLUMN aguardando_28d INT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user pYL55nDNDyx6afF.a1234ddf1d1d --database hXtc2JpcmaPLqpdM6HSR6t --execute ALTER TABLE regulacao_data ADD COLUMN aguardando_28d INT NULL;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 306
+}

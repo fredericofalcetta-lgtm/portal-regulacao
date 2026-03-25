@@ -99,3 +99,9 @@
 - [x] Restringir botão Sincronizar no Dashboard para administrador/monitoramento
 - [x] Expandir sincronização para incluir abas Final, Reguladores e Dicionário - Especialidades
 - [x] Corrigir botão Sincronizar não aparecendo para administrador/monitoramento (comparação de perfil)
+- [x] Migrar banco: adicionar colunas aguardando28d, aguardando60d, aguardando90d na tabela regulacao_data
+- [x] Atualizar syncSheets para mapear as novas colunas >28, >60d, >90d da aba Final
+- [x] Atualizar procedures do backend para retornar as novas colunas
+- [x] Exibir >28d, >60d, >90d na tabela de Regulação
+- [x] Exibir >28d, >60d, >90d no Dashboard (métricas e gráficos)
+- [x] Exibir >28d, >60d, >90d em Minhas Agendas e Monitor de Check-ins
