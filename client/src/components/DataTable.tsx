@@ -178,10 +178,11 @@ export default function DataTable({
   perfilUsuario,
   emailUsuario,
 }: DataTableProps) {
+  const perfilLower = perfilUsuario.toLowerCase();
   const isAdminOuMonitor =
-    perfilUsuario.toLowerCase() === 'administrador' ||
-    perfilUsuario.toLowerCase() === 'monitoramento';
-  const isRegulador = perfilUsuario.toLowerCase() === 'regulador';
+    perfilLower.includes('administrador') ||
+    perfilLower.includes('monitoramento');
+  const isRegulador = perfilLower.includes('regulador');
 
   // Uma única query para reguladores — compartilhada por todas as linhas
   const { data: reguladoresList = [] } = trpc.reguladores.listarReguladores.useQuery(undefined, {

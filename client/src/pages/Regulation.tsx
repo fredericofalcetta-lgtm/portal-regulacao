@@ -87,7 +87,7 @@ export default function Regulation({ data }: RegulationProps) {
 
       return data.filter(row => {
         const nomeAgenda = String(row[0]).trim().toLowerCase();
-        const especialidade = String(row[9]).trim().toLowerCase();
+        const especialidade = String(row[12]).trim().toLowerCase();
 
         // Verificar a qual grupo do regulador esta linha pertence
         const gruposDaLinha = gruposDoRegulador.filter(grupo =>
@@ -112,7 +112,7 @@ export default function Regulation({ data }: RegulationProps) {
     // Sem agendas específicas: filtrar apenas por Grande Grupo
     if (gruposDoRegulador.length > 0) {
       return data.filter(row => {
-        const especialidade = String(row[9]).toLowerCase();
+        const especialidade = String(row[12]).toLowerCase();
         return gruposDoRegulador.some(grupo => especialidade.includes(grupo));
       });
     }
@@ -153,9 +153,10 @@ export default function Regulation({ data }: RegulationProps) {
     const especialidadesSet = new Set<string>();
 
     dadosFiltradosPorPerfil.forEach(row => {
-      centraisSet.add(String(row[8]));
+      const central = String(row[11]);
+      if (central) centraisSet.add(central);
       // Expande especialidades compostas
-      expandirEspecialidades(String(row[9])).forEach(esp => especialidadesSet.add(esp));
+      expandirEspecialidades(String(row[12])).forEach(esp => { if (esp) especialidadesSet.add(esp); });
     });
 
     return {
@@ -170,8 +171,8 @@ export default function Regulation({ data }: RegulationProps) {
     const agendasSet = new Set<string>();
 
     dadosFiltradosPorPerfil.forEach(row => {
-      const especialidadesBruto = String(row[9]);
-      const central = String(row[8]);
+      const especialidadesBruto = String(row[12]);
+      const central = String(row[11]);
 
       const partes = expandirEspecialidades(especialidadesBruto);
       const matchEsp =

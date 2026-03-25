@@ -105,3 +105,5 @@
 - [x] Exibir >28d, >60d, >90d na tabela de Regulação
 - [x] Exibir >28d, >60d, >90d no Dashboard (métricas e gráficos)
 - [x] Exibir >28d, >60d, >90d em Minhas Agendas e Monitor de Check-ins
+- [x] Corrigir filtros de Central e Especialidade sem opções na aba Regulação (índices deslocados)
+- [x] Corrigir colunas >28d, >60d, >90d não populadas (índices errados no syncSheets ou getData)

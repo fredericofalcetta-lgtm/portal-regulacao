@@ -1,0 +1,23 @@
+{
+  "query": "SELECT \n  COUNT(*) as total,\n  COUNT(aguardando_28d) as com_28d,\n  COUNT(aguardando_60d) as com_60d,\n  COUNT(aguardando_90d) as com_90d\nFROM regulacao_data;\n\nSELECT agenda, municipio, central, aguardando, aguardando_28d, aguardando_60d, aguardando_90d \nFROM regulacao_data \nWHERE aguardando_28d IS NOT NULL \nLIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user pYL55nDNDyx6afF.a1234ddf1d1d --database hXtc2JpcmaPLqpdM6HSR6t --execute SELECT \n  COUNT(*) as total,\n  COUNT(aguardando_28d) as com_28d,\n  COUNT(aguardando_60d) as com_60d,\n  COUNT(aguardando_90d) as com_90d\nFROM regulacao_data;\n\nSELECT agenda, municipio, central, aguardando, aguardando_28d, aguardando_60d, aguardando_90d \nFROM regulacao_data \nWHERE aguardando_28d IS NOT NULL \nLIMIT 5;",
+  "rows": [
+    {
+      "total": "3602",
+      "com_28d": "267",
+      "com_60d": "189",
+      "com_90d": "125"
+    }
+  ],
+  "messages": [
+    "agenda\tmunicipio\tcentral\taguardando\taguardando_28d\taguardando_60d\taguardando_90d",
+    "CIRURGIA CARDIACA ADULTO\tPORTO ALEGRE\tCRA\t22\t2\tNULL\tNULL",
+    "CARDIOLOGIA ADULTO\t\t1CRS\t38\t3\t2\t2",
+    "CARDIOLOGIA ADULTO\tNOVO HAMBURGO\t1CRS\t282\t169\t139\t102",
+    "CARDIOLOGIA ADULTO\tCANOAS\t1CRS\t1248\t1081\t892\t694",
+    "CARDIOLOGIA ARRITMIA\t\t1CRS\t28\t27\t25\t24"
+  ],
+  "stdout": "total\tcom_28d\tcom_60d\tcom_90d\n3602\t267\t189\t125\nagenda\tmunicipio\tcentral\taguardando\taguardando_28d\taguardando_60d\taguardando_90d\nCIRURGIA CARDIACA ADULTO\tPORTO ALEGRE\tCRA\t22\t2\tNULL\tNULL\nCARDIOLOGIA ADULTO\t\t1CRS\t38\t3\t2\t2\nCARDIOLOGIA ADULTO\tNOVO HAMBURGO\t1CRS\t282\t169\t139\t102\nCARDIOLOGIA ADULTO\tCANOAS\t1CRS\t1248\t1081\t892\t694\nCARDIOLOGIA ARRITMIA\t\t1CRS\t28\t27\t25\t24\n",
+  "stderr": "",
+  "execution_time_ms": 110
+}
