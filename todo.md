@@ -98,3 +98,4 @@
 - [x] Botão Sincronizar na tela inicial (discreto, visível apenas para administrador/monitoramento)
 - [x] Restringir botão Sincronizar no Dashboard para administrador/monitoramento
 - [x] Expandir sincronização para incluir abas Final, Reguladores e Dicionário - Especialidades
+- [x] Corrigir botão Sincronizar não aparecendo para administrador/monitoramento (comparação de perfil)

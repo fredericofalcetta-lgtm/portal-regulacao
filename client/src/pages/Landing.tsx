@@ -83,9 +83,10 @@ export default function Landing() {
   const { data: syncHistory, refetch: refetchHistory } = trpc.sheets.getSyncHistory.useQuery();
 
   // Controle de acesso ao botão de sincronização
+  // O campo perfil pode conter valores compostos como "ADMINISTRADOR, REGULADOR"
   const { data: accessData } = trpc.auth.checkAccess.useQuery();
   const perfil = accessData?.regulador?.perfil?.toLowerCase() ?? '';
-  const podeSync = perfil === 'administrador' || perfil === 'monitoramento';
+  const podeSync = perfil.includes('administrador') || perfil.includes('monitoramento');
 
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
   const syncMutation = trpc.sheets.syncAll.useMutation({
