@@ -126,6 +126,8 @@ export default function CheckInDetalhes({ agendaId, especialidade, central }: Ch
                           <th className="px-3 py-2 text-center font-semibold text-foreground">Cotas</th>
                           <th className="px-3 py-2 text-center font-semibold text-foreground">Saldo</th>
                           <th className="px-3 py-2 text-center font-semibold text-foreground">Aguardando</th>
+                          <th className="px-3 py-2 text-center font-semibold text-foreground">Autorizadas</th>
+                          <th className="px-3 py-2 text-center font-semibold text-foreground">Aut/Cotas</th>
                           <th className="px-3 py-2 text-center font-semibold text-foreground">Índice</th>
                         </tr>
                       </thead>
@@ -140,6 +142,10 @@ export default function CheckInDetalhes({ agendaId, especialidade, central }: Ch
                             <td className="px-3 py-1.5 text-center text-foreground">{a.cotas ?? '—'}</td>
                             <td className="px-3 py-1.5 text-center text-foreground">{a.saldo ?? '—'}</td>
                             <td className="px-3 py-1.5 text-center text-foreground">{a.aguardando ?? '—'}</td>
+                            <td className="px-3 py-1.5 text-center text-foreground">{a.autorizadas ?? '—'}</td>
+                            <td className="px-3 py-1.5 text-center text-foreground">
+                              {a.autCotas != null ? Number(a.autCotas).toFixed(2) : '—'}
+                            </td>
                             <td className={`px-3 py-1.5 text-center ${getIndexColor(a.indexRegula)}`}>
                               {a.indexRegula != null ? a.indexRegula.toFixed(2) : '—'}
                             </td>

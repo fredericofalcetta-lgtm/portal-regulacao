@@ -680,6 +680,8 @@ export const appRouter = router({
             cotas: a.cotas,
             saldo: a.saldo,
             aguardando: a.aguardando,
+            autorizadas: a.autorizadas,
+            autCotas: a.autCotas,
             indexRegula: a.indexRegula,
             especialidade: a.especialidade,
           }));
