@@ -39,11 +39,14 @@ interface AgendaRowProps {
   isCheckInPending: boolean;
   isRemoverPending: boolean;
   isConcluirPending?: boolean;
-  showFlags?: boolean;
-  showConcluir?: boolean;
+  // Controles de colunas extras (após Flags)
   showEncaminhadoPor?: boolean;
   showConcluidoEm?: boolean;
+  showCheckIn?: boolean;
+  showConcluir?: boolean;
+  showStatus?: boolean;
   isConcluida?: boolean;
+  dateLabel?: string;
 }
 
 function AgendaRow({
@@ -68,11 +71,13 @@ function AgendaRow({
   isCheckInPending,
   isRemoverPending,
   isConcluirPending = false,
-  showFlags = false,
-  showConcluir = false,
   showEncaminhadoPor = false,
   showConcluidoEm = false,
+  showCheckIn = false,
+  showConcluir = false,
+  showStatus = false,
   isConcluida = false,
+  dateLabel = 'Check-in em',
 }: AgendaRowProps) {
   const getBadgeColor = (value: number | null | undefined): string => {
     if (!value) return 'bg-muted text-muted-foreground';
@@ -82,60 +87,61 @@ function AgendaRow({
     return 'bg-muted text-muted-foreground';
   };
 
+  const dateDisplay = showConcluidoEm && concluidoEm
+    ? new Date(concluidoEm).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })
+    : new Date(createdAt).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+
   return (
     <tr className={`border-t border-border hover:bg-secondary/50 transition-colors ${isConcluida ? 'opacity-75' : ''}`}>
+      {/* Agenda + Município */}
       <td className="px-4 py-3">
         <div className="font-medium text-sm text-foreground">{agendaNome}</div>
-        {municipio && (
-          <div className="text-xs text-muted-foreground mt-0.5">{municipio}</div>
-        )}
+        {municipio && <div className="text-xs text-muted-foreground mt-0.5">{municipio}</div>}
       </td>
+      {/* Central */}
       <td className="px-4 py-3 text-center text-xs text-foreground">{central ?? '—'}</td>
+      {/* Cotas */}
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{cotas ?? '—'}</td>
+      {/* Saldo */}
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{saldo ?? '—'}</td>
+      {/* Aguardando */}
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando ?? '—'}</td>
+      {/* >28d */}
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando28d ?? '—'}</td>
+      {/* >60d */}
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando60d ?? '—'}</td>
+      {/* >90d */}
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando90d ?? '—'}</td>
+      {/* IndexRegula */}
       <td className="px-4 py-3 text-center">
         <span className={`inline-block px-2 py-0.5 rounded text-sm ${getBadgeColor(indexRegula)}`}>
           {indexRegula != null ? indexRegula.toFixed(2) : '—'}
         </span>
       </td>
-      {showFlags && (
-        <td className="px-4 py-3 text-center">
-          {flags ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300">
-              <Flag size={10} />
-              {flags}
-            </span>
-          ) : (
-            <span className="text-xs text-muted-foreground">—</span>
-          )}
-        </td>
-      )}
+      {/* Flags — sempre presente para manter alinhamento */}
+      <td className="px-4 py-3 text-center">
+        {flags ? (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300">
+            <Flag size={10} />
+            {flags}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        )}
+      </td>
+
+      {/* ── Colunas extras contextuais (após Flags) ── */}
+
+      {/* Encaminhado por — só em "Encaminhadas para mim" */}
       {showEncaminhadoPor && (
         <td className="px-4 py-3 text-center text-xs text-muted-foreground">
           {encaminhadoPor ?? '—'}
         </td>
       )}
-      <td className="px-4 py-3 text-center text-xs text-muted-foreground">
-        {showConcluidoEm && concluidoEm
-          ? new Date(concluidoEm).toLocaleString('pt-BR', {
-              hour: '2-digit',
-              minute: '2-digit',
-              day: '2-digit',
-              month: '2-digit',
-            })
-          : new Date(createdAt).toLocaleString('pt-BR', {
-              hour: '2-digit',
-              minute: '2-digit',
-              day: '2-digit',
-              month: '2-digit',
-            })}
-      </td>
-      {/* Botão Check-in/Check-out — só aparece se onCheckIn estiver definido */}
-      {onCheckIn !== undefined && (
+      {/* Data */}
+      <td className="px-4 py-3 text-center text-xs text-muted-foreground">{dateDisplay}</td>
+      {/* Check-in/out */}
+      {showCheckIn && onCheckIn !== undefined && (
         <td className="px-4 py-3 text-center">
           <button
             onClick={onCheckIn}
@@ -158,7 +164,7 @@ function AgendaRow({
           </button>
         </td>
       )}
-      {/* Botão Concluído — só aparece nos check-ins ativos */}
+      {/* Concluído — só em Check-ins ativos */}
       {showConcluir && onConcluir !== undefined && (
         <td className="px-4 py-3 text-center">
           <button
@@ -167,17 +173,13 @@ function AgendaRow({
             title="Marcar agenda como concluída"
             className="flex items-center gap-1 mx-auto px-2 py-1 rounded text-xs font-medium transition-colors disabled:opacity-50 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/50"
           >
-            {isConcluirPending ? (
-              <Loader2 size={11} className="animate-spin" />
-            ) : (
-              <CheckCheck size={11} />
-            )}
+            {isConcluirPending ? <Loader2 size={11} className="animate-spin" /> : <CheckCheck size={11} />}
             Concluído
           </button>
         </td>
       )}
-      {/* Coluna de status para agendas concluídas */}
-      {isConcluida && (
+      {/* Status — só em Agendas concluídas */}
+      {showStatus && (
         <td className="px-4 py-3 text-center">
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">
             <CheckCircle2 size={10} />
@@ -190,25 +192,26 @@ function AgendaRow({
 }
 
 // ─── Cabeçalho da tabela ─────────────────────────────────────────────────────
+// Colunas fixas (até Flags): Agenda | Central | Cotas | Saldo | Aguardando | >28d | >60d | >90d | Index | Flags
+// Colunas extras (contextuais): Encaminhado por? | Data | Check-in? | Ação? | Status?
 
 function TableHeader({
   showEncaminhadoPor = false,
-  showCheckIn = true,
+  showCheckIn = false,
   showConcluir = false,
-  showFlags = false,
   showStatus = false,
   dateLabel = 'Check-in em',
 }: {
   showEncaminhadoPor?: boolean;
   showCheckIn?: boolean;
   showConcluir?: boolean;
-  showFlags?: boolean;
   showStatus?: boolean;
   dateLabel?: string;
 }) {
   return (
     <thead className="bg-secondary">
       <tr>
+        {/* Colunas fixas — iguais nas três tabelas */}
         <th className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Agenda</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Central</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Cotas</th>
@@ -218,15 +221,12 @@ function TableHeader({
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;60d</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;90d</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Index</th>
-        {showFlags && (
-          <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Flags</th>
-        )}
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Flags</th>
+        {/* Colunas extras contextuais */}
         {showEncaminhadoPor && (
           <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Encaminhado por</th>
         )}
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">
-          {dateLabel}
-        </th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">{dateLabel}</th>
         {showCheckIn && (
           <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Check-in</th>
         )}
@@ -269,98 +269,57 @@ export default function MinhasAgendas() {
   });
 
   const limparConcluidasMutation = trpc.agendasConcluidas.limpar.useMutation({
-    onSuccess: () => {
-      refetchConcluidas();
-    },
+    onSuccess: () => { refetchConcluidas(); },
   });
 
   const limparEncaminhadasMutation = trpc.encaminhamentos.removerTodos.useMutation({
-    onSuccess: () => {
-      refetchEncaminhadas();
-    },
+    onSuccess: () => { refetchEncaminhadas(); },
   });
 
-  // Fazer check-in ou check-out em uma agenda das encaminhadas
   const handleCheckIn = (enc: {
-    agendaId: number;
-    agendaNome: string;
-    municipio?: string | null;
-    especialidade?: string;
-    central?: string | null;
-    cotas?: number | null;
-    saldo?: number | null;
-    aguardando?: number | null;
-    indexRegula?: number | null;
+    agendaId: number; agendaNome: string; municipio?: string | null;
+    especialidade?: string; central?: string | null; cotas?: number | null;
+    saldo?: number | null; aguardando?: number | null; indexRegula?: number | null;
   }) => {
     checkInMutation.mutate({
-      agendaId: enc.agendaId,
-      agendaNome: enc.agendaNome,
-      municipio: enc.municipio ?? undefined,
-      especialidade: enc.especialidade ?? '',
-      central: enc.central ?? undefined,
-      cotas: enc.cotas ?? undefined,
-      saldo: enc.saldo ?? undefined,
-      aguardando: enc.aguardando ?? undefined,
+      agendaId: enc.agendaId, agendaNome: enc.agendaNome,
+      municipio: enc.municipio ?? undefined, especialidade: enc.especialidade ?? '',
+      central: enc.central ?? undefined, cotas: enc.cotas ?? undefined,
+      saldo: enc.saldo ?? undefined, aguardando: enc.aguardando ?? undefined,
       indexRegula: enc.indexRegula ?? undefined,
     });
   };
 
-  // Fazer check-out de um check-in ativo (retorna para encaminhadas)
   const handleCheckOut = (ci: {
-    agendaId: number;
-    agendaNome: string;
-    municipio?: string | null;
-    especialidade: string;
-    central?: string | null;
-    cotas?: number | null;
-    saldo?: number | null;
-    aguardando?: number | null;
-    indexRegula?: number | null;
+    agendaId: number; agendaNome: string; municipio?: string | null;
+    especialidade: string; central?: string | null; cotas?: number | null;
+    saldo?: number | null; aguardando?: number | null; indexRegula?: number | null;
   }) => {
     checkInMutation.mutate({
-      agendaId: ci.agendaId,
-      agendaNome: ci.agendaNome,
-      municipio: ci.municipio ?? undefined,
-      especialidade: ci.especialidade,
-      central: ci.central ?? undefined,
-      cotas: ci.cotas ?? undefined,
-      saldo: ci.saldo ?? undefined,
-      aguardando: ci.aguardando ?? undefined,
+      agendaId: ci.agendaId, agendaNome: ci.agendaNome,
+      municipio: ci.municipio ?? undefined, especialidade: ci.especialidade,
+      central: ci.central ?? undefined, cotas: ci.cotas ?? undefined,
+      saldo: ci.saldo ?? undefined, aguardando: ci.aguardando ?? undefined,
       indexRegula: ci.indexRegula ?? undefined,
     });
   };
 
-  // Concluir agenda: faz check-out e move para agendas concluídas
   const handleConcluir = (ci: {
-    agendaId: number;
-    agendaNome: string;
-    municipio?: string | null;
-    especialidade: string;
-    central?: string | null;
-    cotas?: number | null;
-    saldo?: number | null;
-    aguardando?: number | null;
-    indexRegula?: number | null;
+    agendaId: number; agendaNome: string; municipio?: string | null;
+    especialidade: string; central?: string | null; cotas?: number | null;
+    saldo?: number | null; aguardando?: number | null; indexRegula?: number | null;
   }) => {
     concluirMutation.mutate({
-      agendaId: ci.agendaId,
-      agendaNome: ci.agendaNome,
-      municipio: ci.municipio ?? undefined,
-      especialidade: ci.especialidade,
-      central: ci.central ?? undefined,
-      cotas: ci.cotas ?? undefined,
-      saldo: ci.saldo ?? undefined,
-      aguardando: ci.aguardando ?? undefined,
+      agendaId: ci.agendaId, agendaNome: ci.agendaNome,
+      municipio: ci.municipio ?? undefined, especialidade: ci.especialidade,
+      central: ci.central ?? undefined, cotas: ci.cotas ?? undefined,
+      saldo: ci.saldo ?? undefined, aguardando: ci.aguardando ?? undefined,
       indexRegula: ci.indexRegula ?? undefined,
     });
   };
 
   const isLoading = loadingCheckIns || loadingEncaminhadas || loadingConcluidas;
-
-  // Conjunto de agendaIds com check-in ativo
   const checkInIds = new Set(checkIns.map(ci => ci.agendaId));
-
-  // Soma total de Aguardando das agendas concluídas
   const totalAguardandoConcluidas = concluidas.reduce((acc, c) => acc + (c.aguardando ?? 0), 0);
 
   const handleRefresh = () => {
@@ -368,6 +327,10 @@ export default function MinhasAgendas() {
     refetchEncaminhadas();
     refetchConcluidas();
   };
+
+  // Número de colunas fixas (Agenda…Flags = 10) + Data = 11
+  // Usado para colSpan no rodapé e nas linhas de detalhe
+  const FIXED_COLS = 11; // Agenda, Central, Cotas, Saldo, Aguardando, >28d, >60d, >90d, Index, Flags, Data
 
   return (
     <div className="flex-1 flex flex-col bg-background min-h-screen">
@@ -415,9 +378,7 @@ export default function MinhasAgendas() {
           ) : checkIns.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center rounded-lg border border-dashed border-border bg-card">
               <ClipboardList size={24} className="text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">
-                Você não tem check-ins ativos no momento.
-              </p>
+              <p className="text-sm text-muted-foreground">Você não tem check-ins ativos no momento.</p>
               <p className="text-xs text-muted-foreground mt-1">
                 Acesse a aba <strong>Regulação</strong> e clique em "Check-in" em uma agenda.
               </p>
@@ -426,10 +387,8 @@ export default function MinhasAgendas() {
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full border-collapse">
                 <TableHeader
-                  showEncaminhadoPor={false}
                   showCheckIn={true}
                   showConcluir={true}
-                  showFlags={true}
                   dateLabel="Check-in em"
                 />
                 <tbody>
@@ -455,12 +414,13 @@ export default function MinhasAgendas() {
                         isCheckInPending={checkInMutation.isPending}
                         isRemoverPending={false}
                         isConcluirPending={concluirMutation.isPending}
-                        showFlags={true}
+                        showCheckIn={true}
                         showConcluir={true}
+                        dateLabel="Check-in em"
                       />
-                      {/* Submenu de agendas relacionadas */}
                       <tr key={`detalhes-${ci.id}`}>
-                        <td colSpan={12} className="p-0">
+                        {/* Check-ins ativos: FIXED_COLS(11) + Check-in(1) + Ação(1) = 13 */}
+                        <td colSpan={13} className="p-0">
                           <CheckInDetalhes
                             agendaId={ci.agendaId}
                             especialidade={ci.especialidade}
@@ -493,11 +453,7 @@ export default function MinhasAgendas() {
                     disabled={limparEncaminhadasMutation.isPending}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md transition-colors disabled:opacity-50"
                   >
-                    {limparEncaminhadasMutation.isPending ? (
-                      <Loader2 size={12} className="animate-spin" />
-                    ) : (
-                      <XCircle size={12} />
-                    )}
+                    {limparEncaminhadasMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <XCircle size={12} />}
                     Limpar encaminhadas
                   </button>
                 </AlertDialogTrigger>
@@ -510,10 +466,7 @@ export default function MinhasAgendas() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => limparEncaminhadasMutation.mutate()}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                    >
+                    <AlertDialogAction onClick={() => limparEncaminhadasMutation.mutate()} className="bg-red-600 hover:bg-red-700 text-white">
                       Sim, limpar
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -529,9 +482,7 @@ export default function MinhasAgendas() {
           ) : encaminhadas.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center rounded-lg border border-dashed border-border bg-card">
               <Send size={24} className="text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">
-                Nenhuma agenda foi encaminhada para você ainda.
-              </p>
+              <p className="text-sm text-muted-foreground">Nenhuma agenda foi encaminhada para você ainda.</p>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-border">
@@ -539,8 +490,6 @@ export default function MinhasAgendas() {
                 <TableHeader
                   showEncaminhadoPor={true}
                   showCheckIn={true}
-                  showConcluir={false}
-                  showFlags={false}
                   dateLabel="Encaminhado em"
                 />
                 <tbody>
@@ -558,24 +507,22 @@ export default function MinhasAgendas() {
                       aguardando60d={enc.aguardando60d}
                       aguardando90d={enc.aguardando90d}
                       indexRegula={enc.indexRegula}
+                      flags={enc.flags}
                       temCheckIn={checkInIds.has(enc.agendaId)}
                       encaminhadoPor={enc.encaminhadoPorNome}
                       createdAt={enc.createdAt}
                       onCheckIn={() => handleCheckIn({
-                        agendaId: enc.agendaId,
-                        agendaNome: enc.agendaNome,
-                        municipio: enc.municipio,
-                        especialidade: enc.especialidade,
-                        central: enc.central,
-                        cotas: enc.cotas,
-                        saldo: enc.saldo,
-                        aguardando: enc.aguardando,
+                        agendaId: enc.agendaId, agendaNome: enc.agendaNome,
+                        municipio: enc.municipio, especialidade: enc.especialidade,
+                        central: enc.central, cotas: enc.cotas,
+                        saldo: enc.saldo, aguardando: enc.aguardando,
                         indexRegula: enc.indexRegula,
                       })}
                       isCheckInPending={checkInMutation.isPending}
                       isRemoverPending={false}
                       showEncaminhadoPor={true}
-                      showFlags={false}
+                      showCheckIn={true}
+                      dateLabel="Encaminhado em"
                     />
                   ))}
                 </tbody>
@@ -601,11 +548,7 @@ export default function MinhasAgendas() {
                     disabled={limparConcluidasMutation.isPending}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-md transition-colors disabled:opacity-50"
                   >
-                    {limparConcluidasMutation.isPending ? (
-                      <Loader2 size={12} className="animate-spin" />
-                    ) : (
-                      <XCircle size={12} />
-                    )}
+                    {limparConcluidasMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <XCircle size={12} />}
                     Limpar agendas concluídas
                   </button>
                 </AlertDialogTrigger>
@@ -618,10 +561,7 @@ export default function MinhasAgendas() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => limparConcluidasMutation.mutate()}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                    >
+                    <AlertDialogAction onClick={() => limparConcluidasMutation.mutate()} className="bg-red-600 hover:bg-red-700 text-white">
                       Sim, limpar
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -637,9 +577,7 @@ export default function MinhasAgendas() {
           ) : concluidas.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center rounded-lg border border-dashed border-border bg-card">
               <CheckCheck size={24} className="text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">
-                Nenhuma agenda concluída ainda.
-              </p>
+              <p className="text-sm text-muted-foreground">Nenhuma agenda concluída ainda.</p>
               <p className="text-xs text-muted-foreground mt-1">
                 Clique em <strong>"Concluído"</strong> em um check-in ativo para registrá-lo aqui.
               </p>
@@ -648,10 +586,6 @@ export default function MinhasAgendas() {
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full border-collapse">
                 <TableHeader
-                  showEncaminhadoPor={false}
-                  showCheckIn={false}
-                  showConcluir={false}
-                  showFlags={false}
                   showStatus={true}
                   dateLabel="Concluído em"
                 />
@@ -666,18 +600,25 @@ export default function MinhasAgendas() {
                       cotas={c.cotas}
                       saldo={c.saldo}
                       aguardando={c.aguardando}
+                      aguardando28d={(c as any).aguardando28d}
+                      aguardando60d={(c as any).aguardando60d}
+                      aguardando90d={(c as any).aguardando90d}
                       indexRegula={c.indexRegula}
+                      flags={(c as any).flags}
                       temCheckIn={false}
                       concluidoEm={c.concluidoEm}
                       createdAt={c.concluidoEm}
                       isCheckInPending={false}
                       isRemoverPending={false}
                       showConcluidoEm={true}
+                      showStatus={true}
                       isConcluida={true}
+                      dateLabel="Concluído em"
                     />
                   ))}
                 </tbody>
                 {/* Rodapé com soma total de Aguardando */}
+                {/* Colunas: Agenda, Central, Cotas, Saldo, Aguardando, >28d, >60d, >90d, Index, Flags, Data, Status = 12 */}
                 <tfoot className="bg-emerald-50 dark:bg-emerald-950/20 border-t-2 border-emerald-200 dark:border-emerald-800">
                   <tr>
                     <td colSpan={4} className="px-4 py-3 text-right text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
@@ -686,7 +627,7 @@ export default function MinhasAgendas() {
                     <td className="px-4 py-3 text-center text-sm font-bold text-emerald-700 dark:text-emerald-300">
                       {totalAguardandoConcluidas}
                     </td>
-                    <td colSpan={3} />
+                    <td colSpan={7} />
                   </tr>
                 </tfoot>
               </table>

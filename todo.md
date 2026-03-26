@@ -107,3 +107,4 @@
 - [x] Exibir >28d, >60d, >90d em Minhas Agendas e Monitor de Check-ins
 - [x] Corrigir filtros de Central e Especialidade sem opções na aba Regulação (índices deslocados)
 - [x] Corrigir colunas >28d, >60d, >90d não populadas (índices errados no syncSheets ou getData)
+- [x] Alinhar colunas das três tabelas em Minhas Agendas (Check-ins ativos, Encaminhadas para mim, Agendas concluídas) até a coluna Flags
