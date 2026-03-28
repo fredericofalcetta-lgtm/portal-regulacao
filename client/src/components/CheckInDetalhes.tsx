@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Loader2, FileText, ListOrdered, ExternalLink, TrendingDown } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
+import { getCorBorderClass, getCorBorderStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 
 interface CheckInDetalhesProps {
   agendaId: number;
@@ -132,12 +133,22 @@ export default function CheckInDetalhes({ agendaId, especialidade, central }: Ch
                         </tr>
                       </thead>
                       <tbody>
-                        {agendas.map((a, idx) => (
+                        {agendas.map((a) => {
+                          const corBorderClass = getCorBorderClass(a.cor);
+                          const corBorderStyle = getCorBorderStyle(a.cor);
+                          const corBadgeStyle = getCorBadgeStyle(a.cor);
+                          return (
                           <tr
                             key={a.id}
-                            className={`border-t border-border/50 ${getBgIndex(a.indexRegula)} hover:opacity-90 transition-opacity`}
+                            className={`border-t border-border/50 ${getBgIndex(a.indexRegula)} ${corBorderClass} hover:opacity-90 transition-opacity`}
+                            style={corBorderStyle}
                           >
-                            <td className="px-3 py-1.5 font-medium text-foreground">{a.agenda ?? '—'}</td>
+                            <td className="px-3 py-1.5 font-medium text-foreground">
+                              <div className="flex items-center gap-1.5">
+                                {a.cor && <span style={corBadgeStyle} title={a.cor} />}
+                                {a.agenda ?? '—'}
+                              </div>
+                            </td>
                             <td className="px-3 py-1.5 text-center text-muted-foreground">{a.municipio ?? '—'}</td>
                             <td className="px-3 py-1.5 text-center text-foreground">{a.cotas ?? '—'}</td>
                             <td className="px-3 py-1.5 text-center text-foreground">{a.saldo ?? '—'}</td>
@@ -150,7 +161,8 @@ export default function CheckInDetalhes({ agendaId, especialidade, central }: Ch
                               {a.indexRegula != null ? a.indexRegula.toFixed(2) : '—'}
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

@@ -26,7 +26,7 @@ export async function syncSheetsToDb(): Promise<number> {
   // Novo cabeçalho (a partir de 2026-03):
   // [0] Agenda, [1] Município, [2] Cotas, [3] Saldo, [4] Aguardando,
   // [5] Autorizadas, [6] Aut/Cotas, [7] IndexRegula,
-  // [8] >28, [9] >60d, [10] >90d, [11] Central, [12] Especialidade, [13] Flags
+  // [8] >28, [9] >60d, [10] >90d, [11] Central, [12] Especialidade, [13] Flags, [14] Cor
   const insertRows = dataRows
     .filter(row => row.length >= 8)
     .map(row => ({
@@ -44,6 +44,7 @@ export async function syncSheetsToDb(): Promise<number> {
       central: row[11] != null ? String(row[11]) : null,
       especialidade: row[12] != null ? String(row[12]) : null,
       flags: row[13] != null ? String(row[13]) : null,
+      cor: row[14] != null ? String(row[14]).trim() : null,
     }));
 
   if (insertRows.length > 0) {

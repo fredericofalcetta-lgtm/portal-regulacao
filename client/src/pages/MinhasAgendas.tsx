@@ -1,5 +1,6 @@
 import React from 'react';
 import { LogIn, LogOut, Loader2, ClipboardList, RefreshCw, Send, CheckCircle2, Trash2, Flag, CheckCheck, XCircle } from 'lucide-react';
+import { getCorBorderClass, getCorBorderStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 import CheckInDetalhes from '@/components/CheckInDetalhes';
 import { trpc } from '@/lib/trpc';
 import {
@@ -29,6 +30,7 @@ interface AgendaRowProps {
   aguardando90d?: number | null;
   indexRegula?: number | null;
   flags?: string | null;
+  cor?: string | null;
   temCheckIn: boolean;
   encaminhadoPor?: string | null;
   concluidoEm?: Date | null;
@@ -61,6 +63,7 @@ function AgendaRow({
   aguardando90d,
   indexRegula,
   flags,
+  cor,
   temCheckIn,
   encaminhadoPor,
   concluidoEm,
@@ -91,11 +94,21 @@ function AgendaRow({
     ? new Date(concluidoEm).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })
     : new Date(createdAt).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
 
+  const corBorderClass = getCorBorderClass(cor);
+  const corBorderStyle = getCorBorderStyle(cor);
+  const corBadgeStyle = getCorBadgeStyle(cor);
+
   return (
-    <tr className={`border-t border-border hover:bg-secondary/50 transition-colors ${isConcluida ? 'opacity-75' : ''}`}>
+    <tr
+      className={`border-t border-border hover:bg-secondary/50 transition-colors ${corBorderClass} ${isConcluida ? 'opacity-75' : ''}`}
+      style={corBorderStyle}
+    >
       {/* Agenda + Município */}
       <td className="px-4 py-3">
-        <div className="font-medium text-sm text-foreground">{agendaNome}</div>
+        <div className="font-medium text-sm text-foreground flex items-center gap-2">
+          {cor && <span style={corBadgeStyle} title={cor} />}
+          {agendaNome}
+        </div>
         {municipio && <div className="text-xs text-muted-foreground mt-0.5">{municipio}</div>}
       </td>
       {/* Central */}
@@ -407,6 +420,7 @@ export default function MinhasAgendas() {
                         aguardando90d={ci.aguardando90d}
                         indexRegula={ci.indexRegula}
                         flags={ci.flags}
+                        cor={ci.cor}
                         temCheckIn={true}
                         createdAt={ci.createdAt}
                         onCheckIn={() => handleCheckOut(ci)}
@@ -508,6 +522,7 @@ export default function MinhasAgendas() {
                       aguardando90d={enc.aguardando90d}
                       indexRegula={enc.indexRegula}
                       flags={enc.flags}
+                      cor={enc.cor}
                       temCheckIn={checkInIds.has(enc.agendaId)}
                       encaminhadoPor={enc.encaminhadoPorNome}
                       createdAt={enc.createdAt}
@@ -605,6 +620,7 @@ export default function MinhasAgendas() {
                       aguardando90d={(c as any).aguardando90d}
                       indexRegula={c.indexRegula}
                       flags={(c as any).flags}
+                      cor={(c as any).cor}
                       temCheckIn={false}
                       concluidoEm={c.concluidoEm}
                       createdAt={c.concluidoEm}

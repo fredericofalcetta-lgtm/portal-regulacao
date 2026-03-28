@@ -38,6 +38,7 @@ export const regulacaoData = mysqlTable("regulacao_data", {
   central: varchar("central", { length: 100 }),
   especialidade: varchar("especialidade", { length: 255 }),
   flags: text("flags"),
+  cor: varchar("cor", { length: 100 }),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 

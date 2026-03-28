@@ -1,4 +1,5 @@
 import { Activity, Loader2, RefreshCw, UserCheck } from 'lucide-react';
+import { getCorBorderClass, getCorBorderStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 import { trpc } from '@/lib/trpc';
 import { useMemo, useEffect, useState } from 'react';
 
@@ -36,6 +37,7 @@ export default function MonitorCheckIns() {
       aguardando60d?: number | null;
       aguardando90d?: number | null;
       indexRegula?: number | null;
+      cor?: string | null;
       reguladores: { nome: string; email: string; desde: Date }[];
     }>();
 
@@ -53,6 +55,7 @@ export default function MonitorCheckIns() {
           aguardando60d: ci.aguardando60d,
           aguardando90d: ci.aguardando90d,
           indexRegula: ci.indexRegula,
+          cor: (ci as any).cor,
           reguladores: [],
         });
       }
@@ -150,10 +153,17 @@ export default function MonitorCheckIns() {
                 </tr>
               </thead>
               <tbody>
-                {agendasAgrupadas.map((agenda) => (
-                  <tr key={agenda.agendaId} className="border-t border-border hover:bg-secondary/50 transition-colors">
+                {agendasAgrupadas.map((agenda) => {
+                  const corBorderClass = getCorBorderClass(agenda.cor);
+                  const corBorderStyle = getCorBorderStyle(agenda.cor);
+                  const corBadgeStyle = getCorBadgeStyle(agenda.cor);
+                  return (
+                  <tr key={agenda.agendaId} className={`border-t border-border hover:bg-secondary/50 transition-colors ${corBorderClass}`} style={corBorderStyle}>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-sm text-foreground">{agenda.agendaNome}</div>
+                      <div className="font-medium text-sm text-foreground flex items-center gap-2">
+                        {agenda.cor && <span style={corBadgeStyle} title={agenda.cor} />}
+                        {agenda.agendaNome}
+                      </div>
                       {agenda.municipio && (
                         <div className="text-xs text-muted-foreground mt-0.5">{agenda.municipio}</div>
                       )}
@@ -195,7 +205,8 @@ export default function MonitorCheckIns() {
                       })}
                     </td>
                   </tr>
-                ))}
+                );
+                })}
               </tbody>
             </table>
           </div>

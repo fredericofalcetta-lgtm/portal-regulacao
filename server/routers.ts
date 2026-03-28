@@ -78,7 +78,7 @@ export const appRouter = router({
       // [0] agenda, [1] municipio, [2] cotas, [3] saldo, [4] aguardando,
       // [5] autorizadas, [6] autCotas, [7] indexRegula,
       // [8] aguardando28d, [9] aguardando60d, [10] aguardando90d,
-      // [11] central, [12] especialidade, [13] flags, [14] id
+      // [11] central, [12] especialidade, [13] flags, [14] cor, [15] id
       const rows = data.map(row => [
         row.agenda ?? "",          // 0
         row.municipio ?? "",       // 1
@@ -94,7 +94,8 @@ export const appRouter = router({
         row.central ?? "",         // 11
         row.especialidade ?? "",   // 12
         row.flags ?? "",           // 13
-        row.id,                    // 14: id para encaminhamentos e check-ins
+        row.cor ?? "",             // 14: cor de destaque
+        row.id,                    // 15: id para encaminhamentos e check-ins
       ]);
 
       return { rows };
@@ -301,6 +302,7 @@ export const appRouter = router({
           aguardando90d: regulacaoData.aguardando90d,
           indexRegula: regulacaoData.indexRegula,
           flags: regulacaoData.flags,
+          cor: regulacaoData.cor,
         })
         .from(encaminhamentos)
         .leftJoin(
@@ -483,6 +485,7 @@ export const appRouter = router({
           aguardando90d: regulacaoData.aguardando90d,
           indexRegula: regulacaoData.indexRegula,
           flags: regulacaoData.flags,
+          cor: regulacaoData.cor,
           usuarioEmail: checkIns.usuarioEmail,
           usuarioNome: checkIns.usuarioNome,
           createdAt: checkIns.createdAt,
@@ -527,6 +530,7 @@ export const appRouter = router({
           aguardando90d: regulacaoData.aguardando90d,
           indexRegula: regulacaoData.indexRegula,
           flags: regulacaoData.flags,
+          cor: regulacaoData.cor,
           usuarioEmail: checkIns.usuarioEmail,
           usuarioNome: checkIns.usuarioNome,
           createdAt: checkIns.createdAt,
@@ -684,6 +688,7 @@ export const appRouter = router({
             autCotas: a.autCotas,
             indexRegula: a.indexRegula,
             especialidade: a.especialidade,
+            cor: a.cor,
           }));
 
         // Buscar prioridades da especialidade (match por grandeGrupo)

@@ -1,0 +1,1 @@
+ALTER TABLE `regulacao_data` ADD `cor` varchar(100);

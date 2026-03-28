@@ -109,3 +109,7 @@
 - [x] Corrigir colunas >28d, >60d, >90d não populadas (índices errados no syncSheets ou getData)
 - [x] Alinhar colunas das três tabelas em Minhas Agendas (Check-ins ativos, Encaminhadas para mim, Agendas concluídas) até a coluna Flags
 - [x] Adicionar colunas Autorizadas e Aut/Cotas no CheckInDetalhes (aba de agendas relacionadas)
+- [x] Migrar banco: adicionar coluna cor na tabela regulacao_data (coluna O da planilha)
+- [x] Atualizar syncSheets para mapear a nova coluna cor
+- [x] Atualizar procedures do backend para retornar a coluna cor
+- [x] Aplicar destaque visual por cor nas agendas em todas as telas

@@ -4,6 +4,7 @@ import { trpc } from '@/lib/trpc';
 import EncaminharCell from './EncaminharCell';
 import AutoEncaminharCell from './AutoEncaminharCell';
 import CheckInCell from './CheckInCell';
+import { getCorBorderClass, getCorBorderStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 
 interface DataTableProps {
   headers: string[];
@@ -42,8 +43,9 @@ const TableRow = memo(function TableRow({
 }) {
   // Layout de índices: [0]agenda [1]municipio [2]cotas [3]saldo [4]aguardando
   // [5]autorizadas [6]autCotas [7]indexRegula [8]>28d [9]>60d [10]>90d
-  // [11]central [12]especialidade [13]flags [14]id
-  const agendaId = typeof row[14] === 'number' ? row[14] : 0;
+  // [11]central [12]especialidade [13]flags [14]cor [15]id
+  const agendaId = typeof row[15] === 'number' ? row[15] : 0;
+  const cor = String(row[14] ?? '');
   const indexValue = parseFloat(String(row[7])) || 0;
 
   const getIndexRegulaColor = (value: number): string => {
@@ -53,15 +55,23 @@ const TableRow = memo(function TableRow({
     return '';
   };
 
+  const corBorderClass = getCorBorderClass(cor);
+  const corBorderStyle = getCorBorderStyle(cor);
+  const corBadgeStyle = getCorBadgeStyle(cor);
+
   return (
     <tr
-      className={`border-b border-border hover:bg-secondary transition-colors ${
+      className={`border-b border-border hover:bg-secondary transition-colors ${corBorderClass} ${
         rowIndex % 2 === 0 ? 'bg-card' : 'bg-muted/30'
       }`}
+      style={corBorderStyle}
     >
       {/* Agenda */}
       <td className="px-6 py-3 text-foreground">
-        <div className="font-medium text-sm">{String(row[0])}</div>
+        <div className="font-medium text-sm flex items-center gap-2">
+          {cor && <span style={corBadgeStyle} title={cor} />}
+          {String(row[0])}
+        </div>
         <div className="text-xs text-muted-foreground mt-0.5">{String(row[1])}</div>
       </td>
 
@@ -416,7 +426,7 @@ export default function DataTable({
               </tr>
             ) : (
               filteredAndSortedRows.map((row, rowIndex) => {
-                const agendaId = typeof row[14] === 'number' ? row[14] : 0;
+                const agendaId = typeof row[15] === 'number' ? row[15] : 0;
                 return (
                   <TableRow
                     key={agendaId > 0 ? agendaId : rowIndex}
