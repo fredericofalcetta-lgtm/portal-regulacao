@@ -1,6 +1,6 @@
 import React from 'react';
 import { LogIn, LogOut, Loader2, ClipboardList, RefreshCw, Send, CheckCircle2, Trash2, Flag, CheckCheck, XCircle } from 'lucide-react';
-import { getCorBorderClass, getCorBorderStyle, getCorBadgeStyle } from '@/lib/corAgenda';
+import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 import CheckInDetalhes from '@/components/CheckInDetalhes';
 import { trpc } from '@/lib/trpc';
 import {
@@ -94,14 +94,13 @@ function AgendaRow({
     ? new Date(concluidoEm).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })
     : new Date(createdAt).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
 
-  const corBorderClass = getCorBorderClass(cor);
-  const corBorderStyle = getCorBorderStyle(cor);
+  const corRowStyle = getCorRowStyle(cor);
   const corBadgeStyle = getCorBadgeStyle(cor);
 
   return (
     <tr
-      className={`border-t border-border hover:bg-secondary/50 transition-colors ${corBorderClass} ${isConcluida ? 'opacity-75' : ''}`}
-      style={corBorderStyle}
+      className={`border-t border-border hover:bg-secondary/50 transition-colors ${isConcluida ? 'opacity-75' : ''}`}
+      style={corRowStyle}
     >
       {/* Agenda + Município */}
       <td className="px-4 py-3">

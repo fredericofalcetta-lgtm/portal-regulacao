@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Loader2, FileText, ListOrdered, ExternalLink, TrendingDown } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { getCorBorderClass, getCorBorderStyle, getCorBadgeStyle } from '@/lib/corAgenda';
+import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 
 interface CheckInDetalhesProps {
   agendaId: number;
@@ -134,14 +134,13 @@ export default function CheckInDetalhes({ agendaId, especialidade, central }: Ch
                       </thead>
                       <tbody>
                         {agendas.map((a) => {
-                          const corBorderClass = getCorBorderClass(a.cor);
-                          const corBorderStyle = getCorBorderStyle(a.cor);
+                          const corRowStyle = getCorRowStyle(a.cor);
                           const corBadgeStyle = getCorBadgeStyle(a.cor);
                           return (
                           <tr
                             key={a.id}
-                            className={`border-t border-border/50 ${getBgIndex(a.indexRegula)} ${corBorderClass} hover:opacity-90 transition-opacity`}
-                            style={corBorderStyle}
+                            className={`border-t border-border/50 ${getBgIndex(a.indexRegula)} hover:opacity-90 transition-opacity`}
+                            style={corRowStyle}
                           >
                             <td className="px-3 py-1.5 font-medium text-foreground">
                               <div className="flex items-center gap-1.5">

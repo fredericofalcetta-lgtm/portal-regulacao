@@ -1,5 +1,5 @@
 import { Activity, Loader2, RefreshCw, UserCheck } from 'lucide-react';
-import { getCorBorderClass, getCorBorderStyle, getCorBadgeStyle } from '@/lib/corAgenda';
+import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 import { trpc } from '@/lib/trpc';
 import { useMemo, useEffect, useState } from 'react';
 
@@ -154,11 +154,10 @@ export default function MonitorCheckIns() {
               </thead>
               <tbody>
                 {agendasAgrupadas.map((agenda) => {
-                  const corBorderClass = getCorBorderClass(agenda.cor);
-                  const corBorderStyle = getCorBorderStyle(agenda.cor);
+                  const corRowStyle = getCorRowStyle(agenda.cor);
                   const corBadgeStyle = getCorBadgeStyle(agenda.cor);
                   return (
-                  <tr key={agenda.agendaId} className={`border-t border-border hover:bg-secondary/50 transition-colors ${corBorderClass}`} style={corBorderStyle}>
+                  <tr key={agenda.agendaId} className="border-t border-border hover:bg-secondary/50 transition-colors" style={corRowStyle}>
                     <td className="px-4 py-3">
                       <div className="font-medium text-sm text-foreground flex items-center gap-2">
                         {agenda.cor && <span style={corBadgeStyle} title={agenda.cor} />}

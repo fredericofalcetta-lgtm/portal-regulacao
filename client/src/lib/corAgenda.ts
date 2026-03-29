@@ -1,59 +1,102 @@
 /**
  * Utilitário para aplicar destaque visual por cor nas agendas.
  * A cor vem da coluna O da planilha (campo `cor` no banco).
- * Suporta nomes de cores em português e inglês, em maiúsculas ou minúsculas.
+ * Suporta nomes em português (masculino e feminino) e inglês, em qualquer capitalização.
+ * Exemplos de valores no banco: "VERMELHA", "AMARELA", "VERDE"
  */
 
-/** Retorna a classe CSS de borda lateral colorida para a linha da tabela */
-export function getCorBorderClass(cor: string | null | undefined): string {
-  if (!cor) return "";
-  const c = cor.toLowerCase().trim();
-  if (c.includes("vermelho") || c.includes("red"))     return "border-l-4 border-l-red-500";
-  if (c.includes("laranja") || c.includes("orange"))   return "border-l-4 border-l-orange-500";
-  if (c.includes("amarelo") || c.includes("yellow"))   return "border-l-4 border-l-yellow-400";
-  if (c.includes("verde") || c.includes("green"))      return "border-l-4 border-l-green-500";
-  if (c.includes("azul") || c.includes("blue"))        return "border-l-4 border-l-blue-500";
-  if (c.includes("roxo") || c.includes("purple") || c.includes("violeta")) return "border-l-4 border-l-purple-500";
-  if (c.includes("rosa") || c.includes("pink"))        return "border-l-4 border-l-pink-500";
-  if (c.includes("cinza") || c.includes("gray") || c.includes("grey")) return "border-l-4 border-l-gray-400";
-  if (c.includes("branco") || c.includes("white"))     return "border-l-4 border-l-slate-200";
-  if (c.includes("preto") || c.includes("black"))      return "border-l-4 border-l-slate-800";
-  // Tenta usar como cor CSS direta (ex: "#ff0000", "rgb(...)")
-  return "";
+import type { CSSProperties } from 'react';
+
+/** Normaliza o valor de cor para comparação */
+function norm(cor: string | null | undefined): string {
+  return (cor ?? "").toLowerCase().trim();
 }
 
-/** Retorna o estilo inline de borda lateral para cores não mapeadas (hex, rgb, etc.) */
-export function getCorBorderStyle(cor: string | null | undefined): React.CSSProperties {
-  if (!cor) return {};
-  const c = cor.toLowerCase().trim();
-  // Se não é um nome em português/inglês reconhecido, tenta usar como valor CSS
-  const nomesMapeados = [
-    "vermelho","red","laranja","orange","amarelo","yellow",
-    "verde","green","azul","blue","roxo","purple","violeta",
-    "rosa","pink","cinza","gray","grey","branco","white","preto","black"
-  ];
-  if (nomesMapeados.some(n => c.includes(n))) return {};
-  // Valor CSS direto
-  return { borderLeftWidth: "4px", borderLeftStyle: "solid", borderLeftColor: cor.trim() };
+/** Detecta a cor canônica a partir do valor em português/inglês */
+function detectCor(cor: string | null | undefined): string | null {
+  const c = norm(cor);
+  if (!c) return null;
+  if (c.includes("vermelh") || c.includes("red"))                         return "red";
+  if (c.includes("laranj") || c.includes("orange"))                       return "orange";
+  if (c.includes("amarela") || c.includes("amarelo") || c.includes("yellow")) return "yellow";
+  if (c.includes("verde") || c.includes("green"))                         return "green";
+  if (c.includes("azul") || c.includes("blue"))                           return "blue";
+  if (c.includes("roxo") || c.includes("roxa") || c.includes("purple") || c.includes("violeta")) return "purple";
+  if (c.includes("rosa") || c.includes("pink"))                           return "pink";
+  if (c.includes("cinza") || c.includes("gray") || c.includes("grey"))    return "gray";
+  if (c.includes("branco") || c.includes("branca") || c.includes("white")) return "white";
+  if (c.includes("preto") || c.includes("preta") || c.includes("black"))  return "black";
+  return null; // valor desconhecido — pode ser CSS direto
 }
 
-/** Retorna um badge pequeno com a cor para exibir ao lado do nome da agenda */
-export function getCorBadgeStyle(cor: string | null | undefined): React.CSSProperties {
-  if (!cor) return {};
-  const c = cor.toLowerCase().trim();
-  const colorMap: Record<string, string> = {
-    vermelho: "#ef4444", red: "#ef4444",
-    laranja: "#f97316", orange: "#f97316",
-    amarelo: "#facc15", yellow: "#facc15",
-    verde: "#22c55e", green: "#22c55e",
-    azul: "#3b82f6", blue: "#3b82f6",
-    roxo: "#a855f7", purple: "#a855f7", violeta: "#a855f7",
-    rosa: "#ec4899", pink: "#ec4899",
-    cinza: "#9ca3af", gray: "#9ca3af", grey: "#9ca3af",
-    branco: "#f1f5f9", white: "#f1f5f9",
-    preto: "#1e293b", black: "#1e293b",
+/** Mapa de cor canônica → valor hex */
+const HEX_MAP: Record<string, string> = {
+  red:    "#ef4444",
+  orange: "#f97316",
+  yellow: "#eab308",
+  green:  "#22c55e",
+  blue:   "#3b82f6",
+  purple: "#a855f7",
+  pink:   "#ec4899",
+  gray:   "#9ca3af",
+  white:  "#f1f5f9",
+  black:  "#1e293b",
+};
+
+/** Retorna o valor hex da cor, ou o valor CSS direto se não mapeado */
+function getHex(cor: string | null | undefined): string | null {
+  if (!cor) return null;
+  const canonical = detectCor(cor);
+  if (canonical) return HEX_MAP[canonical] ?? null;
+  // Tenta usar como valor CSS direto (ex: "#ff0000")
+  const c = cor.trim();
+  if (c.startsWith("#") || c.startsWith("rgb")) return c;
+  return null;
+}
+
+/**
+ * Retorna estilo inline para a linha da tabela:
+ * borda lateral mais espessa e fundo levemente colorido.
+ */
+export function getCorRowStyle(cor: string | null | undefined): CSSProperties {
+  const hex = getHex(cor);
+  if (!hex) return {};
+  return {
+    borderLeft: `5px solid ${hex}`,
+    backgroundColor: `${hex}18`, // ~10% de opacidade
   };
-  const found = Object.entries(colorMap).find(([k]) => c.includes(k));
-  const color = found ? found[1] : cor.trim();
-  return { backgroundColor: color, width: "10px", height: "10px", borderRadius: "50%", display: "inline-block", flexShrink: 0 };
+}
+
+/**
+ * Retorna estilo inline para o badge circular ao lado do nome da agenda.
+ * Badge maior (14×14px) para maior visibilidade.
+ */
+export function getCorBadgeStyle(cor: string | null | undefined): CSSProperties {
+  const hex = getHex(cor);
+  if (!hex) return {};
+  return {
+    backgroundColor: hex,
+    width: "14px",
+    height: "14px",
+    borderRadius: "50%",
+    display: "inline-block",
+    flexShrink: 0,
+    boxShadow: `0 0 0 2px ${hex}40`,
+  };
+}
+
+/**
+ * Retorna a classe Tailwind de borda lateral (para uso em className).
+ * Mantido por compatibilidade — prefira getCorRowStyle quando possível.
+ */
+export function getCorBorderClass(_cor: string | null | undefined): string {
+  return ""; // lógica migrada para getCorRowStyle (inline style)
+}
+
+/**
+ * Retorna o estilo inline de borda lateral (legado).
+ * @deprecated Use getCorRowStyle que também aplica fundo colorido.
+ */
+export function getCorBorderStyle(cor: string | null | undefined): CSSProperties {
+  return getCorRowStyle(cor);
 }

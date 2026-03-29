@@ -4,7 +4,7 @@ import { trpc } from '@/lib/trpc';
 import EncaminharCell from './EncaminharCell';
 import AutoEncaminharCell from './AutoEncaminharCell';
 import CheckInCell from './CheckInCell';
-import { getCorBorderClass, getCorBorderStyle, getCorBadgeStyle } from '@/lib/corAgenda';
+import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 
 interface DataTableProps {
   headers: string[];
@@ -55,16 +55,15 @@ const TableRow = memo(function TableRow({
     return '';
   };
 
-  const corBorderClass = getCorBorderClass(cor);
-  const corBorderStyle = getCorBorderStyle(cor);
+  const corRowStyle = getCorRowStyle(cor);
   const corBadgeStyle = getCorBadgeStyle(cor);
 
   return (
     <tr
-      className={`border-b border-border hover:bg-secondary transition-colors ${corBorderClass} ${
+      className={`border-b border-border hover:bg-secondary transition-colors ${
         rowIndex % 2 === 0 ? 'bg-card' : 'bg-muted/30'
       }`}
-      style={corBorderStyle}
+      style={corRowStyle}
     >
       {/* Agenda */}
       <td className="px-6 py-3 text-foreground">

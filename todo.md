@@ -113,3 +113,5 @@
 - [x] Atualizar syncSheets para mapear a nova coluna cor
 - [x] Atualizar procedures do backend para retornar a coluna cor
 - [x] Aplicar destaque visual por cor nas agendas em todas as telas
+- [x] Corrigir agendas com cor Vermelha não aparecendo na aba Regulação
+- [x] Aumentar destaque visual das cores nas agendas em todas as telas
