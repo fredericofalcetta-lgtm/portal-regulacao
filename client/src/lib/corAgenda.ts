@@ -85,6 +85,30 @@ export function getCorBadgeStyle(cor: string | null | undefined): CSSProperties 
   };
 }
 
+/** Ordem de prioridade das cores para agrupamento (menor = mais prioritário) */
+const COR_PRIORIDADE: Record<string, number> = {
+  red:    1,
+  orange: 2,
+  yellow: 3,
+  green:  4,
+  blue:   5,
+  purple: 6,
+  pink:   7,
+  gray:   8,
+  white:  9,
+  black:  10,
+};
+
+/**
+ * Retorna a prioridade numérica da cor para ordenação.
+ * Cores desconhecidas ou ausentes recebem prioridade máxima (999).
+ */
+export function getCorPrioridade(cor: string | null | undefined): number {
+  const canonical = detectCor(cor);
+  if (!canonical) return 999;
+  return COR_PRIORIDADE[canonical] ?? 999;
+}
+
 /**
  * Retorna a classe Tailwind de borda lateral (para uso em className).
  * Mantido por compatibilidade — prefira getCorRowStyle quando possível.

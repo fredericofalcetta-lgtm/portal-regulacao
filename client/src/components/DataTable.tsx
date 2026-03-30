@@ -1,10 +1,10 @@
-import { useMemo, memo, useCallback } from 'react';
+import { memo, useMemo, useCallback, Fragment } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import EncaminharCell from './EncaminharCell';
 import AutoEncaminharCell from './AutoEncaminharCell';
 import CheckInCell from './CheckInCell';
-import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
+import { getCorRowStyle, getCorBadgeStyle, getCorPrioridade } from '@/lib/corAgenda';
 
 interface DataTableProps {
   headers: string[];
@@ -259,6 +259,14 @@ export default function DataTable({
     });
 
     filtered.sort((a, b) => {
+      // Coluna especial 14 = ordenar por cor (prioridade definida)
+      if (sortColumn === 14) {
+        const pa = getCorPrioridade(String(a[14] ?? ''));
+        const pb = getCorPrioridade(String(b[14] ?? ''));
+        if (pa !== pb) return sortOrder === 'asc' ? pa - pb : pb - pa;
+        // Desempate: nome da agenda
+        return String(a[0]).localeCompare(String(b[0]), 'pt-BR');
+      }
       const numericColumns = [2, 3, 4, 5, 6, 7, 8, 9, 10];
       if (numericColumns.includes(sortColumn)) {
         const aVal = parseFloat(String(a[sortColumn])) || 0;
@@ -414,31 +422,54 @@ export default function DataTable({
                   <SortIcon col={11} />
                 </div>
               </th>
+              {/* Cor */}
+              <th
+                onClick={() => onSort(14)}
+                className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
+                title="Ordenar por cor"
+              >
+                <div className="flex items-center justify-center space-x-1">
+                  <span>Cor</span>
+                  <SortIcon col={14} />
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
             {filteredAndSortedRows.length === 0 ? (
               <tr>
-                <td colSpan={(isAdminOuMonitor || isRegulador) ? 12 : 11} className="px-6 py-8 text-center">
+                <td colSpan={(isAdminOuMonitor || isRegulador) ? 13 : 12} className="px-6 py-8 text-center">
                   <p className="text-muted-foreground">Nenhum resultado encontrado</p>
                 </td>
               </tr>
             ) : (
               filteredAndSortedRows.map((row, rowIndex) => {
                 const agendaId = typeof row[15] === 'number' ? row[15] : 0;
+                // Separador visual entre grupos de cor (só quando ordenando por cor)
+                const corAtual = String(row[14] ?? '');
+                const corAnterior = rowIndex > 0 ? String(filteredAndSortedRows[rowIndex - 1][14] ?? '') : corAtual;
+                const isNovoCor = sortColumn === 14 && rowIndex > 0 && getCorPrioridade(corAtual) !== getCorPrioridade(corAnterior);
                 return (
-                  <TableRow
-                    key={agendaId > 0 ? agendaId : rowIndex}
-                    row={row}
-                    rowIndex={rowIndex}
-                    isAdminOuMonitor={isAdminOuMonitor}
-                    isRegulador={isRegulador}
-                    encaminhadosAtuais={encaminhamentosPorAgenda.get(agendaId) ?? []}
-                    checkInsAtuais={checkInsPorAgenda.get(agendaId) ?? []}
-                    reguladoresList={reguladoresList}
-                    emailUsuario={emailUsuario}
-                    onUpdate={handleUpdate}
-                  />
+                  <Fragment key={agendaId > 0 ? agendaId : rowIndex}>
+                    {isNovoCor && (
+                      <tr>
+                        <td colSpan={(isAdminOuMonitor || isRegulador) ? 13 : 12} className="h-0 p-0">
+                          <div className="border-t-2 border-dashed border-border/60 mx-4" />
+                        </td>
+                      </tr>
+                    )}
+                    <TableRow
+                      row={row}
+                      rowIndex={rowIndex}
+                      isAdminOuMonitor={isAdminOuMonitor}
+                      isRegulador={isRegulador}
+                      encaminhadosAtuais={encaminhamentosPorAgenda.get(agendaId) ?? []}
+                      checkInsAtuais={checkInsPorAgenda.get(agendaId) ?? []}
+                      reguladoresList={reguladoresList}
+                      emailUsuario={emailUsuario}
+                      onUpdate={handleUpdate}
+                    />
+                  </Fragment>
                 );
               })
             )}
