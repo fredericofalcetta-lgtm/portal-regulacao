@@ -330,6 +330,20 @@ export default function MinhasAgendas() {
     });
   };
 
+  const handleConcluirEncaminhada = (enc: {
+    agendaId: number; agendaNome: string; municipio?: string | null;
+    especialidade?: string; central?: string | null; cotas?: number | null;
+    saldo?: number | null; aguardando?: number | null; indexRegula?: number | null;
+  }) => {
+    concluirMutation.mutate({
+      agendaId: enc.agendaId, agendaNome: enc.agendaNome,
+      municipio: enc.municipio ?? undefined, especialidade: enc.especialidade ?? '',
+      central: enc.central ?? undefined, cotas: enc.cotas ?? undefined,
+      saldo: enc.saldo ?? undefined, aguardando: enc.aguardando ?? undefined,
+      indexRegula: enc.indexRegula ?? undefined,
+    });
+  };
+
   const isLoading = loadingCheckIns || loadingEncaminhadas || loadingConcluidas;
   const checkInIds = new Set(checkIns.map(ci => ci.agendaId));
   const totalAguardandoConcluidas = concluidas.reduce((acc, c) => acc + (c.aguardando ?? 0), 0);
@@ -503,6 +517,7 @@ export default function MinhasAgendas() {
                 <TableHeader
                   showEncaminhadoPor={true}
                   showCheckIn={true}
+                  showConcluir={true}
                   dateLabel="Encaminhado em"
                 />
                 <tbody>
@@ -532,10 +547,13 @@ export default function MinhasAgendas() {
                         saldo: enc.saldo, aguardando: enc.aguardando,
                         indexRegula: enc.indexRegula,
                       })}
+                      onConcluir={() => handleConcluirEncaminhada(enc)}
                       isCheckInPending={checkInMutation.isPending}
                       isRemoverPending={false}
+                      isConcluirPending={concluirMutation.isPending}
                       showEncaminhadoPor={true}
                       showCheckIn={true}
+                      showConcluir={true}
                       dateLabel="Encaminhado em"
                     />
                   ))}
