@@ -117,3 +117,4 @@
 - [x] Aumentar destaque visual das cores nas agendas em todas as telas
 - [x] Ordenação por cor na tabela principal de Regulação com agrupamento visual entre grupos de cor
 - [x] Adicionar botão Concluído na tabela Encaminhadas para mim (igual ao de Check-ins ativos)
+- [x] Exibir reguladores com check-in ativo em cada agenda nas tabelas de Minhas Agendas

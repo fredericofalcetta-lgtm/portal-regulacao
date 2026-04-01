@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogIn, LogOut, Loader2, ClipboardList, RefreshCw, Send, CheckCircle2, Trash2, Flag, CheckCheck, XCircle } from 'lucide-react';
+import { LogIn, LogOut, Loader2, ClipboardList, RefreshCw, Send, CheckCircle2, Trash2, Flag, CheckCheck, XCircle, Users } from 'lucide-react';
 import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 import CheckInDetalhes from '@/components/CheckInDetalhes';
 import { trpc } from '@/lib/trpc';
@@ -32,6 +32,7 @@ interface AgendaRowProps {
   flags?: string | null;
   cor?: string | null;
   temCheckIn: boolean;
+  reguladoresAtivos?: { usuarioEmail: string; usuarioNome: string }[];
   encaminhadoPor?: string | null;
   concluidoEm?: Date | null;
   createdAt: Date;
@@ -65,6 +66,7 @@ function AgendaRow({
   flags,
   cor,
   temCheckIn,
+  reguladoresAtivos,
   encaminhadoPor,
   concluidoEm,
   createdAt,
@@ -109,6 +111,20 @@ function AgendaRow({
           {agendaNome}
         </div>
         {municipio && <div className="text-xs text-muted-foreground mt-0.5">{municipio}</div>}
+        {reguladoresAtivos && reguladoresAtivos.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {reguladoresAtivos.map(r => (
+              <span
+                key={r.usuarioEmail}
+                title={r.usuarioEmail}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300"
+              >
+                <Users size={9} />
+                {r.usuarioNome.split(' ')[0]}
+              </span>
+            ))}
+          </div>
+        )}
       </td>
       {/* Central */}
       <td className="px-4 py-3 text-center text-xs text-foreground">{central ?? '—'}</td>
@@ -348,6 +364,19 @@ export default function MinhasAgendas() {
   const checkInIds = new Set(checkIns.map(ci => ci.agendaId));
   const totalAguardandoConcluidas = concluidas.reduce((acc, c) => acc + (c.aguardando ?? 0), 0);
 
+  // IDs de todas as agendas visíveis (check-ins + encaminhadas) para buscar quem está regulando
+  const todasAgendaIds = React.useMemo(() => {
+    const ids = new Set<number>();
+    checkIns.forEach(ci => ids.add(ci.agendaId));
+    encaminhadas.forEach(enc => ids.add(enc.agendaId));
+    return Array.from(ids);
+  }, [checkIns, encaminhadas]);
+
+  const { data: checkInsPorAgenda = {} } = trpc.checkIns.getPorAgendas.useQuery(
+    { agendaIds: todasAgendaIds },
+    { enabled: todasAgendaIds.length > 0, refetchInterval: 60_000 }
+  );
+
   const handleRefresh = () => {
     refetchCheckIns();
     refetchEncaminhadas();
@@ -435,6 +464,7 @@ export default function MinhasAgendas() {
                         flags={ci.flags}
                         cor={ci.cor}
                         temCheckIn={true}
+                        reguladoresAtivos={checkInsPorAgenda[ci.agendaId] ?? []}
                         createdAt={ci.createdAt}
                         onCheckIn={() => handleCheckOut(ci)}
                         onConcluir={() => handleConcluir(ci)}
@@ -538,6 +568,7 @@ export default function MinhasAgendas() {
                       flags={enc.flags}
                       cor={enc.cor}
                       temCheckIn={checkInIds.has(enc.agendaId)}
+                      reguladoresAtivos={checkInsPorAgenda[enc.agendaId] ?? []}
                       encaminhadoPor={enc.encaminhadoPorNome}
                       createdAt={enc.createdAt}
                       onCheckIn={() => handleCheckIn({

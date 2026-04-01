@@ -14,7 +14,7 @@ import {
   agendasConcluidas,
   dicionarioEspecialidades,
 } from "../drizzle/schema";
-import { asc, desc, eq, and, or, isNull } from "drizzle-orm";
+import { asc, desc, eq, and, or, isNull, inArray } from "drizzle-orm";
 import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb, syncProtocolosToDb, syncDicionarioToDb } from "./syncSheets";
 import { z } from "zod";
 
@@ -508,6 +508,29 @@ export const appRouter = router({
         .where(eq(checkIns.usuarioEmail, email))
         .orderBy(desc(checkIns.createdAt));
     }),
+
+    // Buscar check-ins ativos para um conjunto de agendas (para exibir quem está regulando em Minhas Agendas)
+    getPorAgendas: protectedProcedure
+      .input(z.object({ agendaIds: z.array(z.number()) }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db || input.agendaIds.length === 0) return {};
+        const rows = await db
+          .select({
+            agendaId: checkIns.agendaId,
+            usuarioEmail: checkIns.usuarioEmail,
+            usuarioNome: checkIns.usuarioNome,
+          })
+          .from(checkIns)
+          .where(inArray(checkIns.agendaId, input.agendaIds));
+        // Agrupar por agendaId
+        const grouped: Record<number, { usuarioEmail: string; usuarioNome: string }[]> = {};
+        for (const row of rows) {
+          if (!grouped[row.agendaId]) grouped[row.agendaId] = [];
+          grouped[row.agendaId].push({ usuarioEmail: row.usuarioEmail, usuarioNome: row.usuarioNome });
+        }
+        return grouped;
+      }),
 
     // Buscar todos os check-ins (para exibir na tabela)
     getAll: protectedProcedure.query(async () => {
