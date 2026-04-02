@@ -14,7 +14,7 @@ import {
   agendasConcluidas,
   dicionarioEspecialidades,
 } from "../drizzle/schema";
-import { asc, desc, eq, and, or, isNull, inArray } from "drizzle-orm";
+import { asc, desc, eq, and, inArray } from "drizzle-orm";
 import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb, syncProtocolosToDb, syncDicionarioToDb } from "./syncSheets";
 import { z } from "zod";
 
@@ -278,8 +278,11 @@ export const appRouter = router({
       const email = ctx.user?.email ?? "";
 
       // Buscar encaminhamentos com JOIN na tabela de dados para pegar informações atualizadas
-      // JOIN usa agendaNome + municipio + central como chave composta para evitar duplicatas
-      // Agendas com mesmo nome existem em centrais diferentes (ex: CIRURGIA GERAL ADULTO em 1CRS, 2CRS...)
+      // JOIN usa agendaNome + municipio + central como chave composta para evitar duplicatas.
+      // IMPORTANTE: usar eq() direto (match exato) em vez de isNull()+or(), pois agendas sem
+      // município têm municipio='' (string vazia, não NULL). Se usarmos isNull()+or(), o JOIN
+      // faz match com TODAS as agendas de mesmo nome que também têm municipio='', causando
+      // duplicação de linhas (ex: ORTOPEDIA ADULTO aparece em 16 centrais diferentes).
       const result = await db
         .select({
           id: encaminhamentos.id,
@@ -309,14 +312,8 @@ export const appRouter = router({
           regulacaoData,
           and(
             eq(encaminhamentos.agendaNome, regulacaoData.agenda),
-            or(
-              isNull(encaminhamentos.municipio),
-              eq(encaminhamentos.municipio, regulacaoData.municipio)
-            ),
-            or(
-              isNull(encaminhamentos.central),
-              eq(encaminhamentos.central, regulacaoData.central)
-            )
+            eq(encaminhamentos.municipio, regulacaoData.municipio),
+            eq(encaminhamentos.central, regulacaoData.central)
           )
         )
         .where(eq(encaminhamentos.reguladorEmail, email))
@@ -495,14 +492,8 @@ export const appRouter = router({
           regulacaoData,
           and(
             eq(checkIns.agendaNome, regulacaoData.agenda),
-            or(
-              isNull(checkIns.municipio),
-              eq(checkIns.municipio, regulacaoData.municipio)
-            ),
-            or(
-              isNull(checkIns.central),
-              eq(checkIns.central, regulacaoData.central)
-            )
+            eq(checkIns.municipio, regulacaoData.municipio),
+            eq(checkIns.central, regulacaoData.central)
           )
         )
         .where(eq(checkIns.usuarioEmail, email))
@@ -563,14 +554,8 @@ export const appRouter = router({
           regulacaoData,
           and(
             eq(checkIns.agendaNome, regulacaoData.agenda),
-            or(
-              isNull(checkIns.municipio),
-              eq(checkIns.municipio, regulacaoData.municipio)
-            ),
-            or(
-              isNull(checkIns.central),
-              eq(checkIns.central, regulacaoData.central)
-            )
+            eq(checkIns.municipio, regulacaoData.municipio),
+            eq(checkIns.central, regulacaoData.central)
           )
         )
         .orderBy(desc(checkIns.createdAt));
