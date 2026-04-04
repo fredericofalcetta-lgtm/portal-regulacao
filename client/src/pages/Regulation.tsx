@@ -7,12 +7,14 @@ import { trpc } from '@/lib/trpc';
 
 interface RegulationProps {
   data: (string | number)[][];
+  concluidasIds?: number[];
+  onConcluir?: () => void;
 }
 
 // Perfis que têm acesso irrestrito a todas as especialidades
 const PERFIS_IRRESTRITO = ['monitoramento', 'administrador'];
 
-export default function Regulation({ data }: RegulationProps) {
+export default function Regulation({ data, concluidasIds = [], onConcluir }: RegulationProps) {
   const { regulador, perfilAtivo } = useRegulador();
   const {
     selectedAgendas,
@@ -250,6 +252,8 @@ export default function Regulation({ data }: RegulationProps) {
         onSort={handleSort}
         perfilUsuario={perfilAtivo ?? regulador?.perfil ?? ''}
         emailUsuario={regulador?.email ?? ''}
+        concluidasIds={concluidasIds}
+        onConcluir={onConcluir}
       />
     </div>
   );

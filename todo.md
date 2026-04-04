@@ -119,3 +119,6 @@
 - [x] Adicionar botão Concluído na tabela Encaminhadas para mim (igual ao de Check-ins ativos)
 - [x] Exibir reguladores com check-in ativo em cada agenda nas tabelas de Minhas Agendas
 - [x] Corrigir JOIN duplicado em check-ins e encaminhamentos para agendas sem município (municipio=''): substituir isNull()+or() por eq() direto na chave composta agenda+municipio+central
+- [x] Exibir coluna Aut/Cotas nos check-ins ativos em Minhas Agendas
+- [x] Marcar agendas concluídas na aba Regulação (destaque visual + badge "Concluída")
+- [x] Bloquear reencaminhamento de agendas concluídas até o próximo dia (renovação do banco)

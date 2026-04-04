@@ -23,6 +23,8 @@ interface AgendaRowProps {
   municipio?: string | null;
   central?: string | null;
   cotas?: number | null;
+  autorizadas?: number | null;
+  autCotas?: string | null;
   saldo?: number | null;
   aguardando?: number | null;
   aguardando28d?: number | null;
@@ -57,6 +59,8 @@ function AgendaRow({
   municipio,
   central,
   cotas,
+  autorizadas,
+  autCotas,
   saldo,
   aguardando,
   aguardando28d,
@@ -130,6 +134,10 @@ function AgendaRow({
       <td className="px-4 py-3 text-center text-xs text-foreground">{central ?? '—'}</td>
       {/* Cotas */}
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{cotas ?? '—'}</td>
+      {/* Aut/Cotas */}
+      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">
+        {autCotas != null ? autCotas : (autorizadas != null ? `${autorizadas}` : '—')}
+      </td>
       {/* Saldo */}
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{saldo ?? '—'}</td>
       {/* Aguardando */}
@@ -243,6 +251,7 @@ function TableHeader({
         <th className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Agenda</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Central</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Cotas</th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aut/Cotas</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Saldo</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aguardando</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;28d</th>
@@ -383,9 +392,9 @@ export default function MinhasAgendas() {
     refetchConcluidas();
   };
 
-  // Número de colunas fixas (Agenda…Flags = 10) + Data = 11
+  // Número de colunas fixas (Agenda…Flags = 11) + Data = 12
   // Usado para colSpan no rodapé e nas linhas de detalhe
-  const FIXED_COLS = 11; // Agenda, Central, Cotas, Saldo, Aguardando, >28d, >60d, >90d, Index, Flags, Data
+  const FIXED_COLS = 12; // Agenda, Central, Cotas, Aut/Cotas, Saldo, Aguardando, >28d, >60d, >90d, Index, Flags, Data
 
   return (
     <div className="flex-1 flex flex-col bg-background min-h-screen">
@@ -455,6 +464,8 @@ export default function MinhasAgendas() {
                         municipio={ci.municipio}
                         central={ci.central}
                         cotas={ci.cotas}
+                        autorizadas={(ci as any).autorizadas}
+                        autCotas={(ci as any).autCotas}
                         saldo={ci.saldo}
                         aguardando={ci.aguardando}
                         aguardando28d={ci.aguardando28d}
@@ -476,8 +487,8 @@ export default function MinhasAgendas() {
                         dateLabel="Check-in em"
                       />
                       <tr key={`detalhes-${ci.id}`}>
-                        {/* Check-ins ativos: FIXED_COLS(11) + Check-in(1) + Ação(1) = 13 */}
-                        <td colSpan={13} className="p-0">
+                        {/* Check-ins ativos: FIXED_COLS(12) + Check-in(1) + Ação(1) = 14 */}
+                        <td colSpan={14} className="p-0">
                           <CheckInDetalhes
                             agendaId={ci.agendaId}
                             especialidade={ci.especialidade}
@@ -682,10 +693,10 @@ export default function MinhasAgendas() {
                   ))}
                 </tbody>
                 {/* Rodapé com soma total de Aguardando */}
-                {/* Colunas: Agenda, Central, Cotas, Saldo, Aguardando, >28d, >60d, >90d, Index, Flags, Data, Status = 12 */}
+                {/* Colunas: Agenda, Central, Cotas, Aut/Cotas, Saldo, Aguardando, >28d, >60d, >90d, Index, Flags, Data, Status = 13 */}
                 <tfoot className="bg-emerald-50 dark:bg-emerald-950/20 border-t-2 border-emerald-200 dark:border-emerald-800">
                   <tr>
-                    <td colSpan={4} className="px-4 py-3 text-right text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+                    <td colSpan={5} className="px-4 py-3 text-right text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
                       Total Aguardando (produtividade):
                     </td>
                     <td className="px-4 py-3 text-center text-sm font-bold text-emerald-700 dark:text-emerald-300">

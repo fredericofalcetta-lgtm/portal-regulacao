@@ -13,6 +13,12 @@ export default function Home() {
   const [location] = useLocation();
   const utils = trpc.useUtils();
 
+  // Invalidar sheets.getData quando agendas concluídas mudarem
+  // (para que a aba Regulação reflita o status de concluída)
+  const invalidateSheetsData = useCallback(() => {
+    utils.sheets.getData.invalidate();
+  }, [utils]);
+
   // Limpar check-ins quando o usuário fechar a aba ou o navegador
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -28,6 +34,7 @@ export default function Home() {
     gcTime: 10 * 60 * 1000,
   });
   const rows = sheetsData?.rows ?? [];
+  const concluidasIds = sheetsData?.concluidasIds ?? [];
 
   const handleRefresh = useCallback(() => {
     utils.sheets.getData.invalidate();
@@ -63,7 +70,7 @@ export default function Home() {
         <Switch>
           <Route path="/" component={Landing} />
           <Route path="/regulacao">
-            {() => <Regulation data={rows} />}
+            {() => <Regulation data={rows} concluidasIds={concluidasIds} onConcluir={invalidateSheetsData} />}
           </Route>
           <Route path="/dashboard">
             {() => <Dashboard data={rows} onRefresh={handleRefresh} />}

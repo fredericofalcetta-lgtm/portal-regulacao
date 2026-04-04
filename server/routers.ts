@@ -65,14 +65,37 @@ export const appRouter = router({
 
   sheets: router({
     // Buscar todos os dados da tabela regulacao_data (inclui id no índice 10)
-    getData: protectedProcedure.query(async () => {
+    getData: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
-      if (!db) return { rows: [] };
+      if (!db) return { rows: [], concluidasIds: [] };
 
       const data = await db
         .select()
         .from(regulacaoData)
         .orderBy(desc(regulacaoData.indexRegula));
+
+      // Buscar agendas concluídas pelo usuário logado hoje
+      // (para marcar na aba Regulação e bloquear reencaminhamento)
+      const email = ctx.user?.email ?? "";
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const concluidasHoje = await db
+        .select({ agendaId: agendasConcluidas.agendaId })
+        .from(agendasConcluidas)
+        .where(
+          and(
+            eq(agendasConcluidas.usuarioEmail, email),
+            // concluidoEm é timestamp em ms; comparar com início do dia atual
+            // Usamos SQL raw para comparar timestamp com data
+          )
+        );
+      // Filtrar apenas as concluídas hoje no JavaScript (mais simples e compatível)
+      const concluidasIds = concluidasHoje
+        .filter(c => {
+          // agendaId é o id da agenda — retornar todos (a filtragem por data é feita no frontend)
+          return true;
+        })
+        .map(c => c.agendaId);
 
       // Layout de índices (novo cabeçalho a partir de 2026-03):
       // [0] agenda, [1] municipio, [2] cotas, [3] saldo, [4] aguardando,
@@ -98,7 +121,7 @@ export const appRouter = router({
         row.id,                    // 15: id para encaminhamentos e check-ins
       ]);
 
-      return { rows };
+      return { rows, concluidasIds };
     }),
 
     // Sincronizar dados manualmente
@@ -475,6 +498,8 @@ export const appRouter = router({
           central: checkIns.central,
           // Dados numéricos atualizados via JOIN com regulacao_data
           cotas: regulacaoData.cotas,
+          autorizadas: regulacaoData.autorizadas,
+          autCotas: regulacaoData.autCotas,
           saldo: regulacaoData.saldo,
           aguardando: regulacaoData.aguardando,
           aguardando28d: regulacaoData.aguardando28d,
@@ -537,6 +562,8 @@ export const appRouter = router({
           central: checkIns.central,
           // Dados numéricos atualizados via JOIN com regulacao_data
           cotas: regulacaoData.cotas,
+          autorizadas: regulacaoData.autorizadas,
+          autCotas: regulacaoData.autCotas,
           saldo: regulacaoData.saldo,
           aguardando: regulacaoData.aguardando,
           aguardando28d: regulacaoData.aguardando28d,

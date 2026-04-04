@@ -17,6 +17,8 @@ interface DataTableProps {
   onSort: (column: number) => void;
   perfilUsuario: string;
   emailUsuario: string;
+  concluidasIds?: number[];
+  onConcluir?: () => void;
 }
 
 // Memoizar a linha da tabela para evitar re-renders desnecessários
@@ -30,6 +32,7 @@ const TableRow = memo(function TableRow({
   reguladoresList,
   emailUsuario,
   onUpdate,
+  isConcluida,
 }: {
   row: (string | number)[];
   rowIndex: number;
@@ -40,6 +43,7 @@ const TableRow = memo(function TableRow({
   reguladoresList: { email: string; nome: string }[];
   emailUsuario: string;
   onUpdate: () => void;
+  isConcluida: boolean;
 }) {
   // Layout de índices: [0]agenda [1]municipio [2]cotas [3]saldo [4]aguardando
   // [5]autorizadas [6]autCotas [7]indexRegula [8]>28d [9]>60d [10]>90d
@@ -61,14 +65,22 @@ const TableRow = memo(function TableRow({
   return (
     <tr
       className={`border-b border-border hover:bg-secondary transition-colors ${
-        rowIndex % 2 === 0 ? 'bg-card' : 'bg-muted/30'
+        isConcluida
+          ? 'opacity-60 bg-emerald-50 dark:bg-emerald-950/20'
+          : rowIndex % 2 === 0 ? 'bg-card' : 'bg-muted/30'
       }`}
-      style={corRowStyle}
+      style={isConcluida ? undefined : corRowStyle}
     >
       {/* Agenda */}
       <td className="px-6 py-3 text-foreground">
         <div className="font-medium text-sm flex items-center gap-2">
-          {cor && <span style={corBadgeStyle} title={cor} />}
+          {cor && !isConcluida && <span style={corBadgeStyle} title={cor} />}
+          {isConcluida && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+              Concluída
+            </span>
+          )}
           {String(row[0])}
         </div>
         <div className="text-xs text-muted-foreground mt-0.5">{String(row[1])}</div>
@@ -77,7 +89,9 @@ const TableRow = memo(function TableRow({
       {/* Encaminhar — admin/monitor: dropdown; regulador: botão toggle */}
       {(isAdminOuMonitor || isRegulador) && (
         <td className="px-3 py-3 text-center">
-          {agendaId > 0 ? (
+          {isConcluida ? (
+            <span className="text-xs text-muted-foreground italic">bloqueado</span>
+          ) : agendaId > 0 ? (
             isAdminOuMonitor ? (
               <EncaminharCell
                 agendaId={agendaId}
@@ -109,7 +123,9 @@ const TableRow = memo(function TableRow({
 
       {/* Check-in — todos */}
       <td className="px-3 py-3 text-center">
-        {agendaId > 0 ? (
+        {isConcluida ? (
+          <span className="text-xs text-muted-foreground italic">bloqueado</span>
+        ) : agendaId > 0 ? (
           <CheckInCell
             agendaId={agendaId}
             agendaNome={String(row[0])}
@@ -186,7 +202,10 @@ export default function DataTable({
   onSort,
   perfilUsuario,
   emailUsuario,
+  concluidasIds = [],
+  onConcluir,
 }: DataTableProps) {
+  const concluidasSet = useMemo(() => new Set(concluidasIds), [concluidasIds]);
   const perfilLower = perfilUsuario.toLowerCase();
   const isAdminOuMonitor =
     perfilLower.includes('administrador') ||
@@ -234,7 +253,8 @@ export default function DataTable({
   const handleUpdate = useCallback(() => {
     refetchEncaminhamentos();
     refetchCheckIns();
-  }, [refetchEncaminhamentos, refetchCheckIns]);
+    onConcluir?.();
+  }, [refetchEncaminhamentos, refetchCheckIns, onConcluir]);
 
   // Expande especialidades compostas (ex: "Fisiatria, Reumatologia") em partes individuais
   const expandirEspecialidades = (valor: string): string[] =>
@@ -468,6 +488,7 @@ export default function DataTable({
                       reguladoresList={reguladoresList}
                       emailUsuario={emailUsuario}
                       onUpdate={handleUpdate}
+                      isConcluida={agendaId > 0 && concluidasSet.has(agendaId)}
                     />
                   </Fragment>
                 );
