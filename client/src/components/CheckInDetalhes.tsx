@@ -134,8 +134,8 @@ export default function CheckInDetalhes({ agendaId, especialidade, central }: Ch
                       </thead>
                       <tbody>
                         {agendas.map((a) => {
-                          const corRowStyle = getCorRowStyle(a.cor);
-                          const corBadgeStyle = getCorBadgeStyle(a.cor);
+                          const corRowStyle = getCorRowStyle(a.corIndex);
+                          const corBadgeStyle = getCorBadgeStyle(a.corIndex);
                           return (
                           <tr
                             key={a.id}
@@ -144,7 +144,7 @@ export default function CheckInDetalhes({ agendaId, especialidade, central }: Ch
                           >
                             <td className="px-3 py-1.5 font-medium text-foreground">
                               <div className="flex items-center gap-1.5">
-                                {a.cor && <span style={corBadgeStyle} title={a.cor} />}
+                                {a.corIndex && <span style={corBadgeStyle} title={a.corIndex} />}
                                 {a.agenda ?? '—'}
                               </div>
                             </td>

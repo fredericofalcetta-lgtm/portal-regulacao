@@ -47,9 +47,12 @@ const TableRow = memo(function TableRow({
 }) {
   // Layout de índices: [0]agenda [1]municipio [2]cotas [3]saldo [4]aguardando
   // [5]autorizadas [6]autCotas [7]indexRegula [8]>28d [9]>60d [10]>90d
-  // [11]central [12]especialidade [13]flags [14]cor [15]id
-  const agendaId = typeof row[15] === 'number' ? row[15] : 0;
-  const cor = String(row[14] ?? '');
+  // [11]central [12]especialidade [13]flagIndex [14]corIndex [15]flagAutCotas [16]corAutCotas [17]id
+  const agendaId = typeof row[17] === 'number' ? row[17] : 0;
+  const cor = String(row[14] ?? '');  // corIndex
+  const flagIndex = String(row[13] ?? '');
+  const flagAutCotas = String(row[15] ?? '');
+  const corAutCotas = String(row[16] ?? '');
   const indexValue = parseFloat(String(row[7])) || 0;
 
   const getIndexRegulaColor = (value: number): string => {
@@ -161,10 +164,26 @@ const TableRow = memo(function TableRow({
       <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
         {String(row[5])}
       </td>
+      {/* Aut/Cotas */}
+      <td className="px-3 py-3 text-center">
+        <span
+          title={flagAutCotas || undefined}
+          className={`inline-block px-2 py-1 rounded text-sm font-semibold cursor-default ${
+            corAutCotas === 'Vermelho' ? 'bg-red-100 dark:bg-red-950/50 text-red-900 dark:text-red-300' :
+            corAutCotas === 'Laranja' ? 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300' :
+            corAutCotas === 'Amarelo' ? 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-900 dark:text-yellow-300' :
+            corAutCotas === 'Verde' ? 'bg-green-100 dark:bg-green-950/50 text-green-900 dark:text-green-300' :
+            'text-foreground'
+          }`}
+        >
+          {String(row[6])}
+        </span>
+      </td>
       {/* IndexRegula */}
       <td className="px-3 py-3 text-center">
         <span
-          className={`inline-block px-2 py-1 rounded text-sm font-semibold ${
+          title={flagIndex || undefined}
+          className={`inline-block px-2 py-1 rounded text-sm font-semibold cursor-default ${
             getIndexRegulaColor(indexValue) || 'text-foreground'
           }`}
         >
@@ -442,14 +461,24 @@ export default function DataTable({
                   <SortIcon col={11} />
                 </div>
               </th>
-              {/* Cor */}
+              {/* Aut/Cotas */}
+              <th
+                onClick={() => onSort(6)}
+                className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
+              >
+                <div className="flex items-center justify-center space-x-1">
+                  <span>Aut/Cotas</span>
+                  <SortIcon col={6} />
+                </div>
+              </th>
+              {/* Prioridade (cor da linha) */}
               <th
                 onClick={() => onSort(14)}
                 className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
-                title="Ordenar por cor"
+                title="Ordenar por prioridade de cor"
               >
                 <div className="flex items-center justify-center space-x-1">
-                  <span>Cor</span>
+                  <span>Prioridade</span>
                   <SortIcon col={14} />
                 </div>
               </th>
@@ -464,7 +493,7 @@ export default function DataTable({
               </tr>
             ) : (
               filteredAndSortedRows.map((row, rowIndex) => {
-                const agendaId = typeof row[15] === 'number' ? row[15] : 0;
+                const agendaId = typeof row[17] === 'number' ? row[17] : 0;
                 // Separador visual entre grupos de cor (só quando ordenando por cor)
                 const corAtual = String(row[14] ?? '');
                 const corAnterior = rowIndex > 0 ? String(filteredAndSortedRows[rowIndex - 1][14] ?? '') : corAtual;

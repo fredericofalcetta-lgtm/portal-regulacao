@@ -122,3 +122,11 @@
 - [x] Exibir coluna Aut/Cotas nos check-ins ativos em Minhas Agendas
 - [x] Marcar agendas concluídas na aba Regulação (destaque visual + badge "Concluída")
 - [x] Bloquear reencaminhamento de agendas concluídas até o próximo dia (renovação do banco)
+- [x] Migrar banco: adicionar colunas flagIndex (col N), corIndex (col O), flagAutCotas (col P), corAutCotas (col Q)
+- [x] Atualizar syncSheets para mapear as novas colunas N, O, P, Q da aba Final
+- [x] Atualizar procedures do backend para retornar as novas colunas
+- [x] Usar corIndex para colorir a linha (substituindo coluna cor atual)
+- [x] Usar corAutCotas para colorir o valor Aut/Cotas (cor da letra + fundo do badge)
+- [x] Exibir flagIndex como tooltip ao passar o mouse sobre o valor do IndexRegula
+- [x] Exibir flagAutCotas como tooltip ao passar o mouse sobre o valor do Aut/Cotas
+- [x] Ocultar colunas de cor e flag das tabelas visíveis ao usuário

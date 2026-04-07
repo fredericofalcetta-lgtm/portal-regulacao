@@ -31,8 +31,10 @@ interface AgendaRowProps {
   aguardando60d?: number | null;
   aguardando90d?: number | null;
   indexRegula?: number | null;
-  flags?: string | null;
-  cor?: string | null;
+  flagIndex?: string | null;
+  corIndex?: string | null;
+  flagAutCotas?: string | null;
+  corAutCotas?: string | null;
   temCheckIn: boolean;
   reguladoresAtivos?: { usuarioEmail: string; usuarioNome: string }[];
   encaminhadoPor?: string | null;
@@ -67,8 +69,10 @@ function AgendaRow({
   aguardando60d,
   aguardando90d,
   indexRegula,
-  flags,
-  cor,
+  flagIndex,
+  corIndex,
+  flagAutCotas,
+  corAutCotas,
   temCheckIn,
   reguladoresAtivos,
   encaminhadoPor,
@@ -100,8 +104,8 @@ function AgendaRow({
     ? new Date(concluidoEm).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })
     : new Date(createdAt).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
 
-  const corRowStyle = getCorRowStyle(cor);
-  const corBadgeStyle = getCorBadgeStyle(cor);
+  const corRowStyle = getCorRowStyle(corIndex);
+  const corBadgeStyle = getCorBadgeStyle(corIndex);
 
   return (
     <tr
@@ -111,7 +115,7 @@ function AgendaRow({
       {/* Agenda + Município */}
       <td className="px-4 py-3">
         <div className="font-medium text-sm text-foreground flex items-center gap-2">
-          {cor && <span style={corBadgeStyle} title={cor} />}
+          {corIndex && <span style={corBadgeStyle} title={corIndex} />}
           {agendaNome}
         </div>
         {municipio && <div className="text-xs text-muted-foreground mt-0.5">{municipio}</div>}
@@ -135,8 +139,19 @@ function AgendaRow({
       {/* Cotas */}
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{cotas ?? '—'}</td>
       {/* Aut/Cotas */}
-      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">
-        {autCotas != null ? autCotas : (autorizadas != null ? `${autorizadas}` : '—')}
+      <td className="px-4 py-3 text-center">
+        <span
+          title={flagAutCotas || undefined}
+          className={`inline-block px-2 py-0.5 rounded text-sm font-medium cursor-default ${
+            corAutCotas === 'Vermelho' ? 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300' :
+            corAutCotas === 'Laranja' ? 'bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300' :
+            corAutCotas === 'Amarelo' ? 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300' :
+            corAutCotas === 'Verde' ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300' :
+            'text-foreground'
+          }`}
+        >
+          {autCotas != null ? autCotas : (autorizadas != null ? `${autorizadas}` : '—')}
+        </span>
       </td>
       {/* Saldo */}
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{saldo ?? '—'}</td>
@@ -150,20 +165,12 @@ function AgendaRow({
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando90d ?? '—'}</td>
       {/* IndexRegula */}
       <td className="px-4 py-3 text-center">
-        <span className={`inline-block px-2 py-0.5 rounded text-sm ${getBadgeColor(indexRegula)}`}>
+        <span
+          title={flagIndex || undefined}
+          className={`inline-block px-2 py-0.5 rounded text-sm cursor-default ${getBadgeColor(indexRegula)}`}
+        >
           {indexRegula != null ? indexRegula.toFixed(2) : '—'}
         </span>
-      </td>
-      {/* Flags — sempre presente para manter alinhamento */}
-      <td className="px-4 py-3 text-center">
-        {flags ? (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300">
-            <Flag size={10} />
-            {flags}
-          </span>
-        ) : (
-          <span className="text-xs text-muted-foreground">—</span>
-        )}
       </td>
 
       {/* ── Colunas extras contextuais (após Flags) ── */}
@@ -228,7 +235,7 @@ function AgendaRow({
 }
 
 // ─── Cabeçalho da tabela ─────────────────────────────────────────────────────
-// Colunas fixas (até Flags): Agenda | Central | Cotas | Saldo | Aguardando | >28d | >60d | >90d | Index | Flags
+// Colunas fixas: Agenda | Central | Cotas | Aut/Cotas | Saldo | Aguardando | >28d | >60d | >90d | Index
 // Colunas extras (contextuais): Encaminhado por? | Data | Check-in? | Ação? | Status?
 
 function TableHeader({
@@ -258,7 +265,6 @@ function TableHeader({
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;60d</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;90d</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Index</th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Flags</th>
         {/* Colunas extras contextuais */}
         {showEncaminhadoPor && (
           <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Encaminhado por</th>
@@ -392,9 +398,9 @@ export default function MinhasAgendas() {
     refetchConcluidas();
   };
 
-  // Número de colunas fixas (Agenda…Flags = 11) + Data = 12
+  // Número de colunas fixas (Agenda…Index = 10) + Data = 11
   // Usado para colSpan no rodapé e nas linhas de detalhe
-  const FIXED_COLS = 12; // Agenda, Central, Cotas, Aut/Cotas, Saldo, Aguardando, >28d, >60d, >90d, Index, Flags, Data
+  const FIXED_COLS = 11; // Agenda, Central, Cotas, Aut/Cotas, Saldo, Aguardando, >28d, >60d, >90d, Index, Data
 
   return (
     <div className="flex-1 flex flex-col bg-background min-h-screen">
@@ -472,8 +478,10 @@ export default function MinhasAgendas() {
                         aguardando60d={ci.aguardando60d}
                         aguardando90d={ci.aguardando90d}
                         indexRegula={ci.indexRegula}
-                        flags={ci.flags}
-                        cor={ci.cor}
+                        flagIndex={(ci as any).flagIndex}
+                        corIndex={(ci as any).corIndex}
+                        flagAutCotas={(ci as any).flagAutCotas}
+                        corAutCotas={(ci as any).corAutCotas}
                         temCheckIn={true}
                         reguladoresAtivos={checkInsPorAgenda[ci.agendaId] ?? []}
                         createdAt={ci.createdAt}
@@ -487,8 +495,8 @@ export default function MinhasAgendas() {
                         dateLabel="Check-in em"
                       />
                       <tr key={`detalhes-${ci.id}`}>
-                        {/* Check-ins ativos: FIXED_COLS(12) + Check-in(1) + Ação(1) = 14 */}
-                        <td colSpan={14} className="p-0">
+                        {/* Check-ins ativos: FIXED_COLS(11) + Check-in(1) + Ação(1) = 13 */}
+                        <td colSpan={13} className="p-0">
                           <CheckInDetalhes
                             agendaId={ci.agendaId}
                             especialidade={ci.especialidade}
@@ -576,8 +584,10 @@ export default function MinhasAgendas() {
                       aguardando60d={enc.aguardando60d}
                       aguardando90d={enc.aguardando90d}
                       indexRegula={enc.indexRegula}
-                      flags={enc.flags}
-                      cor={enc.cor}
+                      flagIndex={enc.flagIndex}
+                      corIndex={enc.corIndex}
+                      flagAutCotas={enc.flagAutCotas}
+                      corAutCotas={enc.corAutCotas}
                       temCheckIn={checkInIds.has(enc.agendaId)}
                       reguladoresAtivos={checkInsPorAgenda[enc.agendaId] ?? []}
                       encaminhadoPor={enc.encaminhadoPorNome}
@@ -678,8 +688,10 @@ export default function MinhasAgendas() {
                       aguardando60d={(c as any).aguardando60d}
                       aguardando90d={(c as any).aguardando90d}
                       indexRegula={c.indexRegula}
-                      flags={(c as any).flags}
-                      cor={(c as any).cor}
+                      flagIndex={(c as any).flagIndex}
+                      corIndex={(c as any).corIndex}
+                      flagAutCotas={(c as any).flagAutCotas}
+                      corAutCotas={(c as any).corAutCotas}
                       temCheckIn={false}
                       concluidoEm={c.concluidoEm}
                       createdAt={c.concluidoEm}
@@ -693,7 +705,7 @@ export default function MinhasAgendas() {
                   ))}
                 </tbody>
                 {/* Rodapé com soma total de Aguardando */}
-                {/* Colunas: Agenda, Central, Cotas, Aut/Cotas, Saldo, Aguardando, >28d, >60d, >90d, Index, Flags, Data, Status = 13 */}
+                {/* Colunas: Agenda, Central, Cotas, Aut/Cotas, Saldo, Aguardando, >28d, >60d, >90d, Index, Data, Status = 12 */}
                 <tfoot className="bg-emerald-50 dark:bg-emerald-950/20 border-t-2 border-emerald-200 dark:border-emerald-800">
                   <tr>
                     <td colSpan={5} className="px-4 py-3 text-right text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">

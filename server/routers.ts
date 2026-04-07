@@ -97,11 +97,12 @@ export const appRouter = router({
         })
         .map(c => c.agendaId);
 
-      // Layout de índices (novo cabeçalho a partir de 2026-03):
+      // Layout de índices (novo cabeçalho a partir de 2026-04):
       // [0] agenda, [1] municipio, [2] cotas, [3] saldo, [4] aguardando,
       // [5] autorizadas, [6] autCotas, [7] indexRegula,
       // [8] aguardando28d, [9] aguardando60d, [10] aguardando90d,
-      // [11] central, [12] especialidade, [13] flags, [14] cor, [15] id
+      // [11] central, [12] especialidade,
+      // [13] flagIndex, [14] corIndex, [15] flagAutCotas, [16] corAutCotas, [17] id
       const rows = data.map(row => [
         row.agenda ?? "",          // 0
         row.municipio ?? "",       // 1
@@ -116,9 +117,11 @@ export const appRouter = router({
         row.aguardando90d ?? 0,    // 10
         row.central ?? "",         // 11
         row.especialidade ?? "",   // 12
-        row.flags ?? "",           // 13
-        row.cor ?? "",             // 14: cor de destaque
-        row.id,                    // 15: id para encaminhamentos e check-ins
+        row.flagIndex ?? "",       // 13: flag/tooltip do IndexRegula
+        row.corIndex ?? "",        // 14: cor para colorir a linha
+        row.flagAutCotas ?? "",    // 15: flag/tooltip do Aut/Cotas
+        row.corAutCotas ?? "",     // 16: cor para colorir o valor Aut/Cotas
+        row.id,                    // 17: id para encaminhamentos e check-ins
       ]);
 
       return { rows, concluidasIds };
@@ -327,8 +330,10 @@ export const appRouter = router({
           aguardando60d: regulacaoData.aguardando60d,
           aguardando90d: regulacaoData.aguardando90d,
           indexRegula: regulacaoData.indexRegula,
-          flags: regulacaoData.flags,
-          cor: regulacaoData.cor,
+          flagIndex: regulacaoData.flagIndex,
+          corIndex: regulacaoData.corIndex,
+          flagAutCotas: regulacaoData.flagAutCotas,
+          corAutCotas: regulacaoData.corAutCotas,
         })
         .from(encaminhamentos)
         .leftJoin(
@@ -506,8 +511,10 @@ export const appRouter = router({
           aguardando60d: regulacaoData.aguardando60d,
           aguardando90d: regulacaoData.aguardando90d,
           indexRegula: regulacaoData.indexRegula,
-          flags: regulacaoData.flags,
-          cor: regulacaoData.cor,
+          flagIndex: regulacaoData.flagIndex,
+          corIndex: regulacaoData.corIndex,
+          flagAutCotas: regulacaoData.flagAutCotas,
+          corAutCotas: regulacaoData.corAutCotas,
           usuarioEmail: checkIns.usuarioEmail,
           usuarioNome: checkIns.usuarioNome,
           createdAt: checkIns.createdAt,
@@ -570,8 +577,10 @@ export const appRouter = router({
           aguardando60d: regulacaoData.aguardando60d,
           aguardando90d: regulacaoData.aguardando90d,
           indexRegula: regulacaoData.indexRegula,
-          flags: regulacaoData.flags,
-          cor: regulacaoData.cor,
+          flagIndex: regulacaoData.flagIndex,
+          corIndex: regulacaoData.corIndex,
+          flagAutCotas: regulacaoData.flagAutCotas,
+          corAutCotas: regulacaoData.corAutCotas,
           usuarioEmail: checkIns.usuarioEmail,
           usuarioNome: checkIns.usuarioNome,
           createdAt: checkIns.createdAt,
@@ -723,7 +732,10 @@ export const appRouter = router({
             autCotas: a.autCotas,
             indexRegula: a.indexRegula,
             especialidade: a.especialidade,
-            cor: a.cor,
+            corIndex: a.corIndex,
+            flagIndex: a.flagIndex,
+            flagAutCotas: a.flagAutCotas,
+            corAutCotas: a.corAutCotas,
           }));
 
         // Buscar prioridades da especialidade (match por grandeGrupo)
