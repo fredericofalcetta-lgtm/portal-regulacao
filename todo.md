@@ -130,3 +130,4 @@
 - [x] Exibir flagIndex como tooltip ao passar o mouse sobre o valor do IndexRegula
 - [x] Exibir flagAutCotas como tooltip ao passar o mouse sobre o valor do Aut/Cotas
 - [x] Ocultar colunas de cor e flag das tabelas visíveis ao usuário
+- [x] Corrigir desalinhamento entre cabeçalho e dados na tabela da aba Regulação de Encaminhamentos

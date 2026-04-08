@@ -206,6 +206,18 @@ const TableRow = memo(function TableRow({
       <td className="px-3 py-3 text-center text-xs font-medium text-foreground">
         {String(row[11])}
       </td>
+      {/* Prioridade */}
+      <td className="px-3 py-3 text-center">
+        {cor ? (
+          <span
+            style={corBadgeStyle}
+            title={cor}
+            className="inline-block w-4 h-4 rounded-full"
+          />
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        )}
+      </td>
     </tr>
   );
 });
@@ -411,6 +423,16 @@ export default function DataTable({
                   <SortIcon col={5} />
                 </div>
               </th>
+              {/* Aut/Cotas */}
+              <th
+                onClick={() => onSort(6)}
+                className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
+              >
+                <div className="flex items-center justify-center space-x-1">
+                  <span>Aut/Cotas</span>
+                  <SortIcon col={6} />
+                </div>
+              </th>
               {/* Index */}
               <th
                 onClick={() => onSort(7)}
@@ -459,16 +481,6 @@ export default function DataTable({
                 <div className="flex items-center justify-center space-x-1">
                   <span>Central</span>
                   <SortIcon col={11} />
-                </div>
-              </th>
-              {/* Aut/Cotas */}
-              <th
-                onClick={() => onSort(6)}
-                className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
-              >
-                <div className="flex items-center justify-center space-x-1">
-                  <span>Aut/Cotas</span>
-                  <SortIcon col={6} />
                 </div>
               </th>
               {/* Prioridade (cor da linha) */}
