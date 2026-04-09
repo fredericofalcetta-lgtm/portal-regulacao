@@ -13,6 +13,8 @@ import {
   checkIns,
   agendasConcluidas,
   dicionarioEspecialidades,
+  reguladorConfig,
+  agendasFavoritas,
 } from "../drizzle/schema";
 import { asc, desc, eq, and, inArray } from "drizzle-orm";
 import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb, syncProtocolosToDb, syncDicionarioToDb } from "./syncSheets";
@@ -298,18 +300,19 @@ export const appRouter = router({
 
   encaminhamentos: router({
     // Buscar encaminhamentos destinados ao usuário logado (com dados atualizados da agenda)
+    // Inclui agendas favoritas do regulador como encaminhamentos virtuais (isFavorita=true).
     getMinhas: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       if (!db) return [];
       const email = ctx.user?.email ?? "";
 
-      // Buscar encaminhamentos com JOIN na tabela de dados para pegar informações atualizadas
+      // 1. Buscar encaminhamentos reais com JOIN na tabela de dados
       // JOIN usa agendaNome + municipio + central como chave composta para evitar duplicatas.
       // IMPORTANTE: usar eq() direto (match exato) em vez de isNull()+or(), pois agendas sem
       // município têm municipio='' (string vazia, não NULL). Se usarmos isNull()+or(), o JOIN
       // faz match com TODAS as agendas de mesmo nome que também têm municipio='', causando
       // duplicação de linhas (ex: ORTOPEDIA ADULTO aparece em 16 centrais diferentes).
-      const result = await db
+      const encResult = await db
         .select({
           id: encaminhamentos.id,
           agendaId: encaminhamentos.agendaId,
@@ -347,7 +350,67 @@ export const appRouter = router({
         .where(eq(encaminhamentos.reguladorEmail, email))
         .orderBy(desc(regulacaoData.indexRegula), desc(encaminhamentos.createdAt));
 
-      return result;
+      // 2. Buscar agendas favoritas do regulador com dados atualizados via JOIN
+      const favResult = await db
+        .select({
+          favId: agendasFavoritas.id,
+          agendaId: agendasFavoritas.agendaId,
+          agendaNome: agendasFavoritas.agendaNome,
+          especialidade: agendasFavoritas.especialidade,
+          // Dados atualizados da agenda via JOIN
+          municipio: regulacaoData.municipio,
+          central: regulacaoData.central,
+          cotas: regulacaoData.cotas,
+          saldo: regulacaoData.saldo,
+          aguardando: regulacaoData.aguardando,
+          aguardando28d: regulacaoData.aguardando28d,
+          aguardando60d: regulacaoData.aguardando60d,
+          aguardando90d: regulacaoData.aguardando90d,
+          indexRegula: regulacaoData.indexRegula,
+          flagIndex: regulacaoData.flagIndex,
+          corIndex: regulacaoData.corIndex,
+          flagAutCotas: regulacaoData.flagAutCotas,
+          corAutCotas: regulacaoData.corAutCotas,
+        })
+        .from(agendasFavoritas)
+        .leftJoin(
+          regulacaoData,
+          eq(agendasFavoritas.agendaId, regulacaoData.id)
+        )
+        .where(eq(agendasFavoritas.reguladorEmail, email));
+
+      // 3. Converter favoritas para o mesmo formato dos encaminhamentos
+      // IDs negativos para distinguir de encaminhamentos reais no frontend
+      const encIds = new Set(encResult.map(e => e.agendaId));
+      const favAsEnc = favResult
+        .filter(f => !encIds.has(f.agendaId)) // não duplicar se já encaminhada
+        .map(f => ({
+          id: -(f.favId),          // ID negativo = favorita
+          agendaId: f.agendaId,
+          agendaNome: f.agendaNome,
+          especialidade: f.especialidade ?? "",
+          reguladorEmail: email,
+          reguladorNome: "",
+          encaminhadoPorEmail: "favorita",
+          encaminhadoPorNome: "Favorita",
+          createdAt: new Date(),
+          municipio: f.municipio,
+          central: f.central,
+          cotas: f.cotas,
+          saldo: f.saldo,
+          aguardando: f.aguardando,
+          aguardando28d: f.aguardando28d,
+          aguardando60d: f.aguardando60d,
+          aguardando90d: f.aguardando90d,
+          indexRegula: f.indexRegula,
+          flagIndex: f.flagIndex,
+          corIndex: f.corIndex,
+          flagAutCotas: f.flagAutCotas,
+          corAutCotas: f.corAutCotas,
+        }));
+
+      // 4. Combinar: encaminhamentos reais primeiro, depois favoritas
+      return [...encResult, ...favAsEnc];
     }),
 
     // Buscar todos os encaminhamentos (carregado uma vez para a tabela)
@@ -845,6 +908,183 @@ export const appRouter = router({
         .delete(agendasConcluidas)
         .where(eq(agendasConcluidas.usuarioEmail, email));
       return { success: true };
+    }),
+  }),
+
+  // ─── Configuração de Reguladores (admin/monitor) ────────────────────────────
+  reguladorConfig: router({
+    /**
+     * Listar todos os reguladores com suas configurações (especialidades + agendas filtro + favoritas).
+     * Acessível apenas por admin/monitor.
+     */
+    listarTodos: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+
+      // Buscar todos os reguladores ativos
+      const regs = await db
+        .select()
+        .from(reguladores)
+        .where(eq(reguladores.ativo, "sim"))
+        .orderBy(asc(reguladores.nome));
+
+      // Buscar todas as configs
+      const configs = await db.select().from(reguladorConfig);
+      const configMap = new Map(configs.map(c => [c.reguladorEmail, c]));
+
+      // Buscar todas as favoritas agrupadas por email
+      const favs = await db.select().from(agendasFavoritas);
+      const favMap = new Map<string, typeof favs>();
+      for (const fav of favs) {
+        if (!favMap.has(fav.reguladorEmail)) favMap.set(fav.reguladorEmail, []);
+        favMap.get(fav.reguladorEmail)!.push(fav);
+      }
+
+      return regs.map(reg => {
+        const config = configMap.get(reg.email);
+        const favoritas = favMap.get(reg.email) ?? [];
+        return {
+          id: reg.id,
+          nome: reg.nome,
+          email: reg.email,
+          perfil: reg.perfil,
+          vinculo: reg.vinculo,
+          especialidades: config?.especialidades ?? "",
+          agendasFiltro: config?.agendasFiltro ?? "",
+          favoritas: favoritas.map(f => ({
+            id: f.id,
+            agendaId: f.agendaId,
+            agendaNome: f.agendaNome,
+            municipio: f.municipio ?? "",
+            central: f.central ?? "",
+            especialidade: f.especialidade ?? "",
+          })),
+        };
+      });
+    }),
+
+    /**
+     * Atualizar especialidades e agendas filtro de um regulador.
+     */
+    atualizarConfig: protectedProcedure
+      .input(z.object({
+        reguladorEmail: z.string().email(),
+        especialidades: z.string(),
+        agendasFiltro: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco de dados não disponível");
+
+        // Upsert: inserir ou atualizar
+        const existing = await db
+          .select()
+          .from(reguladorConfig)
+          .where(eq(reguladorConfig.reguladorEmail, input.reguladorEmail))
+          .limit(1);
+
+        if (existing.length > 0) {
+          await db
+            .update(reguladorConfig)
+            .set({
+              especialidades: input.especialidades,
+              agendasFiltro: input.agendasFiltro,
+            })
+            .where(eq(reguladorConfig.reguladorEmail, input.reguladorEmail));
+        } else {
+          await db.insert(reguladorConfig).values({
+            reguladorEmail: input.reguladorEmail,
+            especialidades: input.especialidades,
+            agendasFiltro: input.agendasFiltro,
+          });
+        }
+
+        return { success: true };
+      }),
+
+    /**
+     * Adicionar agenda favorita para um regulador.
+     */
+    adicionarFavorita: protectedProcedure
+      .input(z.object({
+        reguladorEmail: z.string().email(),
+        agendaId: z.number(),
+        agendaNome: z.string(),
+        municipio: z.string().optional(),
+        central: z.string().optional(),
+        especialidade: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco de dados não disponível");
+
+        // Verificar se já existe
+        const existing = await db
+          .select()
+          .from(agendasFavoritas)
+          .where(and(
+            eq(agendasFavoritas.reguladorEmail, input.reguladorEmail),
+            eq(agendasFavoritas.agendaId, input.agendaId)
+          ))
+          .limit(1);
+
+        if (existing.length > 0) return { success: true, alreadyExists: true };
+
+        await db.insert(agendasFavoritas).values({
+          reguladorEmail: input.reguladorEmail,
+          agendaId: input.agendaId,
+          agendaNome: input.agendaNome,
+          municipio: input.municipio ?? "",
+          central: input.central ?? "",
+          especialidade: input.especialidade ?? "",
+        });
+
+        return { success: true, alreadyExists: false };
+      }),
+
+    /**
+     * Remover agenda favorita de um regulador.
+     */
+    removerFavorita: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco de dados não disponível");
+        await db.delete(agendasFavoritas).where(eq(agendasFavoritas.id, input.id));
+        return { success: true };
+      }),
+
+    /**
+     * Buscar configuração do regulador logado (para aplicar filtros na aba Regulação).
+     */
+    meuConfig: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return null;
+      const email = ctx.user?.email ?? "";
+
+      const config = await db
+        .select()
+        .from(reguladorConfig)
+        .where(eq(reguladorConfig.reguladorEmail, email))
+        .limit(1);
+
+      const favoritas = await db
+        .select()
+        .from(agendasFavoritas)
+        .where(eq(agendasFavoritas.reguladorEmail, email));
+
+      return {
+        especialidades: config[0]?.especialidades ?? "",
+        agendasFiltro: config[0]?.agendasFiltro ?? "",
+        favoritas: favoritas.map(f => ({
+          id: f.id,
+          agendaId: f.agendaId,
+          agendaNome: f.agendaNome,
+          municipio: f.municipio ?? "",
+          central: f.central ?? "",
+          especialidade: f.especialidade ?? "",
+        })),
+      };
     }),
   }),
 });

@@ -178,7 +178,13 @@ function AgendaRow({
       {/* Encaminhado por — só em "Encaminhadas para mim" */}
       {showEncaminhadoPor && (
         <td className="px-4 py-3 text-center text-xs text-muted-foreground">
-          {encaminhadoPor ?? '—'}
+          {encaminhadoPor === 'Favorita' ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
+              ⭐ Favorita
+            </span>
+          ) : (
+            encaminhadoPor ?? '—'
+          )}
         </td>
       )}
       {/* Data */}

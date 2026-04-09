@@ -131,3 +131,11 @@
 - [x] Exibir flagAutCotas como tooltip ao passar o mouse sobre o valor do Aut/Cotas
 - [x] Ocultar colunas de cor e flag das tabelas visíveis ao usuário
 - [x] Corrigir desalinhamento entre cabeçalho e dados na tabela da aba Regulação de Encaminhamentos
+- [x] Criar tabela regulador_config no banco (especialidades e agendas_filtro por usuário)
+- [x] Criar tabela agendas_favoritas no banco (agendas fixas por usuário)
+- [x] Criar procedures CRUD de reguladores (listar, atualizar especialidades, agendas filtro, favoritas)
+- [x] Criar página Reguladores acessível apenas para admin/monitor
+- [x] Tabela de reguladores com edição inline de especialidades, agendas filtro e favoritas
+- [x] Integrar agendas favoritas na seção "Encaminhadas para mim" de Minhas Agendas
+- [x] Agendas favoritas reaparecem diariamente após renovação do banco
+- [ ] Aplicar filtro de especialidades/agendas da config do regulador na aba Regulação

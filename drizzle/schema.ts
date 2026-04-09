@@ -188,3 +188,39 @@ export const dicionarioEspecialidades = mysqlTable("dicionario_especialidades", 
 });
 
 export type DicionarioEspecialidade = typeof dicionarioEspecialidades.$inferSelect;
+
+/**
+ * Configuração de especialidades e agendas filtro por regulador.
+ * Gerenciada pelo portal (admin/monitor), substitui colunas D e E da planilha Reguladores.
+ */
+export const reguladorConfig = mysqlTable("regulador_config", {
+  id: int("id").autoincrement().primaryKey(),
+  reguladorEmail: varchar("regulador_email", { length: 320 }).notNull().unique(),
+  // Lista de especialidades separadas por vírgula (ex: "Oncologia,Endocrinologia")
+  especialidades: text("especialidades"),
+  // Lista de agendas filtro separadas por vírgula (ex: "ENDOCRINOLOGIA DIABETES,ONCOLOGIA MAMA")
+  agendasFiltro: text("agendas_filtro"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ReguladorConfig = typeof reguladorConfig.$inferSelect;
+export type InsertReguladorConfig = typeof reguladorConfig.$inferInsert;
+
+/**
+ * Agendas favoritas por regulador.
+ * Aparecem diariamente na seção "Encaminhadas para mim" de Minhas Agendas.
+ * O regulador pode fazer check-in e concluir; reaparecem a cada renovação do banco.
+ */
+export const agendasFavoritas = mysqlTable("agendas_favoritas", {
+  id: int("id").autoincrement().primaryKey(),
+  reguladorEmail: varchar("regulador_email", { length: 320 }).notNull(),
+  agendaId: int("agenda_id").notNull(),
+  agendaNome: varchar("agenda_nome", { length: 255 }).notNull(),
+  municipio: varchar("municipio", { length: 255 }),
+  central: varchar("central", { length: 100 }),
+  especialidade: varchar("especialidade", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AgendaFavorita = typeof agendasFavoritas.$inferSelect;
+export type InsertAgendaFavorita = typeof agendasFavoritas.$inferInsert;
