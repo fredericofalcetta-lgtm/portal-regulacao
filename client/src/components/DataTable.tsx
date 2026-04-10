@@ -70,7 +70,7 @@ const TableRow = memo(function TableRow({
       className={`border-b border-border hover:bg-secondary transition-colors ${
         isConcluida
           ? 'opacity-60 bg-emerald-50 dark:bg-emerald-950/20'
-          : rowIndex % 2 === 0 ? 'bg-card' : 'bg-muted/30'
+          : 'bg-card'
       }`}
       style={isConcluida ? undefined : corRowStyle}
     >
@@ -205,18 +205,6 @@ const TableRow = memo(function TableRow({
       {/* Central */}
       <td className="px-3 py-3 text-center text-xs font-medium text-foreground">
         {String(row[11])}
-      </td>
-      {/* Prioridade */}
-      <td className="px-3 py-3 text-center">
-        {cor ? (
-          <span
-            style={corBadgeStyle}
-            title={cor}
-            className="inline-block w-4 h-4 rounded-full"
-          />
-        ) : (
-          <span className="text-xs text-muted-foreground">—</span>
-        )}
       </td>
     </tr>
   );
@@ -483,23 +471,13 @@ export default function DataTable({
                   <SortIcon col={11} />
                 </div>
               </th>
-              {/* Prioridade (cor da linha) */}
-              <th
-                onClick={() => onSort(14)}
-                className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
-                title="Ordenar por prioridade de cor"
-              >
-                <div className="flex items-center justify-center space-x-1">
-                  <span>Prioridade</span>
-                  <SortIcon col={14} />
-                </div>
-              </th>
+
             </tr>
           </thead>
           <tbody>
             {filteredAndSortedRows.length === 0 ? (
               <tr>
-                <td colSpan={(isAdminOuMonitor || isRegulador) ? 13 : 12} className="px-6 py-8 text-center">
+                <td colSpan={(isAdminOuMonitor || isRegulador) ? 12 : 11} className="px-6 py-8 text-center">
                   <p className="text-muted-foreground">Nenhum resultado encontrado</p>
                 </td>
               </tr>
@@ -514,7 +492,7 @@ export default function DataTable({
                   <Fragment key={agendaId > 0 ? agendaId : rowIndex}>
                     {isNovoCor && (
                       <tr>
-                        <td colSpan={(isAdminOuMonitor || isRegulador) ? 13 : 12} className="h-0 p-0">
+                        <td colSpan={(isAdminOuMonitor || isRegulador) ? 12 : 11} className="h-0 p-0">
                           <div className="border-t-2 border-dashed border-border/60 mx-4" />
                         </td>
                       </tr>

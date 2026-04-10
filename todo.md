@@ -141,3 +141,5 @@
 - [ ] Aplicar filtro de especialidades/agendas da config do regulador na aba Regulação
 - [x] Converter todos os campos de configuração do regulador para dropdowns (especialidades, agendas filtro, favoritas)
 - [x] Corrigir z-index dos menus dropdown que ficam atrás dos cards seguintes na página Reguladores
+- [x] Remover alternância de fundo branco/cinza (zebra striping) na tabela de Regulação — linhas sem alerta devem ter fundo branco
+- [x] Remover coluna Prioridade da tabela de Regulação de Encaminhamentos
