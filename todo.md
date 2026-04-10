@@ -139,3 +139,5 @@
 - [x] Integrar agendas favoritas na seção "Encaminhadas para mim" de Minhas Agendas
 - [x] Agendas favoritas reaparecem diariamente após renovação do banco
 - [ ] Aplicar filtro de especialidades/agendas da config do regulador na aba Regulação
+- [x] Converter todos os campos de configuração do regulador para dropdowns (especialidades, agendas filtro, favoritas)
+- [x] Corrigir z-index dos menus dropdown que ficam atrás dos cards seguintes na página Reguladores
