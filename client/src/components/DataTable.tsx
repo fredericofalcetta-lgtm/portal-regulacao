@@ -176,7 +176,7 @@ const TableRow = memo(function TableRow({
             'text-foreground'
           }`}
         >
-          {String(row[6])}
+          {(() => { const v = parseFloat(String(row[6] ?? '')); return isNaN(v) ? (row[6] ? String(row[6]) : '—') : v.toFixed(2); })()}
         </span>
       </td>
       {/* IndexRegula */}

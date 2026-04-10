@@ -143,3 +143,5 @@
 - [x] Corrigir z-index dos menus dropdown que ficam atrás dos cards seguintes na página Reguladores
 - [x] Remover alternância de fundo branco/cinza (zebra striping) na tabela de Regulação — linhas sem alerta devem ter fundo branco
 - [x] Remover coluna Prioridade da tabela de Regulação de Encaminhamentos
+- [x] Corrigir Aut/Cotas em "Encaminhadas para mim": buscar valor atualizado do banco em vez do valor salvo no encaminhamento
+- [x] Formatar Aut/Cotas com 2 casas decimais em todas as tabelas de Minhas Agendas

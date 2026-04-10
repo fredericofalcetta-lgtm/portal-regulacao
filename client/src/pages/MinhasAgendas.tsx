@@ -150,7 +150,9 @@ function AgendaRow({
             'text-foreground'
           }`}
         >
-          {autCotas != null ? autCotas : (autorizadas != null ? `${autorizadas}` : '—')}
+          {autCotas != null
+            ? (isNaN(parseFloat(String(autCotas))) ? autCotas : parseFloat(String(autCotas)).toFixed(2))
+            : (autorizadas != null ? `${autorizadas}` : '—')}
         </span>
       </td>
       {/* Saldo */}
@@ -589,6 +591,8 @@ export default function MinhasAgendas() {
                       aguardando28d={enc.aguardando28d}
                       aguardando60d={enc.aguardando60d}
                       aguardando90d={enc.aguardando90d}
+                      autorizadas={enc.autorizadas}
+                      autCotas={enc.autCotas}
                       indexRegula={enc.indexRegula}
                       flagIndex={enc.flagIndex}
                       corIndex={enc.corIndex}
