@@ -19,6 +19,8 @@ interface DataTableProps {
   emailUsuario: string;
   concluidasIds?: number[];
   onConcluir?: () => void;
+  onRefresh?: () => void;
+  dataUpdatedAt?: number;
 }
 
 // Memoizar a linha da tabela para evitar re-renders desnecessários
@@ -124,25 +126,22 @@ const TableRow = memo(function TableRow({
         </td>
       )}
 
-      {/* Check-in — todos */}
+      {/* Regulando — lista de reguladores com check-in ativo */}
       <td className="px-3 py-3 text-center">
-        {isConcluida ? (
-          <span className="text-xs text-muted-foreground italic">bloqueado</span>
-        ) : agendaId > 0 ? (
-          <CheckInCell
-            agendaId={agendaId}
-            agendaNome={String(row[0])}
-            municipio={String(row[1])}
-            especialidade={String(row[12])}
-            central={String(row[11])}
-            cotas={typeof row[2] === 'number' ? row[2] : undefined}
-            saldo={typeof row[3] === 'number' ? row[3] : undefined}
-            aguardando={typeof row[4] === 'number' ? row[4] : undefined}
-            indexRegula={indexValue}
-            checkInsAtuais={checkInsAtuais}
-            usuarioEmail={emailUsuario}
-            onUpdate={onUpdate}
-          />
+        {checkInsAtuais.length > 0 ? (
+          <div className="flex flex-col gap-1 items-center">
+            {checkInsAtuais.map((ci) => (
+              <span
+                key={ci.usuarioEmail}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300"
+              >
+                <svg className="w-2.5 h-2.5 flex-shrink-0" fill="currentColor" viewBox="0 0 8 8">
+                  <circle cx="4" cy="4" r="3" />
+                </svg>
+                {ci.usuarioNome || ci.usuarioEmail}
+              </span>
+            ))}
+          </div>
         ) : (
           <span className="text-xs text-muted-foreground">—</span>
         )}
@@ -223,6 +222,8 @@ export default function DataTable({
   emailUsuario,
   concluidasIds = [],
   onConcluir,
+  onRefresh,
+  dataUpdatedAt,
 }: DataTableProps) {
   const concluidasSet = useMemo(() => new Set(concluidasIds), [concluidasIds]);
   const perfilLower = perfilUsuario.toLowerCase();
@@ -335,12 +336,40 @@ export default function DataTable({
     <div className="flex-1 flex flex-col bg-card">
       {/* Header */}
       <div className="px-6 py-4 border-b border-border">
-        <h1 className="text-2xl font-semibold text-foreground">
-          Regulação de Encaminhamentos
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {filteredAndSortedRows.length} resultado{filteredAndSortedRows.length !== 1 ? 's' : ''}
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-foreground">
+              Regulação de Encaminhamentos
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {filteredAndSortedRows.length} resultado{filteredAndSortedRows.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {dataUpdatedAt && dataUpdatedAt > 0 && (
+              <span className="text-xs text-muted-foreground">
+                Atualizado em {new Date(dataUpdatedAt).toLocaleString('pt-BR', {
+                  day: '2-digit', month: '2-digit', year: 'numeric',
+                  hour: '2-digit', minute: '2-digit'
+                })}
+              </span>
+            )}
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                  <path d="M21 3v5h-5"/>
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                  <path d="M8 16H3v5"/>
+                </svg>
+                Atualizar
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Table Container */}
@@ -366,9 +395,9 @@ export default function DataTable({
                 </th>
               )}
 
-              {/* Check-in — todos */}
+              {/* Regulando — quem está com check-in ativo */}
               <th className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">
-                Check-in
+                Regulando
               </th>
 
               {/* Cotas */}

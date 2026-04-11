@@ -30,7 +30,7 @@ export default function Home() {
   }, []);
 
   // staleTime de 5 minutos: não refaz a query ao trocar de aba
-  const { data: sheetsData, isLoading } = trpc.sheets.getData.useQuery(undefined, {
+  const { data: sheetsData, isLoading, dataUpdatedAt: sheetsDataUpdatedAt } = trpc.sheets.getData.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });
@@ -71,7 +71,7 @@ export default function Home() {
         <Switch>
           <Route path="/" component={Landing} />
           <Route path="/regulacao">
-            {() => <Regulation data={rows} concluidasIds={concluidasIds} onConcluir={invalidateSheetsData} />}
+            {() => <Regulation data={rows} concluidasIds={concluidasIds} onConcluir={invalidateSheetsData} onRefresh={handleRefresh} dataUpdatedAt={sheetsDataUpdatedAt} />}
           </Route>
           <Route path="/dashboard">
             {() => <Dashboard data={rows} onRefresh={handleRefresh} />}

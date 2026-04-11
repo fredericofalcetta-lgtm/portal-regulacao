@@ -295,10 +295,10 @@ function TableHeader({
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function MinhasAgendas() {
-  const { data: checkIns = [], isLoading: loadingCheckIns, refetch: refetchCheckIns } =
+  const { data: checkIns = [], isLoading: loadingCheckIns, refetch: refetchCheckIns, dataUpdatedAt: checkInsUpdatedAt } =
     trpc.checkIns.getMeus.useQuery();
 
-  const { data: encaminhadas = [], isLoading: loadingEncaminhadas, refetch: refetchEncaminhadas } =
+  const { data: encaminhadas = [], isLoading: loadingEncaminhadas, refetch: refetchEncaminhadas, dataUpdatedAt: encaminhadasUpdatedAt } =
     trpc.encaminhamentos.getMinhas.useQuery();
 
   const { data: concluidas = [], isLoading: loadingConcluidas, refetch: refetchConcluidas } =
@@ -426,14 +426,24 @@ export default function MinhasAgendas() {
               </p>
             </div>
           </div>
-          <button
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors disabled:opacity-50"
-          >
-            <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
-            Atualizar
-          </button>
+          <div className="flex items-center gap-3">
+            {(checkInsUpdatedAt > 0 || encaminhadasUpdatedAt > 0) && (
+              <span className="text-xs text-muted-foreground">
+                Atualizado em {new Date(Math.max(checkInsUpdatedAt, encaminhadasUpdatedAt)).toLocaleString('pt-BR', {
+                  day: '2-digit', month: '2-digit', year: 'numeric',
+                  hour: '2-digit', minute: '2-digit'
+                })}
+              </span>
+            )}
+            <button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+              Atualizar
+            </button>
+          </div>
         </div>
       </div>
 

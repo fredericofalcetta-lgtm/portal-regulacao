@@ -9,12 +9,14 @@ interface RegulationProps {
   data: (string | number)[][];
   concluidasIds?: number[];
   onConcluir?: () => void;
+  onRefresh?: () => void;
+  dataUpdatedAt?: number;
 }
 
 // Perfis que têm acesso irrestrito a todas as especialidades
 const PERFIS_IRRESTRITO = ['monitoramento', 'administrador'];
 
-export default function Regulation({ data, concluidasIds = [], onConcluir }: RegulationProps) {
+export default function Regulation({ data, concluidasIds = [], onConcluir, onRefresh, dataUpdatedAt }: RegulationProps) {
   const { regulador, perfilAtivo } = useRegulador();
   const {
     selectedAgendas,
@@ -254,6 +256,8 @@ export default function Regulation({ data, concluidasIds = [], onConcluir }: Reg
         emailUsuario={regulador?.email ?? ''}
         concluidasIds={concluidasIds}
         onConcluir={onConcluir}
+        onRefresh={onRefresh}
+        dataUpdatedAt={dataUpdatedAt}
       />
     </div>
   );

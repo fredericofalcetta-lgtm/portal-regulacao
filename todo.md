@@ -145,3 +145,6 @@
 - [x] Remover coluna Prioridade da tabela de Regulação de Encaminhamentos
 - [x] Corrigir Aut/Cotas em "Encaminhadas para mim": buscar valor atualizado do banco em vez do valor salvo no encaminhamento
 - [x] Formatar Aut/Cotas com 2 casas decimais em todas as tabelas de Minhas Agendas
+- [x] Adicionar data/hora de última atualização na aba Minhas Agendas
+- [x] Adicionar botão de atualizar dados na aba Regulação de Encaminhamentos
+- [x] Substituir botão de check-in na aba Regulação por lista de reguladores ativos naquela agenda
