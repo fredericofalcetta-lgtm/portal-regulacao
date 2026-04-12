@@ -161,3 +161,4 @@
 - [x] Corrigir dropdown de outras especialidades cortado pelo fim da página (usar position fixed com direção inteligente para cima ou baixo)
 - [x] Corrigir deduplicação por nome nos dropdowns de Agendas Relacionadas (mesma especialidade e outras especialidades mostram múltiplas instâncias do mesmo nome)
 - [x] Aumentar altura do dropdown de outras especialidades com barra de rolagem (atualmente mostra apenas ~6 agendas)
+- [x] Deduplicar dropdown principal "Agenda a configurar" por nome (mostrar cada agenda apenas uma vez, sem repetir instâncias por município/central)

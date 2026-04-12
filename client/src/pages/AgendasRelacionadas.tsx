@@ -358,12 +358,18 @@ export default function AgendasRelacionadas() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Filtro do dropdown principal (mostra label completo para facilitar busca)
+  // Agendas deduplicadas por nome para o dropdown principal
+  const agendasDeduplicadasPrincipal = useMemo(
+    () => deduplicarPorNome(todasAgendas),
+    [todasAgendas]
+  );
+
+  // Filtro do dropdown principal (busca por nome)
   const agendasFiltradasPrincipal = useMemo(() => {
     const q = searchAgendaPrincipal.toLowerCase();
-    if (!q) return todasAgendas;
-    return todasAgendas.filter(a => agendaLabel(a).toLowerCase().includes(q));
-  }, [todasAgendas, searchAgendaPrincipal]);
+    if (!q) return agendasDeduplicadasPrincipal;
+    return agendasDeduplicadasPrincipal.filter(a => agendaNome(a).toLowerCase().includes(q));
+  }, [agendasDeduplicadasPrincipal, searchAgendaPrincipal]);
 
   // Contagem de nomes únicos disponíveis
   const qtdNomesUnicosMesmaEsp = useMemo(
@@ -405,7 +411,7 @@ export default function AgendasRelacionadas() {
             className="w-full flex items-center justify-between border rounded-md px-3 py-2.5 text-sm bg-white hover:bg-gray-50 transition-colors"
           >
             {agendaSelecionada ? (
-              <span className="font-medium text-gray-900">{agendaLabel(agendaSelecionada)}</span>
+              <span className="font-medium text-gray-900">{agendaNome(agendaSelecionada)}</span>
             ) : (
               <span className="text-gray-400">Selecione uma agenda para configurar...</span>
             )}
@@ -425,7 +431,7 @@ export default function AgendasRelacionadas() {
                     autoFocus
                     value={searchAgendaPrincipal}
                     onChange={e => setSearchAgendaPrincipal(e.target.value)}
-                    placeholder="Buscar por nome, município ou central..."
+                    placeholder="Buscar por nome da agenda..."
                     className="pl-7 h-8 text-sm"
                   />
                 </div>
@@ -436,12 +442,12 @@ export default function AgendasRelacionadas() {
                 ) : (
                   agendasFiltradasPrincipal.map(a => (
                     <button
-                      key={a.id}
+                      key={agendaNome(a)}
                       type="button"
                       onClick={() => handleSelecionarAgenda(a.id)}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between ${a.id === agendaSelecionadaId ? "bg-blue-50 font-medium" : ""}`}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center justify-between ${agendaSelecionada && agendaNome(agendaSelecionada) === agendaNome(a) ? "bg-blue-50 font-medium" : ""}`}
                     >
-                      <span className="truncate">{agendaLabel(a)}</span>
+                      <span className="truncate">{agendaNome(a)}</span>
                       {a.especialidade && (
                         <span className="text-xs text-gray-400 ml-2 flex-shrink-0">{a.especialidade}</span>
                       )}
