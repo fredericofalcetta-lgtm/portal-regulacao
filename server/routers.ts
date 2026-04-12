@@ -756,11 +756,12 @@ export const appRouter = router({
       return { success: true };
     }),
 
-    // Buscar agendas relacionadas (mesma especialidade + central) e recursos da especialidade
+    // Buscar agendas relacionadas (mesma especialidade + central/municipio) e recursos da especialidade
     getRelacionadas: protectedProcedure
       .input(z.object({
         especialidade: z.string(),
         central: z.string().optional(),
+        municipio: z.string().optional(),
         agendaIdExcluir: z.number(), // excluir a agenda do próprio check-in
       }))
       .query(async ({ input }) => {
@@ -813,11 +814,14 @@ export const appRouter = router({
               corAutCotas: a.corAutCotas,
             }));
         } else {
-          // Comportamento padrão: filtrar por especialidade e central
+          // Comportamento padrão: filtrar por especialidade e, se disponível, por região (municipio ou central)
           agendasRelacionadas = todasAgendas
             .filter(a => {
               if (a.id === input.agendaIdExcluir) return false;
+              // Filtrar por central se informada
               if (input.central && a.central !== input.central) return false;
+              // Filtrar por município se informado (e sem central)
+              if (!input.central && input.municipio && a.municipio !== input.municipio) return false;
               const espAgenda = (a.especialidade ?? "").split(/[,;/]+/).map(e => e.trim().toLowerCase());
               return especialidades.some(e => espAgenda.includes(e));
             })

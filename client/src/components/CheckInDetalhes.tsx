@@ -7,15 +7,17 @@ interface CheckInDetalhesProps {
   agendaId: number;
   especialidade: string;
   central?: string | null;
+  municipio?: string | null;
 }
 
-export default function CheckInDetalhes({ agendaId, especialidade, central }: CheckInDetalhesProps) {
+export default function CheckInDetalhes({ agendaId, especialidade, central, municipio }: CheckInDetalhesProps) {
   const [expandido, setExpandido] = useState(false);
 
   const { data, isLoading } = trpc.checkIns.getRelacionadas.useQuery(
     {
       especialidade,
       central: central ?? undefined,
+      municipio: municipio ?? undefined,
       agendaIdExcluir: agendaId,
     },
     {

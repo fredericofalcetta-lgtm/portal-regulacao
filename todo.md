@@ -156,3 +156,6 @@
 - [x] 2º dropdown: multi-select com busca para adicionar agendas de qualquer especialidade
 - [x] Integrar configuração no CheckInDetalhes: usar agendas_relacionadas_config em vez de filtrar apenas por especialidade
 - [x] Adicionar aba Agendas Relacionadas ao menu lateral (admin/monitor)
+- [x] Agrupar agendas por nome (sem município/central) nos dropdowns da aba Agendas Relacionadas
+- [x] Filtrar agendas relacionadas por região (município/central) no CheckInDetalhes quando a configuração existir
+- [x] Corrigir dropdown de outras especialidades cortado pelo fim da página (usar position fixed com direção inteligente para cima ou baixo)

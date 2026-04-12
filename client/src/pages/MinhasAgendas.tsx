@@ -519,6 +519,7 @@ export default function MinhasAgendas() {
                             agendaId={ci.agendaId}
                             especialidade={ci.especialidade}
                             central={ci.central}
+                            municipio={ci.municipio}
                           />
                         </td>
                       </tr>

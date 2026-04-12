@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { useRegulador } from "@/contexts/ReguladorContext";
 import { Button } from "@/components/ui/button";
@@ -17,12 +17,18 @@ interface Agenda {
   especialidade: string | null;
 }
 
+// Retorna apenas o nome da agenda (sem município/central)
+function agendaNome(a: Agenda) {
+  return a.agenda ?? "(sem nome)";
+}
+
+// Retorna o label completo para o dropdown principal e chips de outras especialidades
 function agendaLabel(a: Agenda) {
   const partes = [a.agenda, a.municipio, a.central].filter(Boolean);
   return partes.join(" — ");
 }
 
-// ─── Dropdown multi-select com busca ─────────────────────────────────────────
+// ─── Dropdown multi-select com busca e direção inteligente ───────────────────
 
 interface MultiSelectDropdownProps {
   options: Agenda[];
@@ -30,13 +36,24 @@ interface MultiSelectDropdownProps {
   onToggle: (id: number) => void;
   placeholder?: string;
   excludeIds?: number[];
+  // Se true, mostra apenas o nome da agenda (sem município/central)
+  nomeApenas?: boolean;
 }
 
-function MultiSelectDropdown({ options, selected, onToggle, placeholder = "Buscar agenda...", excludeIds = [] }: MultiSelectDropdownProps) {
+function MultiSelectDropdown({
+  options,
+  selected,
+  onToggle,
+  placeholder = "Buscar agenda...",
+  excludeIds = [],
+  nomeApenas = false,
+}: MultiSelectDropdownProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
 
+  // Fechar ao clicar fora
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
@@ -45,20 +62,69 @@ function MultiSelectDropdown({ options, selected, onToggle, placeholder = "Busca
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const filtered = useMemo(() => {
+  // Calcular posição do dropdown (para cima ou para baixo)
+  const calcDropdownStyle = useCallback(() => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const dropdownHeight = 300; // altura máxima estimada
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+
+    if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+      // Abrir para cima
+      setDropdownStyle({
+        position: "fixed",
+        zIndex: 9999,
+        width: rect.width,
+        bottom: viewportHeight - rect.top + 4,
+        left: rect.left,
+        maxHeight: Math.min(spaceAbove - 8, 280),
+      });
+    } else {
+      // Abrir para baixo
+      setDropdownStyle({
+        position: "fixed",
+        zIndex: 9999,
+        width: rect.width,
+        top: rect.bottom + 4,
+        left: rect.left,
+        maxHeight: Math.min(spaceBelow - 8, 280),
+      });
+    }
+  }, []);
+
+  function handleOpen() {
+    calcDropdownStyle();
+    setOpen(v => !v);
+  }
+
+  // Agrupar por nome quando nomeApenas=true: mostrar cada nome único uma vez
+  const filteredOptions = useMemo(() => {
     const q = search.toLowerCase();
-    return options.filter(a => {
+    const base = options.filter(a => {
       if (excludeIds.includes(a.id)) return false;
-      if (!q) return true;
-      return agendaLabel(a).toLowerCase().includes(q);
+      const label = nomeApenas ? agendaNome(a) : agendaLabel(a);
+      return !q || label.toLowerCase().includes(q);
     });
-  }, [options, search, excludeIds]);
+
+    if (!nomeApenas) return base;
+
+    // Deduplicar por nome: manter apenas o primeiro ID de cada nome
+    const seen = new Set<string>();
+    return base.filter(a => {
+      const nome = agendaNome(a);
+      if (seen.has(nome)) return false;
+      seen.add(nome);
+      return true;
+    });
+  }, [options, search, excludeIds, nomeApenas]);
 
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen(v => !v)}
+        onClick={handleOpen}
         className="w-full flex items-center justify-between border rounded-md px-3 py-2 text-sm bg-white hover:bg-gray-50 transition-colors"
       >
         <span className="text-gray-500">{placeholder}</span>
@@ -66,11 +132,7 @@ function MultiSelectDropdown({ options, selected, onToggle, placeholder = "Busca
       </button>
 
       {open && (
-        <div className="fixed z-[9999] bg-white border rounded-md shadow-lg" style={{
-          width: ref.current?.getBoundingClientRect().width,
-          top: (ref.current?.getBoundingClientRect().bottom ?? 0) + 4,
-          left: ref.current?.getBoundingClientRect().left,
-        }}>
+        <div className="bg-white border rounded-md shadow-lg overflow-hidden" style={dropdownStyle}>
           <div className="p-2 border-b">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
@@ -78,28 +140,33 @@ function MultiSelectDropdown({ options, selected, onToggle, placeholder = "Busca
                 autoFocus
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder="Buscar por nome, município ou central..."
+                placeholder={nomeApenas ? "Buscar por nome da agenda..." : "Buscar por nome, município ou central..."}
                 className="pl-7 h-8 text-sm"
               />
             </div>
           </div>
-          <div className="max-h-60 overflow-y-auto">
-            {filtered.length === 0 ? (
+          <div className="overflow-y-auto" style={{ maxHeight: "calc(100% - 80px)" }}>
+            {filteredOptions.length === 0 ? (
               <div className="p-3 text-sm text-gray-400 text-center">Nenhuma agenda encontrada</div>
             ) : (
-              filtered.map(a => (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => onToggle(a.id)}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${selected.includes(a.id) ? "bg-blue-50" : ""}`}
-                >
-                  <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${selected.includes(a.id) ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}>
-                    {selected.includes(a.id) && <span className="text-white text-xs">✓</span>}
-                  </div>
-                  <span className="truncate">{agendaLabel(a)}</span>
-                </button>
-              ))
+              filteredOptions.map(a => {
+                const label = nomeApenas ? agendaNome(a) : agendaLabel(a);
+                // Para nomeApenas, selecionar/deselecionar todos os IDs com o mesmo nome
+                const isSelected = selected.includes(a.id);
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => onToggle(a.id)}
+                    className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${isSelected ? "bg-blue-50" : ""}`}
+                  >
+                    <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${isSelected ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}>
+                      {isSelected && <span className="text-white text-xs">✓</span>}
+                    </div>
+                    <span className="truncate">{label}</span>
+                  </button>
+                );
+              })
             )}
           </div>
           <div className="p-2 border-t text-xs text-gray-400 text-right">
@@ -140,7 +207,7 @@ export default function AgendasRelacionadas() {
     [todasAgendas, agendaSelecionadaId]
   );
 
-  // Agendas da mesma especialidade
+  // Agendas da mesma especialidade (excluindo a própria)
   const agendasMesmaEsp = useMemo(() => {
     if (!agendaSelecionada?.especialidade) return [];
     return todasAgendas.filter(
@@ -168,7 +235,6 @@ export default function AgendasRelacionadas() {
     const idsRelacionadas = configData.relacionadas;
     const idsEspecialidade = agendasMesmaEsp.map(a => a.id);
 
-    // Separar em "mesma especialidade" e "outras"
     const mesmaEsp = idsRelacionadas.filter(id => idsEspecialidade.includes(id));
     const outras = idsRelacionadas.filter(id => !idsEspecialidade.includes(id));
 
@@ -191,7 +257,6 @@ export default function AgendasRelacionadas() {
     onSuccess: () => {
       toast.success("Configuração resetada para o padrão");
       setUsandoPadrao(true);
-      // Restaurar padrão: todas da mesma especialidade
       setRelacionadasMesmaEsp(agendasMesmaEsp.map(a => a.id));
       setRelacionadasOutras([]);
       utils.agendasRelacionadas.getConfig.invalidate();
@@ -240,7 +305,7 @@ export default function AgendasRelacionadas() {
     await resetarMutation.mutateAsync({ agendaId: agendaSelecionada.id });
   }
 
-  // Fechar dropdown ao clicar fora
+  // Fechar dropdown principal ao clicar fora
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (refAgendaPrincipal.current && !refAgendaPrincipal.current.contains(e.target as Node)) {
@@ -251,7 +316,7 @@ export default function AgendasRelacionadas() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Filtro do dropdown principal
+  // Filtro do dropdown principal (mostra label completo para facilitar busca)
   const agendasFiltradasPrincipal = useMemo(() => {
     const q = searchAgendaPrincipal.toLowerCase();
     if (!q) return todasAgendas;
@@ -378,7 +443,7 @@ export default function AgendasRelacionadas() {
             </div>
           </div>
 
-          {/* Dropdown 1: Mesma especialidade */}
+          {/* Dropdown 1: Mesma especialidade — mostra apenas o nome */}
           <div className="bg-white border rounded-lg p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -409,7 +474,7 @@ export default function AgendasRelacionadas() {
               </div>
             </div>
 
-            {/* Chips das selecionadas */}
+            {/* Chips das selecionadas — mostra apenas o nome */}
             {relacionadasMesmaEsp.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3 p-2 bg-gray-50 rounded-md">
                 {relacionadasMesmaEsp.map(id => {
@@ -417,7 +482,7 @@ export default function AgendasRelacionadas() {
                   if (!a) return null;
                   return (
                     <span key={id} className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                      {agendaLabel(a)}
+                      {agendaNome(a)}
                       <button
                         type="button"
                         onClick={() => handleToggleMesmaEsp(id)}
@@ -431,16 +496,17 @@ export default function AgendasRelacionadas() {
               </div>
             )}
 
-            {/* Dropdown para adicionar */}
+            {/* Dropdown para adicionar — mostra apenas o nome */}
             <MultiSelectDropdown
               options={agendasMesmaEsp}
               selected={relacionadasMesmaEsp}
               onToggle={handleToggleMesmaEsp}
               placeholder={`Adicionar agenda da especialidade ${agendaSelecionada.especialidade}...`}
+              nomeApenas
             />
           </div>
 
-          {/* Dropdown 2: Outras especialidades */}
+          {/* Dropdown 2: Outras especialidades — mostra label completo com direção inteligente */}
           <div className="bg-white border rounded-lg p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -470,8 +536,8 @@ export default function AgendasRelacionadas() {
                   if (!a) return null;
                   return (
                     <span key={id} className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                      {agendaLabel(a)}
-                      {a.especialidade && <span className="text-purple-500">({a.especialidade})</span>}
+                      {agendaNome(a)}
+                      {a.especialidade && <span className="text-purple-500 ml-1">({a.especialidade})</span>}
                       <button
                         type="button"
                         onClick={() => handleToggleOutras(id)}
@@ -485,7 +551,7 @@ export default function AgendasRelacionadas() {
               </div>
             )}
 
-            {/* Dropdown multi-select com busca */}
+            {/* Dropdown multi-select com busca e direção inteligente */}
             <MultiSelectDropdown
               options={agendasOutrasEsp}
               selected={relacionadasOutras}
