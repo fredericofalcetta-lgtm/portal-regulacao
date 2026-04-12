@@ -159,3 +159,5 @@
 - [x] Agrupar agendas por nome (sem município/central) nos dropdowns da aba Agendas Relacionadas
 - [x] Filtrar agendas relacionadas por região (município/central) no CheckInDetalhes quando a configuração existir
 - [x] Corrigir dropdown de outras especialidades cortado pelo fim da página (usar position fixed com direção inteligente para cima ou baixo)
+- [x] Corrigir deduplicação por nome nos dropdowns de Agendas Relacionadas (mesma especialidade e outras especialidades mostram múltiplas instâncias do mesmo nome)
+- [x] Aumentar altura do dropdown de outras especialidades com barra de rolagem (atualmente mostra apenas ~6 agendas)

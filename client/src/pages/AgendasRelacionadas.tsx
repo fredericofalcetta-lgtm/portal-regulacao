@@ -17,37 +17,62 @@ interface Agenda {
   especialidade: string | null;
 }
 
-// Retorna apenas o nome da agenda (sem município/central)
-function agendaNome(a: Agenda) {
-  return a.agenda ?? "(sem nome)";
+// Nome canônico da agenda (chave de agrupamento)
+function agendaNome(a: Agenda): string {
+  return (a.agenda ?? "").trim() || "(sem nome)";
 }
 
-// Retorna o label completo para o dropdown principal e chips de outras especialidades
+// Label completo para o dropdown principal de seleção de agenda a configurar
 function agendaLabel(a: Agenda) {
   const partes = [a.agenda, a.municipio, a.central].filter(Boolean);
   return partes.join(" — ");
 }
 
-// ─── Dropdown multi-select com busca e direção inteligente ───────────────────
-
-interface MultiSelectDropdownProps {
-  options: Agenda[];
-  selected: number[];
-  onToggle: (id: number) => void;
-  placeholder?: string;
-  excludeIds?: number[];
-  // Se true, mostra apenas o nome da agenda (sem município/central)
-  nomeApenas?: boolean;
+// Deduplica lista de agendas por nome, mantendo a primeira ocorrência de cada nome
+function deduplicarPorNome(agendas: Agenda[]): Agenda[] {
+  const seen = new Set<string>();
+  return agendas.filter(a => {
+    const nome = agendaNome(a);
+    if (seen.has(nome)) return false;
+    seen.add(nome);
+    return true;
+  });
 }
 
-function MultiSelectDropdown({
+// Dado um conjunto de nomes selecionados, retorna todos os IDs correspondentes
+function nomesParaIds(nomes: Set<string>, agendas: Agenda[]): number[] {
+  return agendas
+    .filter(a => nomes.has(agendaNome(a)))
+    .map(a => a.id);
+}
+
+// Dado um conjunto de IDs, retorna os nomes únicos correspondentes
+function idsParaNomes(ids: number[], agendas: Agenda[]): Set<string> {
+  const nomes = new Set<string>();
+  for (const id of ids) {
+    const a = agendas.find(x => x.id === id);
+    if (a) nomes.add(agendaNome(a));
+  }
+  return nomes;
+}
+
+// ─── Dropdown multi-select por nome com busca e direção inteligente ──────────
+
+interface NomeSelectDropdownProps {
+  options: Agenda[];          // lista completa (pode ter duplicatas — será deduplicada)
+  selected: Set<string>;      // nomes selecionados
+  onToggle: (nome: string) => void;
+  placeholder?: string;
+  showEspecialidade?: boolean; // exibir especialidade ao lado do nome
+}
+
+function NomeSelectDropdown({
   options,
   selected,
   onToggle,
   placeholder = "Buscar agenda...",
-  excludeIds = [],
-  nomeApenas = false,
-}: MultiSelectDropdownProps) {
+  showEspecialidade = false,
+}: NomeSelectDropdownProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
@@ -67,21 +92,11 @@ function MultiSelectDropdown({
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
-    const dropdownHeight = 300; // altura máxima estimada
-    const spaceBelow = viewportHeight - rect.bottom;
-    const spaceAbove = rect.top;
+    const desiredHeight = 400;
+    const spaceBelow = viewportHeight - rect.bottom - 8;
+    const spaceAbove = rect.top - 8;
 
-    if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
-      // Abrir para cima
-      setDropdownStyle({
-        position: "fixed",
-        zIndex: 9999,
-        width: rect.width,
-        bottom: viewportHeight - rect.top + 4,
-        left: rect.left,
-        maxHeight: Math.min(spaceAbove - 8, 280),
-      });
-    } else {
+    if (spaceBelow >= desiredHeight || spaceBelow >= spaceAbove) {
       // Abrir para baixo
       setDropdownStyle({
         position: "fixed",
@@ -89,7 +104,17 @@ function MultiSelectDropdown({
         width: rect.width,
         top: rect.bottom + 4,
         left: rect.left,
-        maxHeight: Math.min(spaceBelow - 8, 280),
+        maxHeight: Math.min(spaceBelow, desiredHeight),
+      });
+    } else {
+      // Abrir para cima
+      setDropdownStyle({
+        position: "fixed",
+        zIndex: 9999,
+        width: rect.width,
+        bottom: viewportHeight - rect.top + 4,
+        left: rect.left,
+        maxHeight: Math.min(spaceAbove, desiredHeight),
       });
     }
   }, []);
@@ -99,26 +124,14 @@ function MultiSelectDropdown({
     setOpen(v => !v);
   }
 
-  // Agrupar por nome quando nomeApenas=true: mostrar cada nome único uma vez
+  // Deduplicar e filtrar por busca
+  const dedupOptions = useMemo(() => deduplicarPorNome(options), [options]);
+
   const filteredOptions = useMemo(() => {
     const q = search.toLowerCase();
-    const base = options.filter(a => {
-      if (excludeIds.includes(a.id)) return false;
-      const label = nomeApenas ? agendaNome(a) : agendaLabel(a);
-      return !q || label.toLowerCase().includes(q);
-    });
-
-    if (!nomeApenas) return base;
-
-    // Deduplicar por nome: manter apenas o primeiro ID de cada nome
-    const seen = new Set<string>();
-    return base.filter(a => {
-      const nome = agendaNome(a);
-      if (seen.has(nome)) return false;
-      seen.add(nome);
-      return true;
-    });
-  }, [options, search, excludeIds, nomeApenas]);
+    if (!q) return dedupOptions;
+    return dedupOptions.filter(a => agendaNome(a).toLowerCase().includes(q));
+  }, [dedupOptions, search]);
 
   return (
     <div ref={ref} className="relative">
@@ -132,45 +145,55 @@ function MultiSelectDropdown({
       </button>
 
       {open && (
-        <div className="bg-white border rounded-md shadow-lg overflow-hidden" style={dropdownStyle}>
-          <div className="p-2 border-b">
+        <div
+          className="bg-white border rounded-md shadow-lg flex flex-col"
+          style={dropdownStyle}
+        >
+          {/* Campo de busca */}
+          <div className="p-2 border-b flex-shrink-0">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
               <Input
                 autoFocus
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder={nomeApenas ? "Buscar por nome da agenda..." : "Buscar por nome, município ou central..."}
+                placeholder="Buscar por nome da agenda..."
                 className="pl-7 h-8 text-sm"
               />
             </div>
           </div>
-          <div className="overflow-y-auto" style={{ maxHeight: "calc(100% - 80px)" }}>
+
+          {/* Lista com scroll */}
+          <div className="overflow-y-auto flex-1">
             {filteredOptions.length === 0 ? (
               <div className="p-3 text-sm text-gray-400 text-center">Nenhuma agenda encontrada</div>
             ) : (
               filteredOptions.map(a => {
-                const label = nomeApenas ? agendaNome(a) : agendaLabel(a);
-                // Para nomeApenas, selecionar/deselecionar todos os IDs com o mesmo nome
-                const isSelected = selected.includes(a.id);
+                const nome = agendaNome(a);
+                const isSelected = selected.has(nome);
                 return (
                   <button
-                    key={a.id}
+                    key={nome}
                     type="button"
-                    onClick={() => onToggle(a.id)}
+                    onClick={() => onToggle(nome)}
                     className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${isSelected ? "bg-blue-50" : ""}`}
                   >
                     <div className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${isSelected ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}>
                       {isSelected && <span className="text-white text-xs">✓</span>}
                     </div>
-                    <span className="truncate">{label}</span>
+                    <span className="truncate flex-1">{nome}</span>
+                    {showEspecialidade && a.especialidade && (
+                      <span className="text-xs text-gray-400 flex-shrink-0">{a.especialidade}</span>
+                    )}
                   </button>
                 );
               })
             )}
           </div>
-          <div className="p-2 border-t text-xs text-gray-400 text-right">
-            {selected.filter(id => !excludeIds.includes(id)).length} selecionada(s)
+
+          {/* Rodapé */}
+          <div className="p-2 border-t text-xs text-gray-400 text-right flex-shrink-0">
+            {selected.size} selecionada(s) · {filteredOptions.length} disponíveis
           </div>
         </div>
       )}
@@ -191,9 +214,9 @@ export default function AgendasRelacionadas() {
   const [openAgendaPrincipal, setOpenAgendaPrincipal] = useState(false);
   const refAgendaPrincipal = useRef<HTMLDivElement>(null);
 
-  // IDs das relacionadas configuradas (mesma especialidade + outras)
-  const [relacionadasMesmaEsp, setRelacionadasMesmaEsp] = useState<number[]>([]);
-  const [relacionadasOutras, setRelacionadasOutras] = useState<number[]>([]);
+  // Nomes selecionados (em vez de IDs — deduplicados por nome)
+  const [nomesMesmaEsp, setNomesMesmaEsp] = useState<Set<string>>(new Set());
+  const [nomesOutras, setNomesOutras] = useState<Set<string>>(new Set());
   const [usandoPadrao, setUsandoPadrao] = useState(true);
   const [salvando, setSalvando] = useState(false);
 
@@ -207,21 +230,32 @@ export default function AgendasRelacionadas() {
     [todasAgendas, agendaSelecionadaId]
   );
 
-  // Agendas da mesma especialidade (excluindo a própria)
+  // Agendas da mesma especialidade (excluindo a própria agenda selecionada por nome)
   const agendasMesmaEsp = useMemo(() => {
     if (!agendaSelecionada?.especialidade) return [];
+    const nomeExcluir = agendaNome(agendaSelecionada);
     return todasAgendas.filter(
-      a => a.especialidade === agendaSelecionada.especialidade && a.id !== agendaSelecionadaId
+      a => a.especialidade === agendaSelecionada.especialidade && agendaNome(a) !== nomeExcluir
     );
-  }, [todasAgendas, agendaSelecionada, agendaSelecionadaId]);
+  }, [todasAgendas, agendaSelecionada]);
 
-  // Agendas de outras especialidades
+  // Nomes únicos disponíveis na mesma especialidade
+  const nomesUnicosMesmaEsp = useMemo(
+    () => new Set(deduplicarPorNome(agendasMesmaEsp).map(agendaNome)),
+    [agendasMesmaEsp]
+  );
+
+  // Agendas de outras especialidades (excluindo a própria por nome)
   const agendasOutrasEsp = useMemo(() => {
-    if (!agendaSelecionada?.especialidade) return todasAgendas.filter(a => a.id !== agendaSelecionadaId);
+    if (!agendaSelecionada) return [];
+    const nomeExcluir = agendaNome(agendaSelecionada);
+    if (!agendaSelecionada.especialidade) {
+      return todasAgendas.filter(a => agendaNome(a) !== nomeExcluir);
+    }
     return todasAgendas.filter(
-      a => a.especialidade !== agendaSelecionada.especialidade && a.id !== agendaSelecionadaId
+      a => a.especialidade !== agendaSelecionada.especialidade && agendaNome(a) !== nomeExcluir
     );
-  }, [todasAgendas, agendaSelecionada, agendaSelecionadaId]);
+  }, [todasAgendas, agendaSelecionada]);
 
   // Carregar configuração quando agenda muda
   const { data: configData } = trpc.agendasRelacionadas.getConfig.useQuery(
@@ -235,13 +269,14 @@ export default function AgendasRelacionadas() {
     const idsRelacionadas = configData.relacionadas;
     const idsEspecialidade = agendasMesmaEsp.map(a => a.id);
 
-    const mesmaEsp = idsRelacionadas.filter(id => idsEspecialidade.includes(id));
-    const outras = idsRelacionadas.filter(id => !idsEspecialidade.includes(id));
+    const idsMesmaEsp = idsRelacionadas.filter(id => idsEspecialidade.includes(id));
+    const idsOutras = idsRelacionadas.filter(id => !idsEspecialidade.includes(id));
 
-    setRelacionadasMesmaEsp(mesmaEsp);
-    setRelacionadasOutras(outras);
+    // Converter IDs para nomes únicos
+    setNomesMesmaEsp(idsParaNomes(idsMesmaEsp, todasAgendas));
+    setNomesOutras(idsParaNomes(idsOutras, todasAgendas));
     setUsandoPadrao(configData.usandoPadrao);
-  }, [configData, agendaSelecionada, agendasMesmaEsp]);
+  }, [configData, agendaSelecionada, agendasMesmaEsp, todasAgendas]);
 
   // Mutations
   const salvarMutation = trpc.agendasRelacionadas.salvarConfig.useMutation({
@@ -257,8 +292,8 @@ export default function AgendasRelacionadas() {
     onSuccess: () => {
       toast.success("Configuração resetada para o padrão");
       setUsandoPadrao(true);
-      setRelacionadasMesmaEsp(agendasMesmaEsp.map(a => a.id));
-      setRelacionadasOutras([]);
+      setNomesMesmaEsp(nomesUnicosMesmaEsp);
+      setNomesOutras(new Set());
       utils.agendasRelacionadas.getConfig.invalidate();
     },
     onError: () => toast.error("Erro ao resetar configuração"),
@@ -271,29 +306,36 @@ export default function AgendasRelacionadas() {
     setSearchAgendaPrincipal("");
   }
 
-  function handleToggleMesmaEsp(id: number) {
-    setRelacionadasMesmaEsp(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
+  function handleToggleMesmaEsp(nome: string) {
+    setNomesMesmaEsp(prev => {
+      const next = new Set(prev);
+      if (next.has(nome)) next.delete(nome); else next.add(nome);
+      return next;
+    });
   }
 
-  function handleToggleOutras(id: number) {
-    setRelacionadasOutras(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    );
+  function handleToggleOutras(nome: string) {
+    setNomesOutras(prev => {
+      const next = new Set(prev);
+      if (next.has(nome)) next.delete(nome); else next.add(nome);
+      return next;
+    });
   }
 
   async function handleSalvar() {
     if (!agendaSelecionada) return;
     setSalvando(true);
     try {
+      // Expandir nomes para todos os IDs correspondentes
+      const idsMesmaEsp = nomesParaIds(nomesMesmaEsp, agendasMesmaEsp);
+      const idsOutras = nomesParaIds(nomesOutras, agendasOutrasEsp);
       await salvarMutation.mutateAsync({
         agendaId: agendaSelecionada.id,
-        agendaNome: agendaSelecionada.agenda ?? "",
+        agendaNome: agendaNome(agendaSelecionada),
         municipio: agendaSelecionada.municipio ?? "",
         central: agendaSelecionada.central ?? "",
         especialidade: agendaSelecionada.especialidade ?? "",
-        relacionadasIds: [...relacionadasMesmaEsp, ...relacionadasOutras],
+        relacionadasIds: [...idsMesmaEsp, ...idsOutras],
       });
     } finally {
       setSalvando(false);
@@ -322,6 +364,12 @@ export default function AgendasRelacionadas() {
     if (!q) return todasAgendas;
     return todasAgendas.filter(a => agendaLabel(a).toLowerCase().includes(q));
   }, [todasAgendas, searchAgendaPrincipal]);
+
+  // Contagem de nomes únicos disponíveis
+  const qtdNomesUnicosMesmaEsp = useMemo(
+    () => deduplicarPorNome(agendasMesmaEsp).length,
+    [agendasMesmaEsp]
+  );
 
   if (!isAdmin) {
     return (
@@ -443,7 +491,7 @@ export default function AgendasRelacionadas() {
             </div>
           </div>
 
-          {/* Dropdown 1: Mesma especialidade — mostra apenas o nome */}
+          {/* Dropdown 1: Mesma especialidade */}
           <div className="bg-white border rounded-lg p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -452,13 +500,13 @@ export default function AgendasRelacionadas() {
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
                   Especialidade: <span className="font-medium">{agendaSelecionada.especialidade}</span>
-                  {" · "}{agendasMesmaEsp.length} agenda(s) disponíveis
+                  {" · "}{qtdNomesUnicosMesmaEsp} tipo(s) de agenda disponíveis
                 </p>
               </div>
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setRelacionadasMesmaEsp(agendasMesmaEsp.map(a => a.id))}
+                  onClick={() => setNomesMesmaEsp(nomesUnicosMesmaEsp)}
                   className="text-xs text-blue-600 hover:underline"
                 >
                   Selecionar todas
@@ -466,7 +514,7 @@ export default function AgendasRelacionadas() {
                 <span className="text-gray-300">·</span>
                 <button
                   type="button"
-                  onClick={() => setRelacionadasMesmaEsp([])}
+                  onClick={() => setNomesMesmaEsp(new Set())}
                   className="text-xs text-red-500 hover:underline"
                 >
                   Remover todas
@@ -474,39 +522,33 @@ export default function AgendasRelacionadas() {
               </div>
             </div>
 
-            {/* Chips das selecionadas — mostra apenas o nome */}
-            {relacionadasMesmaEsp.length > 0 && (
+            {/* Chips das selecionadas — um chip por nome */}
+            {nomesMesmaEsp.size > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3 p-2 bg-gray-50 rounded-md">
-                {relacionadasMesmaEsp.map(id => {
-                  const a = todasAgendas.find(x => x.id === id);
-                  if (!a) return null;
-                  return (
-                    <span key={id} className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                      {agendaNome(a)}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleMesmaEsp(id)}
-                        className="hover:text-blue-600"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  );
-                })}
+                {Array.from(nomesMesmaEsp).map(nome => (
+                  <span key={nome} className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                    {nome}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleMesmaEsp(nome)}
+                      className="hover:text-blue-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
               </div>
             )}
 
-            {/* Dropdown para adicionar — mostra apenas o nome */}
-            <MultiSelectDropdown
+            <NomeSelectDropdown
               options={agendasMesmaEsp}
-              selected={relacionadasMesmaEsp}
+              selected={nomesMesmaEsp}
               onToggle={handleToggleMesmaEsp}
               placeholder={`Adicionar agenda da especialidade ${agendaSelecionada.especialidade}...`}
-              nomeApenas
             />
           </div>
 
-          {/* Dropdown 2: Outras especialidades — mostra label completo com direção inteligente */}
+          {/* Dropdown 2: Outras especialidades */}
           <div className="bg-white border rounded-lg p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -517,10 +559,10 @@ export default function AgendasRelacionadas() {
                   Adicione agendas de qualquer outra especialidade que devem aparecer como relacionadas.
                 </p>
               </div>
-              {relacionadasOutras.length > 0 && (
+              {nomesOutras.size > 0 && (
                 <button
                   type="button"
-                  onClick={() => setRelacionadasOutras([])}
+                  onClick={() => setNomesOutras(new Set())}
                   className="text-xs text-red-500 hover:underline"
                 >
                   Remover todas
@@ -529,18 +571,20 @@ export default function AgendasRelacionadas() {
             </div>
 
             {/* Chips das selecionadas */}
-            {relacionadasOutras.length > 0 && (
+            {nomesOutras.size > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-3 p-2 bg-gray-50 rounded-md">
-                {relacionadasOutras.map(id => {
-                  const a = todasAgendas.find(x => x.id === id);
-                  if (!a) return null;
+                {Array.from(nomesOutras).map(nome => {
+                  // Buscar especialidade de uma instância desse nome
+                  const amostra = agendasOutrasEsp.find(a => agendaNome(a) === nome);
                   return (
-                    <span key={id} className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                      {agendaNome(a)}
-                      {a.especialidade && <span className="text-purple-500 ml-1">({a.especialidade})</span>}
+                    <span key={nome} className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                      {nome}
+                      {amostra?.especialidade && (
+                        <span className="text-purple-500 ml-1">({amostra.especialidade})</span>
+                      )}
                       <button
                         type="button"
-                        onClick={() => handleToggleOutras(id)}
+                        onClick={() => handleToggleOutras(nome)}
                         className="hover:text-purple-600"
                       >
                         <X className="w-3 h-3" />
@@ -551,23 +595,22 @@ export default function AgendasRelacionadas() {
               </div>
             )}
 
-            {/* Dropdown multi-select com busca e direção inteligente */}
-            <MultiSelectDropdown
+            <NomeSelectDropdown
               options={agendasOutrasEsp}
-              selected={relacionadasOutras}
+              selected={nomesOutras}
               onToggle={handleToggleOutras}
               placeholder="Buscar e adicionar agendas de outras especialidades..."
-              excludeIds={[agendaSelecionadaId!]}
+              showEspecialidade
             />
           </div>
 
           {/* Resumo */}
           <div className="bg-gray-50 border rounded-lg p-3 text-sm text-gray-600">
-            <strong>{relacionadasMesmaEsp.length + relacionadasOutras.length}</strong> agenda(s) relacionada(s) configurada(s)
+            <strong>{nomesMesmaEsp.size + nomesOutras.size}</strong> tipo(s) de agenda configurado(s)
             {" · "}
-            <strong>{relacionadasMesmaEsp.length}</strong> da mesma especialidade
+            <strong>{nomesMesmaEsp.size}</strong> da mesma especialidade
             {" · "}
-            <strong>{relacionadasOutras.length}</strong> de outras especialidades
+            <strong>{nomesOutras.size}</strong> de outras especialidades
           </div>
         </div>
       )}
