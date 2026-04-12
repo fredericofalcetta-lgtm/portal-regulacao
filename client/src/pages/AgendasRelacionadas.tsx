@@ -1,6 +1,6 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { useAuth } from "@/_core/hooks/useAuth";
+import { useRegulador } from "@/contexts/ReguladorContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -114,9 +114,9 @@ function MultiSelectDropdown({ options, selected, onToggle, placeholder = "Busca
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function AgendasRelacionadas() {
-  const { user } = useAuth();
-  const perfil = (user as any)?.perfil ?? "";
-  const isAdmin = perfil === "Administrador" || perfil === "Monitoramento";
+  const { perfilAtivo, regulador } = useRegulador();
+  const perfilNorm = (perfilAtivo ?? regulador?.perfil ?? '').toLowerCase();
+  const isAdmin = perfilNorm.includes('administrador') || perfilNorm.includes('monitoramento');
 
   // Agenda selecionada para configurar
   const [agendaSelecionadaId, setAgendaSelecionadaId] = useState<number | null>(null);
