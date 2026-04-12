@@ -15,6 +15,7 @@ import {
   dicionarioEspecialidades,
   reguladorConfig,
   agendasFavoritas,
+  agendasRelacionadasConfig,
 } from "../drizzle/schema";
 import { asc, desc, eq, and, inArray } from "drizzle-orm";
 import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb, syncProtocolosToDb, syncDicionarioToDb } from "./syncSheets";
@@ -772,40 +773,73 @@ export const appRouter = router({
           .map(e => e.trim().toLowerCase())
           .filter(Boolean);
 
-        // Buscar todas as agendas da mesma central
+        // Verificar se há configuração personalizada de agendas relacionadas
+        const configPersonalizada = await db
+          .select()
+          .from(agendasRelacionadasConfig)
+          .where(eq(agendasRelacionadasConfig.agendaId, input.agendaIdExcluir))
+          .limit(1);
+
+        // Buscar todas as agendas do banco
         const todasAgendas = await db
           .select()
           .from(regulacaoData)
           .orderBy(desc(regulacaoData.indexRegula));
 
-        // Filtrar por especialidade (match parcial) e central
-        const agendasRelacionadas = todasAgendas
-          .filter(a => {
-            if (a.id === input.agendaIdExcluir) return false;
-            // Filtro por central
-            if (input.central && a.central !== input.central) return false;
-            // Filtro por especialidade (suporta múltiplas)
-            const espAgenda = (a.especialidade ?? "").split(/[,;/]+/).map(e => e.trim().toLowerCase());
-            return especialidades.some(e => espAgenda.includes(e));
-          })
-          .slice(0, 20) // limitar a 20 agendas
-          .map(a => ({
-            id: a.id,
-            agenda: a.agenda,
-            municipio: a.municipio,
-            central: a.central,
-            cotas: a.cotas,
-            saldo: a.saldo,
-            aguardando: a.aguardando,
-            autorizadas: a.autorizadas,
-            autCotas: a.autCotas,
-            indexRegula: a.indexRegula,
-            especialidade: a.especialidade,
-            corIndex: a.corIndex,
-            flagIndex: a.flagIndex,
-            flagAutCotas: a.flagAutCotas,
-            corAutCotas: a.corAutCotas,
-          }));
+        let agendasRelacionadas;
+
+        if (configPersonalizada.length > 0) {
+          // Usar IDs configurados manualmente
+          let idsConfigurados: number[] = [];
+          try { idsConfigurados = JSON.parse(configPersonalizada[0].relacionadasIds); } catch { idsConfigurados = []; }
+
+          agendasRelacionadas = todasAgendas
+            .filter(a => idsConfigurados.includes(a.id))
+            .map(a => ({
+              id: a.id,
+              agenda: a.agenda,
+              municipio: a.municipio,
+              central: a.central,
+              cotas: a.cotas,
+              saldo: a.saldo,
+              aguardando: a.aguardando,
+              autorizadas: a.autorizadas,
+              autCotas: a.autCotas,
+              indexRegula: a.indexRegula,
+              especialidade: a.especialidade,
+              corIndex: a.corIndex,
+              flagIndex: a.flagIndex,
+              flagAutCotas: a.flagAutCotas,
+              corAutCotas: a.corAutCotas,
+            }));
+        } else {
+          // Comportamento padrão: filtrar por especialidade e central
+          agendasRelacionadas = todasAgendas
+            .filter(a => {
+              if (a.id === input.agendaIdExcluir) return false;
+              if (input.central && a.central !== input.central) return false;
+              const espAgenda = (a.especialidade ?? "").split(/[,;/]+/).map(e => e.trim().toLowerCase());
+              return especialidades.some(e => espAgenda.includes(e));
+            })
+            .slice(0, 20)
+            .map(a => ({
+              id: a.id,
+              agenda: a.agenda,
+              municipio: a.municipio,
+              central: a.central,
+              cotas: a.cotas,
+              saldo: a.saldo,
+              aguardando: a.aguardando,
+              autorizadas: a.autorizadas,
+              autCotas: a.autCotas,
+              indexRegula: a.indexRegula,
+              especialidade: a.especialidade,
+              corIndex: a.corIndex,
+              flagIndex: a.flagIndex,
+              flagAutCotas: a.flagAutCotas,
+              corAutCotas: a.corAutCotas,
+            }));
+        }
 
         // Buscar prioridades da especialidade (match por grandeGrupo)
         const todasPrioridades = await db
@@ -1091,6 +1125,145 @@ export const appRouter = router({
           especialidade: f.especialidade ?? "",
         })),
       };
+    }),
+  }),
+
+  // ─── Agendas Relacionadas Config ─────────────────────────────────────────────
+  agendasRelacionadas: router({
+    /**
+     * Buscar configuração de agendas relacionadas para uma agenda específica.
+     * Se não houver configuração salva, retorna todas as agendas da mesma especialidade.
+     */
+    getConfig: protectedProcedure
+      .input(z.object({
+        agendaId: z.number(),
+        especialidade: z.string(),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { relacionadas: [], usandoPadrao: true };
+
+        // Verificar se há configuração salva
+        const config = await db
+          .select()
+          .from(agendasRelacionadasConfig)
+          .where(eq(agendasRelacionadasConfig.agendaId, input.agendaId))
+          .limit(1);
+
+        if (config.length > 0) {
+          // Retornar IDs configurados
+          let ids: number[] = [];
+          try { ids = JSON.parse(config[0].relacionadasIds); } catch { ids = []; }
+          return { relacionadas: ids, usandoPadrao: false };
+        }
+
+        // Sem configuração: retornar todas da mesma especialidade
+        const todasEspecialidade = await db
+          .select({ id: regulacaoData.id })
+          .from(regulacaoData)
+          .where(eq(regulacaoData.especialidade, input.especialidade));
+
+        const ids = todasEspecialidade
+          .map(r => r.id)
+          .filter(id => id !== input.agendaId);
+
+        return { relacionadas: ids, usandoPadrao: true };
+      }),
+
+    /**
+     * Listar todas as configurações de agendas relacionadas (para a aba de administração).
+     */
+    listarConfigs: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db
+        .select()
+        .from(agendasRelacionadasConfig)
+        .orderBy(asc(agendasRelacionadasConfig.agendaNome));
+    }),
+
+    /**
+     * Salvar/atualizar configuração de agendas relacionadas para uma agenda.
+     */
+    salvarConfig: protectedProcedure
+      .input(z.object({
+        agendaId: z.number(),
+        agendaNome: z.string(),
+        municipio: z.string().optional(),
+        central: z.string().optional(),
+        especialidade: z.string().optional(),
+        relacionadasIds: z.array(z.number()),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco de dados não disponível");
+
+        const existing = await db
+          .select()
+          .from(agendasRelacionadasConfig)
+          .where(eq(agendasRelacionadasConfig.agendaId, input.agendaId))
+          .limit(1);
+
+        const idsJson = JSON.stringify(input.relacionadasIds);
+
+        if (existing.length > 0) {
+          await db
+            .update(agendasRelacionadasConfig)
+            .set({ relacionadasIds: idsJson })
+            .where(eq(agendasRelacionadasConfig.agendaId, input.agendaId));
+        } else {
+          await db.insert(agendasRelacionadasConfig).values({
+            agendaId: input.agendaId,
+            agendaNome: input.agendaNome,
+            municipio: input.municipio ?? "",
+            central: input.central ?? "",
+            especialidade: input.especialidade ?? "",
+            relacionadasIds: idsJson,
+          });
+        }
+
+        return { success: true };
+      }),
+
+    /**
+     * Resetar configuração de uma agenda (voltar ao padrão: todas da mesma especialidade).
+     */
+    resetarConfig: protectedProcedure
+      .input(z.object({ agendaId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco de dados não disponível");
+        await db
+          .delete(agendasRelacionadasConfig)
+          .where(eq(agendasRelacionadasConfig.agendaId, input.agendaId));
+        return { success: true };
+      }),
+
+    /**
+     * Listar todas as agendas disponíveis (para o dropdown de seleção).
+     */
+    listarTodasAgendas: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const agendas = await db
+        .select({
+          id: regulacaoData.id,
+          agenda: regulacaoData.agenda,
+          municipio: regulacaoData.municipio,
+          central: regulacaoData.central,
+          especialidade: regulacaoData.especialidade,
+        })
+        .from(regulacaoData)
+        .orderBy(asc(regulacaoData.agenda));
+
+      // Deduplica por nome+municipio+central
+      const seen = new Set<string>();
+      return agendas.filter(a => {
+        const key = `${a.agenda}|${a.municipio}|${a.central}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
     }),
   }),
 });

@@ -8,6 +8,7 @@ import Landing from './Landing';
 import MinhasAgendas from './MinhasAgendas';
 import MonitorCheckIns from './MonitorCheckIns';
 import Reguladores from './Reguladores';
+import AgendasRelacionadas from './AgendasRelacionadas';
 import { trpc } from '@/lib/trpc';
 
 export default function Home() {
@@ -82,6 +83,7 @@ export default function Home() {
           <Route path="/minhas-agendas" component={MinhasAgendas} />
           <Route path="/monitor-checkins" component={MonitorCheckIns} />
           <Route path="/reguladores" component={Reguladores} />
+          <Route path="/agendas-relacionadas" component={AgendasRelacionadas} />
         </Switch>
       </main>
     </div>

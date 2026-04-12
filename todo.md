@@ -148,3 +148,11 @@
 - [x] Adicionar data/hora de última atualização na aba Minhas Agendas
 - [x] Adicionar botão de atualizar dados na aba Regulação de Encaminhamentos
 - [x] Substituir botão de check-in na aba Regulação por lista de reguladores ativos naquela agenda
+- [x] Criar tabela agendas_relacionadas_config no banco (agenda_id → lista de agendas relacionadas)
+- [x] Criar procedures CRUD para agendas relacionadas (listar, salvar config por agenda)
+- [x] Criar página AgendasRelacionadas acessível apenas para admin/monitor
+- [x] Dropdown principal: selecionar a agenda a configurar (todas as agendas do sistema)
+- [x] 1º dropdown: agendas da mesma especialidade selecionadas por padrão, removíveis individualmente
+- [x] 2º dropdown: multi-select com busca para adicionar agendas de qualquer especialidade
+- [x] Integrar configuração no CheckInDetalhes: usar agendas_relacionadas_config em vez de filtrar apenas por especialidade
+- [x] Adicionar aba Agendas Relacionadas ao menu lateral (admin/monitor)

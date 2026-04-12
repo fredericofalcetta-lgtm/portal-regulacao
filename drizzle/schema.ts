@@ -224,3 +224,25 @@ export const agendasFavoritas = mysqlTable("agendas_favoritas", {
 
 export type AgendaFavorita = typeof agendasFavoritas.$inferSelect;
 export type InsertAgendaFavorita = typeof agendasFavoritas.$inferInsert;
+
+/**
+ * Configuração de agendas relacionadas por agenda.
+ * Gerenciada pelo portal (admin/monitor).
+ * Quando configurada, substitui o comportamento padrão (todas da mesma especialidade).
+ * Armazena IDs das agendas relacionadas como JSON array.
+ */
+export const agendasRelacionadasConfig = mysqlTable("agendas_relacionadas_config", {
+  id: int("id").autoincrement().primaryKey(),
+  // ID da agenda principal (regulacao_data.id)
+  agendaId: int("agenda_id").notNull().unique(),
+  agendaNome: varchar("agenda_nome", { length: 255 }).notNull(),
+  municipio: varchar("municipio", { length: 255 }),
+  central: varchar("central", { length: 100 }),
+  especialidade: varchar("especialidade", { length: 255 }),
+  // JSON array de IDs das agendas relacionadas (ex: [1, 2, 3])
+  relacionadasIds: text("relacionadas_ids").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AgendasRelacionadasConfig = typeof agendasRelacionadasConfig.$inferSelect;
+export type InsertAgendasRelacionadasConfig = typeof agendasRelacionadasConfig.$inferInsert;
