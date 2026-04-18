@@ -1,6 +1,6 @@
 import axios from "axios";
 import { getDb } from "./db";
-import { regulacaoData, syncLog, prioridades, reguladores, protocolos, dicionarioEspecialidades } from "../drizzle/schema";
+import { regulacaoData, syncLog, prioridades, reguladores, protocolos, dicionarioEspecialidades, semCotas } from "../drizzle/schema";
 import { count } from "drizzle-orm";
 
 const SPREADSHEET_ID = "1cZ9aGm307pgF5tug8ScZFqncKy9BF1BHo7Dah9Rgm9k";
@@ -234,6 +234,63 @@ export async function syncDicionarioToDb(): Promise<number> {
 }
 
 /**
+ * Sincroniza a aba "Sem cotas" da planilha para o banco de dados.
+ * Detecta agendas novas (que não existiam no dia anterior) e marca com isNova='sim'.
+ */
+export async function syncSemCotasToDb(): Promise<number> {
+  const apiKey = process.env.GOOGLE_SHEETS_API_KEY;
+  if (!apiKey) throw new Error("GOOGLE_SHEETS_API_KEY não está definida");
+  const db = await getDb();
+  if (!db) throw new Error("Banco de dados não disponível");
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sem cotas?key=${apiKey}&majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE`;
+  const response = await axios.get(url, { timeout: 30000 });
+  const rows: (string | number)[][] = response.data.values || [];
+  const dataRows = rows.slice(1); // pular cabeçalho
+
+  // Layout: [0] Espec Sem Cotas, [1] Município, [2] Aguardando, [3] Autorizados, [4] Central
+  const novasLinhas = dataRows
+    .filter(row => row.length >= 1 && row[0])
+    .map(row => ({
+      especialidade: row[0] != null ? String(row[0]).trim() : null,
+      municipio: row[1] != null ? String(row[1]).trim() || null : null,
+      aguardando: row[2] != null ? parseInt(String(row[2])) || 0 : 0,
+      autorizados: row[3] != null ? parseInt(String(row[3])) || 0 : 0,
+      central: row[4] != null ? String(row[4]).trim() || null : null,
+    }));
+
+  // Buscar chaves existentes antes de limpar (para detectar novas)
+  const existentes = await db.select({
+    especialidade: semCotas.especialidade,
+    municipio: semCotas.municipio,
+    central: semCotas.central,
+  }).from(semCotas);
+
+  const chaveExistente = new Set(
+    existentes.map(e => `${e.especialidade ?? ''}|${e.municipio ?? ''}|${e.central ?? ''}`)
+  );
+
+  // Limpar e reinserir com flag isNova
+  await db.delete(semCotas);
+
+  const insertRows = novasLinhas.map(row => ({
+    ...row,
+    isNova: chaveExistente.size > 0 && !chaveExistente.has(`${row.especialidade ?? ''}|${row.municipio ?? ''}|${row.central ?? ''}`) ? 'sim' as const : 'nao' as const,
+  }));
+
+  if (insertRows.length > 0) {
+    const batchSize = 500;
+    for (let i = 0; i < insertRows.length; i += batchSize) {
+      await db.insert(semCotas).values(insertRows.slice(i, i + batchSize));
+    }
+  }
+
+  const novasCount = insertRows.filter(r => r.isNova === 'sim').length;
+  console.log(`[Sync] ${insertRows.length} registros sem cotas sincronizados (${novasCount} novas)`);
+  return insertRows.length;
+}
+
+/**
  * Sincroniza se o banco estiver vazio (primeira carga) ou se forceSync for true.
  */
 export async function syncAndSeedIfEmpty(forceSync = false): Promise<void> {
@@ -258,6 +315,7 @@ export async function syncAndSeedIfEmpty(forceSync = false): Promise<void> {
     await syncPrioridadesToDb();
     await syncReguladoresToDb();
     await syncDicionarioToDb();
+    await syncSemCotasToDb();
   } catch (err) {
     console.error("[Sync] Erro durante sincronização:", err);
   }

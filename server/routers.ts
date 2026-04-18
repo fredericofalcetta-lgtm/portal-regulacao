@@ -16,9 +16,10 @@ import {
   reguladorConfig,
   agendasFavoritas,
   agendasRelacionadasConfig,
+  semCotas,
 } from "../drizzle/schema";
 import { asc, desc, eq, and, inArray } from "drizzle-orm";
-import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb, syncProtocolosToDb, syncDicionarioToDb } from "./syncSheets";
+import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb, syncProtocolosToDb, syncDicionarioToDb, syncSemCotasToDb } from "./syncSheets";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -1246,7 +1247,7 @@ export const appRouter = router({
     /**
      * Listar todas as agendas disponíveis (para o dropdown de seleção).
      */
-    listarTodasAgendas: protectedProcedure.query(async () => {
+      listarTodasAgendas: protectedProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
       const agendas = await db
@@ -1259,7 +1260,6 @@ export const appRouter = router({
         })
         .from(regulacaoData)
         .orderBy(asc(regulacaoData.agenda));
-
       // Deduplica por nome+municipio+central
       const seen = new Set<string>();
       return agendas.filter(a => {
@@ -1270,6 +1270,83 @@ export const appRouter = router({
       });
     }),
   }),
-});
 
+  // ─── Sem Cotas (admin/monitor) ───────────────────────────────────────────────
+  semCotas: router({
+    /**
+     * Listar todos os registros da aba Sem Cotas com filtros opcionais.
+     */
+    listar: protectedProcedure
+      .input(z.object({
+        central: z.string().optional(),
+        especialidade: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { rows: [], novas: [] };
+
+        const rows = await db
+          .select()
+          .from(semCotas)
+          .orderBy(asc(semCotas.central), asc(semCotas.especialidade));
+
+        // Aplicar filtros em memória
+        const filtered = rows.filter(r => {
+          if (input.central && r.central !== input.central) return false;
+          if (input.especialidade) {
+            const esp = (r.especialidade ?? '').toLowerCase();
+            if (!esp.includes(input.especialidade.toLowerCase())) return false;
+          }
+          return true;
+        });
+
+        const novas = filtered.filter(r => r.isNova === 'sim');
+        return { rows: filtered, novas };
+      }),
+
+    /**
+     * Sincronizar manualmente a aba Sem Cotas.
+     */
+    sincronizar: protectedProcedure.mutation(async () => {
+      const count = await syncSemCotasToDb();
+      return { count };
+    }),
+
+    /**
+     * Retorna os valores únicos de Central e Especialidade para os filtros.
+     */
+    getFiltros: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return { centrais: [], especialidades: [] };
+
+      const rows = await db
+        .select({
+          central: semCotas.central,
+          especialidade: semCotas.especialidade,
+        })
+        .from(semCotas);
+
+      const centraisSet = new Set<string>();
+      const especialidadesSet = new Set<string>();
+      for (const r of rows) {
+        if (r.central) centraisSet.add(r.central);
+        if (r.especialidade) especialidadesSet.add(r.especialidade);
+      }
+
+      // Ordenar centrais na ordem padrão: CRA, 1CRS..18CRS
+      const ordemCentral = ['CRA','1CRS','2CRS','3CRS','4CRS','5CRS','6CRS','7CRS','8CRS','9CRS','10CRS','11CRS','12CRS','13CRS','14CRS','15CRS','16CRS','17CRS','18CRS'];
+      const centrais = Array.from(centraisSet).sort((a, b) => {
+        const ia = ordemCentral.indexOf(a);
+        const ib = ordemCentral.indexOf(b);
+        if (ia !== -1 && ib !== -1) return ia - ib;
+        if (ia !== -1) return -1;
+        if (ib !== -1) return 1;
+        return a.localeCompare(b);
+      });
+
+      const especialidades = Array.from(especialidadesSet).sort();
+      return { centrais, especialidades };
+    }),
+  }),
+});
 export type AppRouter = typeof appRouter;

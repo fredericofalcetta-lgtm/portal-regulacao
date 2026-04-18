@@ -162,3 +162,10 @@
 - [x] Corrigir deduplicação por nome nos dropdowns de Agendas Relacionadas (mesma especialidade e outras especialidades mostram múltiplas instâncias do mesmo nome)
 - [x] Aumentar altura do dropdown de outras especialidades com barra de rolagem (atualmente mostra apenas ~6 agendas)
 - [x] Deduplicar dropdown principal "Agenda a configurar" por nome (mostrar cada agenda apenas uma vez, sem repetir instâncias por município/central)
+- [x] Analisar estrutura da aba "Sem cotas" da planilha Google Sheets
+- [x] Criar tabela sem_cotas no banco de dados
+- [x] Sincronizar aba "Sem cotas" da planilha diariamente (junto com as demais)
+- [x] Detectar agendas novas (que não existiam no dia anterior) e armazenar flag
+- [x] Criar procedures tRPC para listar sem_cotas com filtros e agendas novas
+- [x] Criar página SemCotas com seção de novas em destaque no topo e tabela com filtros
+- [x] Adicionar aba Sem Cotas ao menu lateral (admin/monitor)

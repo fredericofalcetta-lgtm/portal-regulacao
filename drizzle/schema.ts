@@ -246,3 +246,23 @@ export const agendasRelacionadasConfig = mysqlTable("agendas_relacionadas_config
 
 export type AgendasRelacionadasConfig = typeof agendasRelacionadasConfig.$inferSelect;
 export type InsertAgendasRelacionadasConfig = typeof agendasRelacionadasConfig.$inferInsert;
+
+/**
+ * Tabela para armazenar os dados da aba "Sem cotas" da planilha.
+ * Colunas: Especialidade, Município, Aguardando, Autorizados, Central.
+ * Inclui flag isNova para indicar agendas que não existiam no dia anterior.
+ */
+export const semCotas = mysqlTable("sem_cotas", {
+  id: int("id").autoincrement().primaryKey(),
+  especialidade: varchar("especialidade", { length: 255 }),
+  municipio: varchar("municipio", { length: 255 }),
+  aguardando: int("aguardando"),
+  autorizados: int("autorizados"),
+  central: varchar("central", { length: 100 }),
+  // Flag para indicar que esta agenda não existia no banco do dia anterior
+  isNova: mysqlEnum("is_nova", ["sim", "nao"]).default("nao").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SemCota = typeof semCotas.$inferSelect;
+export type InsertSemCota = typeof semCotas.$inferInsert;

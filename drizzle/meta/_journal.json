@@ -113,6 +113,13 @@
       "when": 1776016422685,
       "tag": "0015_sparkling_adam_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1776517094138,
+      "tag": "0016_spotty_miss_america",
+      "breakpoints": true
     }
   ]
 }
