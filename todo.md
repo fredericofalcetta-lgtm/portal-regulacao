@@ -169,3 +169,4 @@
 - [x] Criar procedures tRPC para listar sem_cotas com filtros e agendas novas
 - [x] Criar página SemCotas com seção de novas em destaque no topo e tabela com filtros
 - [x] Adicionar aba Sem Cotas ao menu lateral (admin/monitor)
+- [x] Corrigir sincronização da aba Final: usar FORMATTED_VALUE e filtrar linhas com #N/A

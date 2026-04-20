@@ -13,9 +13,10 @@ export async function syncSheetsToDb(): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados não disponível");
 
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}?key=${apiKey}&majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE`;
-  const response = await axios.get(url, { timeout: 30000 });
-  const rows: (string | number)[][] = response.data.values || [];
+  // FORMATTED_VALUE retorna os valores exibidos na planilha (evita #N/A de erros de fórmula)
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}?key=${apiKey}&majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`;
+  const response = await axios.get(url, { timeout: 60000 });
+  const rows: string[][] = response.data.values || [];
 
   // Pular o cabeçalho (linha 0)
   const dataRows = rows.slice(1);
@@ -28,26 +29,42 @@ export async function syncSheetsToDb(): Promise<number> {
   // [5] Autorizadas, [6] Aut/Cotas, [7] IndexRegula,
   // [8] >28, [9] >60d, [10] >90d, [11] Central, [12] Especialidade,
   // [13] Flag Index, [14] Cor Index, [15] Flag Aut/Cotas, [16] Cor Aut/Cotas
+
+  // Função auxiliar para converter número formatado em pt-BR ("1.234,5" → 1234.5)
+  const parseNum = (v: string | undefined | null): number | null => {
+    if (v == null || v === '' || v === '#N/A' || v === '#VALUE!' || v === '#REF!') return null;
+    // Remove separador de milhar e troca vírgula decimal por ponto
+    const cleaned = String(v).replace(/\./g, '').replace(',', '.');
+    const n = parseFloat(cleaned);
+    return isNaN(n) ? null : n;
+  };
+
+  const parseInt2 = (v: string | undefined | null): number | null => {
+    const n = parseNum(v);
+    return n != null ? Math.round(n) : null;
+  };
+
   const insertRows = dataRows
-    .filter(row => row.length >= 8)
+    // Filtrar linhas inválidas: precisam ter agenda preenchida e não ser erro de fórmula
+    .filter(row => row.length >= 1 && row[0] && row[0] !== '#N/A' && row[0] !== '#VALUE!' && row[0] !== '#REF!' && row[0].trim() !== '')
     .map(row => ({
-      agenda: row[0] != null ? String(row[0]) : null,
-      municipio: row[1] != null ? String(row[1]) : null,
-      cotas: row[2] != null ? parseInt(String(row[2])) || null : null,
-      saldo: row[3] != null ? parseInt(String(row[3])) || null : null,
-      aguardando: row[4] != null ? parseInt(String(row[4])) || null : null,
-      autorizadas: row[5] != null ? parseInt(String(row[5])) || null : null,
-      autCotas: row[6] != null ? String(row[6]) : null,
-      indexRegula: row[7] != null ? parseFloat(String(row[7])) || null : null,
-      aguardando28d: row[8] != null ? parseInt(String(row[8])) || null : null,
-      aguardando60d: row[9] != null ? parseInt(String(row[9])) || null : null,
-      aguardando90d: row[10] != null ? parseInt(String(row[10])) || null : null,
-      central: row[11] != null ? String(row[11]) : null,
-      especialidade: row[12] != null ? String(row[12]) : null,
-      flagIndex: row[13] != null ? String(row[13]).trim() : null,
-      corIndex: row[14] != null ? String(row[14]).trim() : null,
-      flagAutCotas: row[15] != null ? String(row[15]).trim() : null,
-      corAutCotas: row[16] != null ? String(row[16]).trim() : null,
+      agenda: row[0]?.trim() || null,
+      municipio: row[1]?.trim() || null,
+      cotas: parseInt2(row[2]),
+      saldo: parseInt2(row[3]),
+      aguardando: parseInt2(row[4]),
+      autorizadas: parseInt2(row[5]),
+      autCotas: row[6]?.trim() || null,
+      indexRegula: parseNum(row[7]),
+      aguardando28d: parseInt2(row[8]),
+      aguardando60d: parseInt2(row[9]),
+      aguardando90d: parseInt2(row[10]),
+      central: row[11]?.trim() || null,
+      especialidade: row[12]?.trim() || null,
+      flagIndex: row[13]?.trim() || null,
+      corIndex: row[14]?.trim() || null,
+      flagAutCotas: row[15]?.trim() || null,
+      corAutCotas: row[16]?.trim() || null,
     }));
 
   if (insertRows.length > 0) {
