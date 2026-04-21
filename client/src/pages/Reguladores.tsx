@@ -414,32 +414,55 @@ interface ReguladorLinhaProps {
   onSaved: () => void;
 }
 
+const PERFIS = [
+  { value: 'regulador', label: 'Regulador' },
+  { value: 'monitoramento', label: 'Monitoramento' },
+  { value: 'administrador', label: 'Administrador' },
+] as const;
+
+type PerfilValue = typeof PERFIS[number]['value'];
+
 function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved }: ReguladorLinhaProps) {
   const [expanded, setExpanded] = useState(false);
   const [editando, setEditando] = useState(false);
   const [especialidades, setEspecialidades] = useState<string[]>(splitList(reg.especialidades));
   const [agendasFiltro, setAgendasFiltro] = useState<string[]>(splitList(reg.agendasFiltro));
+  const [perfilSelecionado, setPerfilSelecionado] = useState<PerfilValue>(
+    (reg.perfil?.toLowerCase() as PerfilValue) ?? 'regulador'
+  );
 
   const atualizarConfig = trpc.reguladorConfig.atualizarConfig.useMutation({
-    onSuccess: () => {
-      toast.success(`${reg.nome} atualizado com sucesso.`);
-      setEditando(false);
-      onSaved();
-    },
-    onError: (e) => toast.error(`Erro ao salvar: ${e.message}`),
+    onError: (e) => toast.error(`Erro ao salvar config: ${e.message}`),
   });
 
-  const handleSalvar = () => {
-    atualizarConfig.mutate({
+  const atualizarPerfil = trpc.reguladorConfig.atualizarPerfil.useMutation({
+    onError: (e) => toast.error(`Erro ao salvar perfil: ${e.message}`),
+  });
+
+  const handleSalvar = async () => {
+    // Salvar config (especialidades + agendas filtro)
+    await atualizarConfig.mutateAsync({
       reguladorEmail: reg.email,
       especialidades: especialidades.join(', '),
       agendasFiltro: agendasFiltro.join(', '),
     });
+    // Salvar perfil se mudou
+    const perfilAtual = (reg.perfil?.toLowerCase() as PerfilValue) ?? 'regulador';
+    if (perfilSelecionado !== perfilAtual) {
+      await atualizarPerfil.mutateAsync({
+        reguladorEmail: reg.email,
+        perfil: perfilSelecionado,
+      });
+    }
+    toast.success(`${reg.nome} atualizado com sucesso.`);
+    setEditando(false);
+    onSaved();
   };
 
   const handleCancelar = () => {
     setEspecialidades(splitList(reg.especialidades));
     setAgendasFiltro(splitList(reg.agendasFiltro));
+    setPerfilSelecionado((reg.perfil?.toLowerCase() as PerfilValue) ?? 'regulador');
     setEditando(false);
   };
 
@@ -521,6 +544,33 @@ function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved }: Reg
                   <Check size={12} />
                   {atualizarConfig.isPending ? 'Salvando...' : 'Salvar'}
                 </button>
+              </div>
+            )}
+          </div>
+
+          {/* Perfil — seletor de perfil */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Perfil</label>
+            {editando ? (
+              <div className="flex gap-2 flex-wrap">
+                {PERFIS.map(p => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => setPerfilSelecionado(p.value)}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                      perfilSelecionado === p.value
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'border-border text-muted-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-foreground">
+                {perfilLabel(reg.perfil)}
               </div>
             )}
           </div>

@@ -1100,6 +1100,33 @@ export const appRouter = router({
       }),
 
     /**
+     * Atualizar o perfil de um regulador (regulador | monitoramento | administrador).
+     * Apenas admin e monitor podem alterar perfis.
+     */
+    atualizarPerfil: protectedProcedure
+      .input(z.object({
+        reguladorEmail: z.string().email(),
+        perfil: z.enum(['regulador', 'monitoramento', 'administrador']),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error('Banco de dados não disponível');
+        // Verificar se o usuário logado é admin ou monitor
+        const userEmail = ctx.user?.email ?? '';
+        const meReg = await db.select({ perfil: reguladores.perfil })
+          .from(reguladores)
+          .where(eq(reguladores.email, userEmail))
+          .limit(1);
+        const meuPerfil = (meReg[0]?.perfil ?? '').toLowerCase();
+        const temPermissao = meuPerfil.includes('administrador') || meuPerfil.includes('monitoramento');
+        if (!temPermissao) throw new Error('Sem permissão para alterar perfis');
+        await db.update(reguladores)
+          .set({ perfil: input.perfil })
+          .where(eq(reguladores.email, input.reguladorEmail));
+        return { success: true };
+      }),
+
+    /**
      * Buscar configuração do regulador logado (para aplicar filtros na aba Regulação).
      */
     meuConfig: protectedProcedure.query(async ({ ctx }) => {

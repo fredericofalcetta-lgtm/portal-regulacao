@@ -170,3 +170,4 @@
 - [x] Criar página SemCotas com seção de novas em destaque no topo e tabela com filtros
 - [x] Adicionar aba Sem Cotas ao menu lateral (admin/monitor)
 - [x] Corrigir sincronização da aba Final: usar FORMATTED_VALUE e filtrar linhas com #N/A
+- [x] Adicionar perfil "monitoramento" no cadastro/edição de reguladores (schema, procedures e UI)
