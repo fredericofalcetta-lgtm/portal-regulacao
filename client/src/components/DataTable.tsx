@@ -175,7 +175,12 @@ const TableRow = memo(function TableRow({
             'text-foreground'
           }`}
         >
-          {(() => { const v = parseFloat(String(row[6] ?? '')); return isNaN(v) ? (row[6] ? String(row[6]) : '—') : v.toFixed(2); })()}
+          {(() => {
+            // autCotas vem como string pt-BR (ex: "21,2") — converter antes de formatar
+            const raw = String(row[6] ?? '');
+            const v = parseFloat(raw.replace(/\./g, '').replace(',', '.'));
+            return isNaN(v) ? (raw || '—') : v.toFixed(2);
+          })()}
         </span>
       </td>
       {/* IndexRegula */}

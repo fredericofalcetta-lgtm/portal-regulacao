@@ -156,7 +156,13 @@ export default function CheckInDetalhes({ agendaId, especialidade, central, muni
                             <td className="px-3 py-1.5 text-center text-foreground">{a.aguardando ?? '—'}</td>
                             <td className="px-3 py-1.5 text-center text-foreground">{a.autorizadas ?? '—'}</td>
                             <td className="px-3 py-1.5 text-center text-foreground">
-                              {a.autCotas != null ? Number(a.autCotas).toFixed(2) : '—'}
+                              {a.autCotas != null
+                                ? (() => {
+                                    // autCotas vem como string pt-BR (ex: "21,2") — converter antes de formatar
+                                    const v = parseFloat(String(a.autCotas).replace(/\./g, '').replace(',', '.'));
+                                    return isNaN(v) ? String(a.autCotas) : v.toFixed(2);
+                                  })()
+                                : '—'}
                             </td>
                             <td className={`px-3 py-1.5 text-center ${getIndexColor(a.indexRegula)}`}>
                               {a.indexRegula != null ? a.indexRegula.toFixed(2) : '—'}

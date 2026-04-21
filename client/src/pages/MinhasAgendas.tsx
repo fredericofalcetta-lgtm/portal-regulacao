@@ -151,7 +151,11 @@ function AgendaRow({
           }`}
         >
           {autCotas != null
-            ? (isNaN(parseFloat(String(autCotas))) ? autCotas : parseFloat(String(autCotas)).toFixed(2))
+            ? (() => {
+                // autCotas vem como string pt-BR (ex: "21,2") — converter antes de formatar
+                const v = parseFloat(String(autCotas).replace(/\./g, '').replace(',', '.'));
+                return isNaN(v) ? String(autCotas) : v.toFixed(2);
+              })()
             : (autorizadas != null ? `${autorizadas}` : '—')}
         </span>
       </td>
