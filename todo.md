@@ -172,3 +172,4 @@
 - [x] Corrigir sincronização da aba Final: usar FORMATTED_VALUE e filtrar linhas com #N/A
 - [x] Adicionar perfil "monitoramento" no cadastro/edição de reguladores (schema, procedures e UI)
 - [x] Corrigir NaN no campo Aut/Cotas na tabela de detalhes do check-in
+- [x] Atualizar cabeçalhos de colunas de ">28d / >60d / >90d" para ">7d / >28d / >90d" em todo o projeto

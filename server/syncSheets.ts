@@ -27,7 +27,7 @@ export async function syncSheetsToDb(): Promise<number> {
   // Layout da aba Final (a partir de 2026-04):
   // [0] Agenda, [1] Município, [2] Cotas, [3] Saldo, [4] Aguardando,
   // [5] Autorizadas, [6] Aut/Cotas, [7] IndexRegula,
-  // [8] >28, [9] >60d, [10] >90d, [11] Central, [12] Especialidade,
+  // [8] >7d, [9] >28d, [10] >90d, [11] Central, [12] Especialidade,
   // [13] Flag Index, [14] Cor Index, [15] Flag Aut/Cotas, [16] Cor Aut/Cotas
 
   // Função auxiliar para converter número formatado em pt-BR ("1.234,5" → 1234.5)

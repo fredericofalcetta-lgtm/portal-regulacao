@@ -144,8 +144,8 @@ export default function MonitorCheckIns() {
                   <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Cotas</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Saldo</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aguardando</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;7d</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;28d</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;60d</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;90d</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Index</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Regulando</th>

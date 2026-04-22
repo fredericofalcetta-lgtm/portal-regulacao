@@ -48,7 +48,7 @@ export default function Dashboard({ data, onRefresh }: DashboardProps) {
     return { totalRecords, totalCotas, totalSaldo, totalAguardando, avgIndexRegula };
   }, [data]);
 
-  // [8]>28d [9]>60d [10]>90d [11]central [12]especialidade [13]flags [14]id
+  // [8]>7d [9]>28d [10]>90d [11]central [12]especialidade [13]flags [14]id
   const especialidadesData = useMemo(() => {
     const map = new Map<string, number>();
     data.forEach(row => {
@@ -91,10 +91,10 @@ export default function Dashboard({ data, onRefresh }: DashboardProps) {
 
   // Totais de pacientes aguardando por faixa de tempo
   const aguardandoFaixas = useMemo(() => {
-    const total28d = data.reduce((sum, row) => sum + (parseFloat(String(row[8])) || 0), 0);
-    const total60d = data.reduce((sum, row) => sum + (parseFloat(String(row[9])) || 0), 0);
+    const total7d = data.reduce((sum, row) => sum + (parseFloat(String(row[8])) || 0), 0);
+    const total28d = data.reduce((sum, row) => sum + (parseFloat(String(row[9])) || 0), 0);
     const total90d = data.reduce((sum, row) => sum + (parseFloat(String(row[10])) || 0), 0);
-    return { total28d, total60d, total90d };
+    return { total7d, total28d, total90d };
   }, [data]);
 
   const syncButtonLabel = {
@@ -165,8 +165,8 @@ export default function Dashboard({ data, onRefresh }: DashboardProps) {
       {/* Faixas de Tempo de Espera */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         {[
-          { label: 'Aguardando >28 dias', value: aguardandoFaixas.total28d.toLocaleString('pt-BR'), color: 'text-yellow-500', bg: 'border-yellow-200 dark:border-yellow-900' },
-          { label: 'Aguardando >60 dias', value: aguardandoFaixas.total60d.toLocaleString('pt-BR'), color: 'text-orange-500', bg: 'border-orange-200 dark:border-orange-900' },
+          { label: 'Aguardando >7 dias', value: aguardandoFaixas.total7d.toLocaleString('pt-BR'), color: 'text-yellow-500', bg: 'border-yellow-200 dark:border-yellow-900' },
+          { label: 'Aguardando >28 dias', value: aguardandoFaixas.total28d.toLocaleString('pt-BR'), color: 'text-orange-500', bg: 'border-orange-200 dark:border-orange-900' },
           { label: 'Aguardando >90 dias', value: aguardandoFaixas.total90d.toLocaleString('pt-BR'), color: 'text-red-500', bg: 'border-red-200 dark:border-red-900' },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={`bg-card border ${bg} rounded-lg shadow-sm p-5`}>

@@ -48,7 +48,7 @@ const TableRow = memo(function TableRow({
   isConcluida: boolean;
 }) {
   // Layout de índices: [0]agenda [1]municipio [2]cotas [3]saldo [4]aguardando
-  // [5]autorizadas [6]autCotas [7]indexRegula [8]>28d [9]>60d [10]>90d
+  // [5]autorizadas [6]autCotas [7]indexRegula [8]>7d [9]>28d [10]>90d
   // [11]central [12]especialidade [13]flagIndex [14]corIndex [15]flagAutCotas [16]corAutCotas [17]id
   const agendaId = typeof row[17] === 'number' ? row[17] : 0;
   const cor = String(row[14] ?? '');  // corIndex
@@ -194,15 +194,16 @@ const TableRow = memo(function TableRow({
           {indexValue.toFixed(2)}
         </span>
       </td>
-      {/* >28d */}
+      {/* >7d */}
       <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
         {row[8] ? String(row[8]) : '—'}
       </td>
-      {/* >60d */}
+      {/* >28d */}
       <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
         {row[9] ? String(row[9]) : '—'}
       </td>
-      {/* >90d */}
+              {/* >90d */}
+
       <td className="px-3 py-3 text-center text-sm font-medium text-foreground">
         {row[10] ? String(row[10]) : '—'}
       </td>
@@ -465,23 +466,23 @@ export default function DataTable({
                   <SortIcon col={7} />
                 </div>
               </th>
-              {/* >28d */}
+              {/* >7d */}
               <th
                 onClick={() => onSort(8)}
                 className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
               >
                 <div className="flex items-center justify-center space-x-1">
-                  <span>&gt;28d</span>
+                  <span>&gt;7d</span>
                   <SortIcon col={8} />
                 </div>
               </th>
-              {/* >60d */}
+              {/* >28d */}
               <th
                 onClick={() => onSort(9)}
                 className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors"
               >
                 <div className="flex items-center justify-center space-x-1">
-                  <span>&gt;60d</span>
+                  <span>&gt;28d</span>
                   <SortIcon col={9} />
                 </div>
               </th>
