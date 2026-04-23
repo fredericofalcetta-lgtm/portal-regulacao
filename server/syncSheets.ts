@@ -328,9 +328,10 @@ export async function syncAndSeedIfEmpty(forceSync = false): Promise<void> {
     }
 
     console.log("[Sync] Iniciando sincronização com Google Sheets...");
+    // Sincronizar apenas as abas essenciais: Final, Dicionário-Especialidades e Sem Cotas.
+    // As abas Reguladores e Protocolos foram desvinculadas da planilha —
+    // reguladores são gerenciados diretamente pelo portal.
     await syncSheetsToDb();
-    await syncPrioridadesToDb();
-    await syncReguladoresToDb();
     await syncDicionarioToDb();
     await syncSemCotasToDb();
   } catch (err) {

@@ -177,3 +177,7 @@
 - [x] Corrigir sincronização de agendas favoritas (números desatualizados)
 - [x] Implementar múltiplos perfis por usuário (schema, procedures e UI)
 - [x] Adicionar indicador de data/hora da última atualização em todas as abas
+- [x] Adicionar cadastro manual de reguladores pela UI (modal com nome, e-mail, perfil, especialidades)
+- [x] Adicionar edição e exclusão de reguladores cadastrados manualmente
+- [x] Remover sincronização das abas Reguladores e Protocolos da planilha Google Sheets
+- [x] Manter sincronização apenas de: Final, Sem Cotas e Dicionário-Especialidades

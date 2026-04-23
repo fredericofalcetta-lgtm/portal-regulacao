@@ -412,6 +412,7 @@ interface ReguladorLinhaProps {
   todasAgendas: { label: string; agendaId: number; agendaNome: string; municipio: string; central: string; especialidade: string }[];
   todasEspecialidades: string[];
   onSaved: () => void;
+  onExcluir: (id: number, nome: string) => void;
 }
 
 const PERFIS = [
@@ -426,7 +427,7 @@ function parsePerfis(perfil: string | null): string[] {
   return perfil.split(/[,;]/).map(p => p.trim().toLowerCase()).filter(Boolean);
 }
 
-function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved }: ReguladorLinhaProps) {
+function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved, onExcluir }: ReguladorLinhaProps) {
   const [expanded, setExpanded] = useState(false);
   const [editando, setEditando] = useState(false);
   const [especialidades, setEspecialidades] = useState<string[]>(splitList(reg.especialidades));
@@ -617,6 +618,17 @@ function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved }: Reg
             onAdicionada={onSaved}
             onRemovida={onSaved}
           />
+
+          {/* Zona de perigo */}
+          <div className="pt-3 border-t border-border">
+            <button
+              onClick={() => onExcluir(reg.id, reg.nome)}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+            >
+              <Trash2 size={12} />
+              Excluir regulador
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -625,9 +637,148 @@ function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved }: Reg
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 
+// ─── Modal de cadastro de novo regulador ────────────────────────────────────
+interface ModalCadastroProps {
+  onClose: () => void;
+  onSaved: () => void;
+}
+function ModalCadastroRegulador({ onClose, onSaved }: ModalCadastroProps) {
+  const [nome, setNome] = useState('');
+  const [email, setEmail] = useState('');
+  const [vinculo, setVinculo] = useState('');
+  const [perfisSelecionados, setPerfisSelecionados] = useState<string[]>(['regulador']);
+
+  const criarMutation = trpc.reguladorConfig.criar.useMutation({
+    onSuccess: () => {
+      toast.success('Regulador cadastrado com sucesso!');
+      onSaved();
+      onClose();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const handleSubmit = (ev: React.FormEvent) => {
+    ev.preventDefault();
+    if (!nome.trim() || !email.trim()) return;
+    criarMutation.mutate({
+      nome: nome.trim(),
+      email: email.trim(),
+      perfil: perfisSelecionados.length > 0 ? perfisSelecionados.join(', ') : 'regulador',
+      vinculo: vinculo.trim() || undefined,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-card border border-border rounded-xl shadow-xl w-full max-w-md mx-4 p-6 space-y-5"
+        onClick={ev => ev.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-foreground">Novo Regulador</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Nome */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Nome *</label>
+            <input
+              type="text"
+              value={nome}
+              onChange={e => setNome(e.target.value)}
+              placeholder="Nome completo"
+              required
+              className="w-full px-3 py-2 text-sm rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+
+          {/* E-mail */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">E-mail *</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="email@exemplo.com"
+              required
+              className="w-full px-3 py-2 text-sm rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+
+          {/* Vínculo */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Vínculo</label>
+            <input
+              type="text"
+              value={vinculo}
+              onChange={e => setVinculo(e.target.value)}
+              placeholder="Ex: SESAB, Municipal..."
+              className="w-full px-3 py-2 text-sm rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+
+          {/* Perfil */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Perfil</label>
+            <div className="flex gap-3 flex-wrap">
+              {PERFIS.map(p => {
+                const checked = perfisSelecionados.includes(p.value);
+                return (
+                  <label
+                    key={p.value}
+                    className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border cursor-pointer transition-colors select-none ${
+                      checked
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'border-border text-muted-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={checked}
+                      onChange={() => {
+                        setPerfisSelecionados(prev =>
+                          checked ? prev.filter(v => v !== p.value) : [...prev, p.value]
+                        );
+                      }}
+                    />
+                    {checked && <Check size={10} />}
+                    {p.label}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={criarMutation.isPending}
+              className="px-4 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {criarMutation.isPending ? 'Salvando...' : 'Cadastrar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function Reguladores() {
   const { perfilAtivo, regulador } = useRegulador();
   const [busca, setBusca] = useState('');
+  const [modalAberto, setModalAberto] = useState(false);
 
   // Verificar acesso: apenas admin ou monitoramento
   const perfilNorm = (perfilAtivo ?? regulador?.perfil ?? '').toLowerCase();
@@ -674,6 +825,19 @@ export default function Reguladores() {
       .sort();
   }, [dicionario]);
 
+  const excluirMutation = trpc.reguladorConfig.excluir.useMutation({
+    onSuccess: () => {
+      toast.success('Regulador excluído com sucesso.');
+      refetch();
+    },
+    onError: (e) => toast.error(`Erro ao excluir: ${e.message}`),
+  });
+
+  const handleExcluir = (id: number, nome: string) => {
+    if (!window.confirm(`Tem certeza que deseja excluir "${nome}"? Esta ação não pode ser desfeita.`)) return;
+    excluirMutation.mutate({ id });
+  };
+
   // Filtrar reguladores pela busca
   const reguladoresFiltrados = useMemo(() => {
     if (!reguladoresList) return [];
@@ -705,12 +869,29 @@ export default function Reguladores() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
+      {/* Modal de cadastro */}
+      {modalAberto && (
+        <ModalCadastroRegulador
+          onClose={() => setModalAberto(false)}
+          onSaved={() => refetch()}
+        />
+      )}
+
       {/* Cabeçalho */}
-      <div>
-        <h1 className="text-xl font-bold text-foreground">Reguladores</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Gerencie as especialidades, agendas filtro e agendas favoritas de cada regulador.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Reguladores</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gerencie as especialidades, agendas filtro e agendas favoritas de cada regulador.
+          </p>
+        </div>
+        <button
+          onClick={() => setModalAberto(true)}
+          className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          <Plus size={15} />
+          Novo Regulador
+        </button>
       </div>
 
       {/* Barra de busca */}
@@ -750,6 +931,7 @@ export default function Reguladores() {
               todasAgendas={todasAgendas}
               todasEspecialidades={todasEspecialidades}
               onSaved={() => refetch()}
+              onExcluir={handleExcluir}
             />
           ))}
         </div>

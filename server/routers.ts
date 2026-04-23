@@ -19,7 +19,7 @@ import {
   semCotas,
 } from "../drizzle/schema";
 import { asc, desc, eq, and, inArray } from "drizzle-orm";
-import { syncSheetsToDb, syncPrioridadesToDb, syncReguladoresToDb, syncProtocolosToDb, syncDicionarioToDb, syncSemCotasToDb } from "./syncSheets";
+import { syncSheetsToDb, syncPrioridadesToDb, syncProtocolosToDb, syncDicionarioToDb, syncSemCotasToDb } from "./syncSheets";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -163,14 +163,7 @@ export const appRouter = router({
         errors.push(`Agendas: ${e instanceof Error ? e.message : 'erro desconhecido'}`);
       }
 
-      // 2. Aba Reguladores
-      try {
-        results.reguladores = await syncReguladoresToDb();
-      } catch (e) {
-        errors.push(`Reguladores: ${e instanceof Error ? e.message : 'erro desconhecido'}`);
-      }
-
-      // 3. Dicionário de Especialidades
+       // 2. Dicionário de Especialidades
       try {
         results.dicionario = await syncDicionarioToDb();
       } catch (e) {
@@ -266,15 +259,10 @@ export const appRouter = router({
   }),
 
   reguladores: router({
-    // Sincronizar reguladores manualmente
+    // Sincronização de reguladores via planilha foi desativada.
+    // Reguladores são agora gerenciados diretamente pelo portal.
     sync: protectedProcedure.mutation(async () => {
-      try {
-        const count = await syncReguladoresToDb();
-        return { success: true, count };
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "Erro desconhecido";
-        throw new Error(message);
-      }
+      return { success: false, message: "Sincronização de reguladores via planilha foi desativada. Use o portal para gerenciar reguladores." };
     }),
 
     // Listar todos os usuários ativos cadastrados (para encaminhamento por Admin/Monitor)
@@ -1176,6 +1164,55 @@ export const appRouter = router({
         })),
       };
     }),
+
+    /**
+     * Criar um novo regulador manualmente (sem depender da planilha).
+     * Apenas admin/monitor podem criar.
+     */
+    criar: protectedProcedure
+      .input(z.object({
+        nome: z.string().min(2, "Nome muito curto"),
+        email: z.string().email("E-mail inválido"),
+        perfil: z.string().default("regulador"),
+        vinculo: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco indisponível");
+        // Verificar se o e-mail já existe
+        const existing = await db
+          .select({ id: reguladores.id })
+          .from(reguladores)
+          .where(eq(reguladores.email, input.email))
+          .limit(1);
+        if (existing.length > 0) {
+          throw new Error("Já existe um regulador com este e-mail");
+        }
+        await db.insert(reguladores).values({
+          nome: input.nome,
+          email: input.email,
+          perfil: input.perfil,
+          vinculo: input.vinculo ?? null,
+          ativo: "sim",
+        });
+        return { success: true };
+      }),
+
+    /**
+     * Excluir (desativar) um regulador pelo ID.
+     * Apenas admin/monitor podem excluir.
+     */
+    excluir: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco indisponível");
+        await db
+          .update(reguladores)
+          .set({ ativo: "nao" })
+          .where(eq(reguladores.id, input.id));
+        return { success: true };
+      }),
   }),
 
   // ─── Agendas Relacionadas Config ─────────────────────────────────────────────
