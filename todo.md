@@ -184,3 +184,5 @@
 - [x] Migrar protocolos para o portal: cadastro manual (nome, URL)
 - [x] Adicionar edição e exclusão de protocolos pelo portal
 - [x] Desvincular sincronização de Protocolos da planilha Google Sheets
+- [x] Corrigir botão "Novo Protocolo" que não aparece na aba Protocolos
+- [x] Adicionar cadastro manual de prioridades (nome, URL) com edição e exclusão

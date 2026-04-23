@@ -210,18 +210,76 @@ export const appRouter = router({
     }),
   }),
 
-  prioridades: router({
+    prioridades: router({
     // Buscar todas as listas de prioridades
     getAll: protectedProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
-
       return db
         .select()
         .from(prioridades)
         .orderBy(asc(prioridades.grandeGrupo), asc(prioridades.nomeArquivo));
     }),
-
+    // Criar prioridade manualmente
+    criar: protectedProcedure
+      .input(z.object({
+        grandeGrupo: z.string().min(1).max(255),
+        nomeArquivo: z.string().min(1).max(500),
+        linkUrl: z.string().url().optional().or(z.literal('')),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error('Banco indisponível');
+        const userEmail = ctx.user?.email ?? '';
+        const meReg = await db.select({ perfil: reguladores.perfil }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+        const perfil = meReg[0]?.perfil?.toLowerCase() ?? '';
+        if (!['administrador', 'admin', 'monitor', 'monitoramento'].some(p => perfil.includes(p))) {
+          throw new Error('Sem permissão para criar prioridades');
+        }
+        await db.insert(prioridades).values({
+          grandeGrupo: input.grandeGrupo,
+          nomeArquivo: input.nomeArquivo,
+          linkUrl: input.linkUrl || null,
+        });
+        return { success: true };
+      }),
+    // Atualizar prioridade
+    atualizar: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        grandeGrupo: z.string().min(1).max(255),
+        nomeArquivo: z.string().min(1).max(500),
+        linkUrl: z.string().url().optional().or(z.literal('')),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error('Banco indisponível');
+        const userEmail = ctx.user?.email ?? '';
+        const meReg = await db.select({ perfil: reguladores.perfil }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+        const perfil = meReg[0]?.perfil?.toLowerCase() ?? '';
+        if (!['administrador', 'admin', 'monitor', 'monitoramento'].some(p => perfil.includes(p))) {
+          throw new Error('Sem permissão para editar prioridades');
+        }
+        await db.update(prioridades)
+          .set({ grandeGrupo: input.grandeGrupo, nomeArquivo: input.nomeArquivo, linkUrl: input.linkUrl || null })
+          .where(eq(prioridades.id, input.id));
+        return { success: true };
+      }),
+    // Excluir prioridade
+    excluir: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error('Banco indisponível');
+        const userEmail = ctx.user?.email ?? '';
+        const meReg = await db.select({ perfil: reguladores.perfil }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+        const perfil = meReg[0]?.perfil?.toLowerCase() ?? '';
+        if (!['administrador', 'admin', 'monitor', 'monitoramento'].some(p => perfil.includes(p))) {
+          throw new Error('Sem permissão para excluir prioridades');
+        }
+        await db.delete(prioridades).where(eq(prioridades.id, input.id));
+        return { success: true };
+      }),
     // Sincronizar prioridades manualmente
     sync: protectedProcedure.mutation(async () => {
       try {
