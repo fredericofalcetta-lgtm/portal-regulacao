@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc';
-import { useAuth } from '@/_core/hooks/useAuth';
+import { useRegulador } from '@/contexts/ReguladorContext';
 import { ExternalLink, RefreshCw, Search, FileText, BookOpen, ListChecks, ScrollText, Plus, Pencil, Trash2, X, Check } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,8 @@ import { toast } from 'sonner';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function useIsAdmin() {
-  const { user } = useAuth();
-  const perfil = (user as { perfil?: string } | null)?.perfil?.toLowerCase() ?? '';
+  const { perfilAtivo } = useRegulador();
+  const perfil = perfilAtivo?.toLowerCase() ?? '';
   return ['administrador', 'admin', 'monitor', 'monitoramento'].some(p => perfil.includes(p));
 }
 
