@@ -19,7 +19,7 @@ import {
   semCotas,
 } from "../drizzle/schema";
 import { asc, desc, eq, and, inArray } from "drizzle-orm";
-import { syncSheetsToDb, syncPrioridadesToDb, syncProtocolosToDb, syncDicionarioToDb, syncSemCotasToDb } from "./syncSheets";
+import { syncSheetsToDb, syncPrioridadesToDb, syncDicionarioToDb, syncSemCotasToDb } from "./syncSheets";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -234,27 +234,76 @@ export const appRouter = router({
     }),
   }),
 
-  protocolos: router({
+    protocolos: router({
     // Buscar todos os protocolos
     getAll: protectedProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
-
       return db
         .select()
         .from(protocolos)
         .orderBy(asc(protocolos.nome));
     }),
-
-    // Sincronizar protocolos manualmente
+    // Criar protocolo manualmente
+    criar: protectedProcedure
+      .input(z.object({
+        nome: z.string().min(1).max(500),
+        linkUrl: z.string().url().optional().or(z.literal('')),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error('Banco indisponível');
+        const userEmail = ctx.user?.email ?? '';
+        const meReg = await db.select({ perfil: reguladores.perfil }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+        const perfil = meReg[0]?.perfil?.toLowerCase() ?? '';
+        if (!['administrador', 'admin', 'monitor', 'monitoramento'].some(p => perfil.includes(p))) {
+          throw new Error('Sem permissão para criar protocolos');
+        }
+        await db.insert(protocolos).values({
+          nome: input.nome,
+          linkUrl: input.linkUrl || null,
+        });
+        return { success: true };
+      }),
+    // Atualizar protocolo
+    atualizar: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        nome: z.string().min(1).max(500),
+        linkUrl: z.string().url().optional().or(z.literal('')),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error('Banco indisponível');
+        const userEmail = ctx.user?.email ?? '';
+        const meReg = await db.select({ perfil: reguladores.perfil }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+        const perfil = meReg[0]?.perfil?.toLowerCase() ?? '';
+        if (!['administrador', 'admin', 'monitor', 'monitoramento'].some(p => perfil.includes(p))) {
+          throw new Error('Sem permissão para editar protocolos');
+        }
+        await db.update(protocolos)
+          .set({ nome: input.nome, linkUrl: input.linkUrl || null })
+          .where(eq(protocolos.id, input.id));
+        return { success: true };
+      }),
+    // Excluir protocolo
+    excluir: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error('Banco indisponível');
+        const userEmail = ctx.user?.email ?? '';
+        const meReg = await db.select({ perfil: reguladores.perfil }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+        const perfil = meReg[0]?.perfil?.toLowerCase() ?? '';
+        if (!['administrador', 'admin', 'monitor', 'monitoramento'].some(p => perfil.includes(p))) {
+          throw new Error('Sem permissão para excluir protocolos');
+        }
+        await db.delete(protocolos).where(eq(protocolos.id, input.id));
+        return { success: true };
+      }),
+    // Sincronização via planilha desativada — protocolos gerenciados pelo portal
     sync: protectedProcedure.mutation(async () => {
-      try {
-        const count = await syncProtocolosToDb();
-        return { success: true, count };
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "Erro desconhecido";
-        throw new Error(message);
-      }
+      return { success: false, message: "Sincronização de protocolos via planilha foi desativada. Use o portal para gerenciar protocolos." };
     }),
   }),
 

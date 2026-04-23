@@ -181,16 +181,7 @@ function PrioridadesTab() {
 
 function ProtocolosTab() {
   const [search, setSearch] = useState('');
-  const { data: protocolos = [], isLoading, refetch } = trpc.protocolos.getAll.useQuery();
-  const syncMutation = trpc.protocolos.sync.useMutation({
-    onSuccess: (data) => {
-      toast.success(`${data.count} protocolos sincronizados com sucesso!`);
-      refetch();
-    },
-    onError: (err) => {
-      toast.error(`Erro ao sincronizar: ${err.message}`);
-    },
-  });
+  const { data: protocolos = [], isLoading } = trpc.protocolos.getAll.useQuery();
 
   const filtered = protocolos.filter(p =>
     p.nome.toLowerCase().includes(search.toLowerCase())
@@ -198,21 +189,11 @@ function ProtocolosTab() {
 
   return (
     <div>
-      {/* Subtítulo + botão sincronizar */}
+      {/* Subtítulo */}
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <p className="text-sm text-muted-foreground">
           {protocolos.length} protocolo{protocolos.length !== 1 ? 's' : ''} disponíve{protocolos.length !== 1 ? 'is' : 'l'}
         </p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => syncMutation.mutate()}
-          disabled={syncMutation.isPending}
-          className="flex items-center gap-2"
-        >
-          <RefreshCw className={`w-4 h-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-          {syncMutation.isPending ? 'Sincronizando...' : 'Sincronizar'}
-        </Button>
       </div>
 
       {/* Busca */}
@@ -238,18 +219,8 @@ function ProtocolosTab() {
       {!isLoading && protocolos.length === 0 && (
         <div className="text-center py-16 bg-muted/30 rounded-xl border border-dashed border-border">
           <BookOpen className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-muted-foreground font-medium">Nenhum protocolo encontrado</p>
-          <p className="text-muted-foreground/70 text-sm mt-1">Clique em "Sincronizar" para carregar os protocolos da planilha</p>
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => syncMutation.mutate()}
-            disabled={syncMutation.isPending}
-            className="mt-4"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-            Sincronizar Agora
-          </Button>
+          <p className="text-muted-foreground font-medium">Nenhum protocolo cadastrado</p>
+          <p className="text-muted-foreground/70 text-sm mt-1">Acesse a aba Protocolos para adicionar novos protocolos</p>
         </div>
       )}
 

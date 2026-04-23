@@ -181,3 +181,6 @@
 - [x] Adicionar edição e exclusão de reguladores cadastrados manualmente
 - [x] Remover sincronização das abas Reguladores e Protocolos da planilha Google Sheets
 - [x] Manter sincronização apenas de: Final, Sem Cotas e Dicionário-Especialidades
+- [x] Migrar protocolos para o portal: cadastro manual (nome, URL)
+- [x] Adicionar edição e exclusão de protocolos pelo portal
+- [x] Desvincular sincronização de Protocolos da planilha Google Sheets
