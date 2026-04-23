@@ -192,6 +192,18 @@ export const appRouter = router({
       return { success: true, results, errors };
     }),
 
+    // Buscar data/hora da última sincronização bem-sucedida
+    getUltimaAtualizacao: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return null;
+      const rows = await db
+        .select({ syncedAt: syncLog.syncedAt, rowCount: syncLog.rowCount })
+        .from(syncLog)
+        .where(eq(syncLog.status, 'success'))
+        .orderBy(desc(syncLog.syncedAt))
+        .limit(1);
+      return rows[0] ?? null;
+    }),
     // Buscar histórico de sincronizações
     getSyncHistory: protectedProcedure.query(async () => {
       const db = await getDb();
@@ -381,7 +393,11 @@ export const appRouter = router({
         .from(agendasFavoritas)
         .leftJoin(
           regulacaoData,
-          eq(agendasFavoritas.agendaId, regulacaoData.id)
+          and(
+            eq(agendasFavoritas.agendaNome, regulacaoData.agenda),
+            eq(agendasFavoritas.municipio, regulacaoData.municipio),
+            eq(agendasFavoritas.central, regulacaoData.central)
+          )
         )
         .where(eq(agendasFavoritas.reguladorEmail, email));
 
@@ -1106,7 +1122,9 @@ export const appRouter = router({
     atualizarPerfil: protectedProcedure
       .input(z.object({
         reguladorEmail: z.string().email(),
-        perfil: z.enum(['regulador', 'monitoramento', 'administrador']),
+        // Aceita string livre para suportar múltiplos perfis separados por vírgula
+        // ex: "regulador, monitoramento" ou apenas "administrador"
+        perfil: z.string().min(1),
       }))
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();

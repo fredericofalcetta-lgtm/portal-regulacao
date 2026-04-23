@@ -173,3 +173,7 @@
 - [x] Adicionar perfil "monitoramento" no cadastro/edição de reguladores (schema, procedures e UI)
 - [x] Corrigir NaN no campo Aut/Cotas na tabela de detalhes do check-in
 - [x] Atualizar cabeçalhos de colunas de ">28d / >60d / >90d" para ">7d / >28d / >90d" em todo o projeto
+- [x] Diagnosticar e corrigir falha nas atualizações diárias automáticas (cron job)
+- [x] Corrigir sincronização de agendas favoritas (números desatualizados)
+- [x] Implementar múltiplos perfis por usuário (schema, procedures e UI)
+- [x] Adicionar indicador de data/hora da última atualização em todas as abas

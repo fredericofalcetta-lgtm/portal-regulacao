@@ -3,6 +3,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { TrendingUp, Users, Clock, CheckCircle, RefreshCw, History } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { useTheme } from '@/contexts/ThemeContext';
+import { UltimaAtualizacao } from '@/components/UltimaAtualizacao';
 
 interface DashboardProps {
   data: (string | number)[][];
@@ -137,7 +138,7 @@ export default function Dashboard({ data, onRefresh }: DashboardProps) {
               {syncButtonLabel}
             </button>
           )}
-          <p className="text-xs text-muted-foreground">Atualização automática diária às 08:30</p>
+          <UltimaAtualizacao />
         </div>
       </div>
 

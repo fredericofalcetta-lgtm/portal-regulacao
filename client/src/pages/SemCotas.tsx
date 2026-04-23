@@ -5,6 +5,7 @@ import FilterPanel from "@/components/FilterPanel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw, Sparkles, TrendingDown } from "lucide-react";
+import { UltimaAtualizacao } from "@/components/UltimaAtualizacao";
 import { toast } from "sonner";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -105,18 +106,21 @@ export default function SemCotas() {
               {linhasFiltradas.length} registro(s) exibido(s).
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => sincronizarMutation.mutate()}
-            disabled={sincronizarMutation.isPending}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw
-              className={`w-4 h-4 ${sincronizarMutation.isPending ? "animate-spin" : ""}`}
-            />
-            Sincronizar
-          </Button>
+          <div className="flex items-center gap-3">
+            <UltimaAtualizacao />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => sincronizarMutation.mutate()}
+              disabled={sincronizarMutation.isPending}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw
+                className={`w-4 h-4 ${sincronizarMutation.isPending ? "animate-spin" : ""}`}
+              />
+              Sincronizar
+            </Button>
+          </div>
         </div>
 
         {/* ── Seção: Agendas Novas ─────────────────────────────────────────── */}

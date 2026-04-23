@@ -91,26 +91,37 @@ startServer()
   .then(() => syncAndSeedIfEmpty(false))
   .catch(console.error);
 
-// Sincronização automática diária às 08:30
-function scheduleDailySync() {
+// Sincronização automática diária às 08:30 (horário de Brasília, UTC-3)
+// Usa verificação periódica a cada 5 minutos para garantir que não perca o horário
+// mesmo após reinicializações do servidor.
+let lastSyncDate: string | null = null;
+
+function getBrasiliaHourMinute(): { hour: number; minute: number; dateStr: string } {
   const now = new Date();
-  const next = new Date();
-  next.setHours(8, 30, 0, 0);
-  if (next <= now) next.setDate(next.getDate() + 1);
-  const msUntilNext = next.getTime() - now.getTime();
+  // UTC-3 = subtrair 3 horas
+  const brasilia = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+  return {
+    hour: brasilia.getUTCHours(),
+    minute: brasilia.getUTCMinutes(),
+    dateStr: brasilia.toISOString().slice(0, 10), // YYYY-MM-DD
+  };
+}
 
-  console.log(`[Sync] Próxima sincronização agendada para: ${next.toLocaleString('pt-BR')}`);
-
-  setTimeout(async () => {
-    console.log('[Sync] Iniciando sincronização automática diária...');
+async function checkAndRunDailySync() {
+  const { hour, minute, dateStr } = getBrasiliaHourMinute();
+  // Executar entre 08:30 e 08:34 (janela de 5 min), uma vez por dia
+  if (hour === 8 && minute >= 30 && minute < 35 && lastSyncDate !== dateStr) {
+    lastSyncDate = dateStr;
+    console.log(`[Sync] Iniciando sincronização automática diária (${dateStr} 08:30 Brasília)...`);
     try {
       await syncAndSeedIfEmpty(true);
       console.log('[Sync] Sincronização automática concluída com sucesso!');
     } catch (err) {
       console.error('[Sync] Erro na sincronização automática:', err);
     }
-    scheduleDailySync(); // Reagendar para o próximo dia
-  }, msUntilNext);
+  }
 }
 
-scheduleDailySync();
+// Verificar a cada 5 minutos
+setInterval(checkAndRunDailySync, 5 * 60 * 1000);
+console.log('[Sync] Verificação periódica de sincronização ativada (a cada 5 min, executa às 08:30 Brasília)');

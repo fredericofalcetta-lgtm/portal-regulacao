@@ -418,17 +418,21 @@ const PERFIS = [
   { value: 'regulador', label: 'Regulador' },
   { value: 'monitoramento', label: 'Monitoramento' },
   { value: 'administrador', label: 'Administrador' },
-] as const;
+];
 
-type PerfilValue = typeof PERFIS[number]['value'];
+// Converte string de perfil (ex: "regulador, monitoramento") em array de valores
+function parsePerfis(perfil: string | null): string[] {
+  if (!perfil) return ['regulador'];
+  return perfil.split(/[,;]/).map(p => p.trim().toLowerCase()).filter(Boolean);
+}
 
 function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved }: ReguladorLinhaProps) {
   const [expanded, setExpanded] = useState(false);
   const [editando, setEditando] = useState(false);
   const [especialidades, setEspecialidades] = useState<string[]>(splitList(reg.especialidades));
   const [agendasFiltro, setAgendasFiltro] = useState<string[]>(splitList(reg.agendasFiltro));
-  const [perfilSelecionado, setPerfilSelecionado] = useState<PerfilValue>(
-    (reg.perfil?.toLowerCase() as PerfilValue) ?? 'regulador'
+  const [perfisSelecionados, setPerfisSelecionados] = useState<string[]>(
+    parsePerfis(reg.perfil)
   );
 
   const atualizarConfig = trpc.reguladorConfig.atualizarConfig.useMutation({
@@ -446,14 +450,12 @@ function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved }: Reg
       especialidades: especialidades.join(', '),
       agendasFiltro: agendasFiltro.join(', '),
     });
-    // Salvar perfil se mudou
-    const perfilAtual = (reg.perfil?.toLowerCase() as PerfilValue) ?? 'regulador';
-    if (perfilSelecionado !== perfilAtual) {
-      await atualizarPerfil.mutateAsync({
-        reguladorEmail: reg.email,
-        perfil: perfilSelecionado,
-      });
-    }
+    // Salvar perfil (sempre salva para garantir consistência)
+    const novosPerfis = perfisSelecionados.length > 0 ? perfisSelecionados : ['regulador'];
+    await atualizarPerfil.mutateAsync({
+      reguladorEmail: reg.email,
+      perfil: novosPerfis.join(', '),
+    });
     toast.success(`${reg.nome} atualizado com sucesso.`);
     setEditando(false);
     onSaved();
@@ -462,7 +464,7 @@ function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved }: Reg
   const handleCancelar = () => {
     setEspecialidades(splitList(reg.especialidades));
     setAgendasFiltro(splitList(reg.agendasFiltro));
-    setPerfilSelecionado((reg.perfil?.toLowerCase() as PerfilValue) ?? 'regulador');
+    setPerfisSelecionados(parsePerfis(reg.perfil));
     setEditando(false);
   };
 
@@ -548,25 +550,39 @@ function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved }: Reg
             )}
           </div>
 
-          {/* Perfil — seletor de perfil */}
+          {/* Perfil — seletor de múltiplos perfis */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Perfil</label>
             {editando ? (
-              <div className="flex gap-2 flex-wrap">
-                {PERFIS.map(p => (
-                  <button
-                    key={p.value}
-                    type="button"
-                    onClick={() => setPerfilSelecionado(p.value)}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                      perfilSelecionado === p.value
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'border-border text-muted-foreground hover:bg-muted'
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                ))}
+              <div className="flex gap-3 flex-wrap">
+                {PERFIS.map(p => {
+                  const checked = perfisSelecionados.includes(p.value);
+                  return (
+                    <label
+                      key={p.value}
+                      className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border cursor-pointer transition-colors select-none ${
+                        checked
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'border-border text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={checked}
+                        onChange={() => {
+                          setPerfisSelecionados(prev =>
+                            checked
+                              ? prev.filter(v => v !== p.value)
+                              : [...prev, p.value]
+                          );
+                        }}
+                      />
+                      {checked && <Check size={10} />}
+                      {p.label}
+                    </label>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-sm text-foreground">

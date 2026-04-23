@@ -1,6 +1,7 @@
 import { Activity, Loader2, RefreshCw, UserCheck } from 'lucide-react';
 import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 import { trpc } from '@/lib/trpc';
+import { UltimaAtualizacao } from '@/components/UltimaAtualizacao';
 import { useMemo, useEffect, useState } from 'react';
 
 export default function MonitorCheckIns() {
@@ -105,6 +106,7 @@ export default function MonitorCheckIns() {
               <span className="font-medium">{checkIns.length}</span>
               <span className="text-muted-foreground">check-in{checkIns.length !== 1 ? 's' : ''} ativo{checkIns.length !== 1 ? 's' : ''}</span>
             </div>
+            <UltimaAtualizacao compact />
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-muted/50 text-xs text-muted-foreground">
               <RefreshCw size={11} className={isLoading ? 'animate-spin' : ''} />
               <span>Próxima em <span className="font-semibold text-foreground">{countdown}s</span></span>

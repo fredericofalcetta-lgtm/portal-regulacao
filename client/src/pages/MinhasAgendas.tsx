@@ -3,6 +3,7 @@ import { LogIn, LogOut, Loader2, ClipboardList, RefreshCw, Send, CheckCircle2, T
 import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 import CheckInDetalhes from '@/components/CheckInDetalhes';
 import { trpc } from '@/lib/trpc';
+import { UltimaAtualizacao } from '@/components/UltimaAtualizacao';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -431,14 +432,7 @@ export default function MinhasAgendas() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {(checkInsUpdatedAt > 0 || encaminhadasUpdatedAt > 0) && (
-              <span className="text-xs text-muted-foreground">
-                Atualizado em {new Date(Math.max(checkInsUpdatedAt, encaminhadasUpdatedAt)).toLocaleString('pt-BR', {
-                  day: '2-digit', month: '2-digit', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit'
-                })}
-              </span>
-            )}
+            <UltimaAtualizacao />
             <button
               onClick={handleRefresh}
               disabled={isLoading}

@@ -4,6 +4,7 @@ import DataTable from '@/components/DataTable';
 import { useRegulador } from '@/contexts/ReguladorContext';
 import { usePersistedFilters } from '@/hooks/usePersistedFilters';
 import { trpc } from '@/lib/trpc';
+import { UltimaAtualizacao } from '@/components/UltimaAtualizacao';
 
 interface RegulationProps {
   data: (string | number)[][];
@@ -217,6 +218,10 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
 
   return (
     <div className="flex h-screen bg-background">
+      {/* Indicador de última atualização */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+        <UltimaAtualizacao compact />
+      </div>
       {/* Aviso de restrição por perfil */}
       {!isIrrestrito && regulador?.grandeGrupo && (
         <div className="absolute top-2 right-4 z-10">
