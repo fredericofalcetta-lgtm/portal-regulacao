@@ -351,30 +351,7 @@ export default function DataTable({
               {filteredAndSortedRows.length} resultado{filteredAndSortedRows.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            {dataUpdatedAt && dataUpdatedAt > 0 && (
-              <span className="text-xs text-muted-foreground">
-                Atualizado em {new Date(dataUpdatedAt).toLocaleString('pt-BR', {
-                  day: '2-digit', month: '2-digit', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit'
-                })}
-              </span>
-            )}
-            {onRefresh && (
-              <button
-                onClick={onRefresh}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                  <path d="M21 3v5h-5"/>
-                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                  <path d="M8 16H3v5"/>
-                </svg>
-                Atualizar
-              </button>
-            )}
-          </div>
+
         </div>
       </div>
 

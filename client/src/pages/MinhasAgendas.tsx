@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogIn, LogOut, Loader2, ClipboardList, RefreshCw, Send, CheckCircle2, Trash2, Flag, CheckCheck, XCircle, Users } from 'lucide-react';
+import { LogIn, LogOut, Loader2, ClipboardList, Send, CheckCircle2, Trash2, Flag, CheckCheck, XCircle, Users } from 'lucide-react';
 import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 import CheckInDetalhes from '@/components/CheckInDetalhes';
 import { trpc } from '@/lib/trpc';
@@ -433,14 +433,6 @@ export default function MinhasAgendas() {
           </div>
           <div className="flex items-center gap-3">
             <UltimaAtualizacao />
-            <button
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-md transition-colors disabled:opacity-50"
-            >
-              <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
-              Atualizar
-            </button>
           </div>
         </div>
       </div>
