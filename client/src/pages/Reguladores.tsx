@@ -570,7 +570,9 @@ function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved, onExc
                       <input
                         type="checkbox"
                         className="sr-only"
+                        tabIndex={-1}
                         checked={checked}
+                        onFocus={e => e.preventDefault()}
                         onChange={() => {
                           setPerfisSelecionados(prev =>
                             checked

@@ -186,3 +186,4 @@
 - [x] Desvincular sincronização de Protocolos da planilha Google Sheets
 - [x] Corrigir botão "Novo Protocolo" que não aparece na aba Protocolos
 - [x] Adicionar cadastro manual de prioridades (nome, URL) com edição e exclusão
+- [x] Corrigir scroll indesejado no card do regulador ao selecionar perfis (tela fica branca/desce)
