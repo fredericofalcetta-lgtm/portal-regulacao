@@ -893,7 +893,13 @@ export const appRouter = router({
           .map(e => e.trim().toLowerCase())
           .filter(Boolean);
 
-        // Verificar se há configuração personalizada de agendas relacionadas
+        // Buscar todas as agendas do banco PRIMEIRO (necessário para resolver nomeAgenda)
+        const todasAgendas = await db
+          .select()
+          .from(regulacaoData)
+          .orderBy(desc(regulacaoData.indexRegula));
+
+        // Verificar se há configuração personalizada de agendas relacionadas.
         // A config é salva por nome de agenda (não por ID), pois a mesma agenda
         // existe em múltiplas centrais e a config deve ser compartilhada entre elas.
         const agendaEmRegulacao = todasAgendas.find(a => a.id === input.agendaIdExcluir);
@@ -907,23 +913,17 @@ export const appRouter = router({
               .limit(1)
           : [];
 
-        // Buscar todas as agendas do banco
-        const todasAgendas = await db
-          .select()
-          .from(regulacaoData)
-          .orderBy(desc(regulacaoData.indexRegula));
-
         let agendasRelacionadas;
 
         if (configPersonalizada.length > 0) {
-          // Usar IDs configurados manualmente, mas ainda filtrar pela central do check-in
-          let idsConfigurados: number[] = [];
-          try { idsConfigurados = JSON.parse(configPersonalizada[0].relacionadasIds); } catch { idsConfigurados = []; }
+          // Usar nomes configurados, filtrados pela central do check-in
+          let nomesConfigurados: string[] = [];
+          try { nomesConfigurados = JSON.parse(configPersonalizada[0].relacionadasNomes); } catch { nomesConfigurados = []; }
 
           agendasRelacionadas = todasAgendas
             .filter(a => {
-              if (!idsConfigurados.includes(a.id)) return false;
-              // Filtrar por central se informada (mostrar apenas agendas da mesma central)
+              if (!nomesConfigurados.includes(a.agenda ?? '')) return false;
+              // Filtrar por central (mostrar apenas agendas da mesma central)
               if (input.central && a.central !== input.central) return false;
               return true;
             })
@@ -1342,21 +1342,21 @@ export const appRouter = router({
   }),
 
   // ─── Agendas Relacionadas Config ─────────────────────────────────────────────
-  agendasRelacionadas: router({
-    /**
+  agendasRelacionadas: router({\n    /**
      * Buscar configuração de agendas relacionadas para uma agenda específica.
      * Se não houver configuração salva, retorna todas as agendas da mesma especialidade.
+     * Usa agendaNome como chave (IDs são voláteis — mudam a cada sync).
      */
     getConfig: protectedProcedure
       .input(z.object({
         agendaId: z.number(),
         especialidade: z.string(),
       }))
-      .query(async ({ input, ctx }) => {
+      .query(async ({ input }) => {
         const db = await getDb();
-        if (!db) return { relacionadas: [], usandoPadrao: true };
+        if (!db) return { relacionadasNomes: [], usandoPadrao: true };
 
-        // Buscar o nome da agenda pelo ID para usar como chave da config
+        // Buscar o nome da agenda pelo ID
         const agendaRow = await db
           .select({ agenda: regulacaoData.agenda })
           .from(regulacaoData)
@@ -1375,22 +1375,31 @@ export const appRouter = router({
           : [];
 
         if (config.length > 0) {
-          let ids: number[] = [];
-          try { ids = JSON.parse(config[0].relacionadasIds); } catch { ids = []; }
-          return { relacionadas: ids, usandoPadrao: false };
+          // Retornar os nomes diretamente — estáveis entre sincronizações
+          let nomes: string[] = [];
+          try { nomes = JSON.parse(config[0].relacionadasNomes); } catch { nomes = []; }
+          return { relacionadasNomes: nomes, usandoPadrao: false };
         }
 
-        // Sem configuração: retornar todas da mesma especialidade
+        // Sem configuração: retornar nomes de todas da mesma especialidade (exceto a própria)
         const todasEspecialidade = await db
-          .select({ id: regulacaoData.id })
+          .select({ id: regulacaoData.id, agenda: regulacaoData.agenda })
           .from(regulacaoData)
           .where(eq(regulacaoData.especialidade, input.especialidade));
 
-        const ids = todasEspecialidade
-          .map(r => r.id)
-          .filter(id => id !== input.agendaId);
+        // Deduplica por nome para o frontend não lidar com duplicatas
+        const nomesVistos = new Set<string>();
+        const nomesEsp: string[] = [];
+        for (const r of todasEspecialidade) {
+          if (r.id === input.agendaId) continue;
+          const nome = r.agenda ?? '';
+          if (nome && !nomesVistos.has(nome)) {
+            nomesVistos.add(nome);
+            nomesEsp.push(nome);
+          }
+        }
 
-        return { relacionadas: ids, usandoPadrao: true };
+        return { relacionadasNomes: nomesEsp, usandoPadrao: true };
       }),
 
     /**
@@ -1407,19 +1416,20 @@ export const appRouter = router({
 
     /**
      * Salvar/atualizar configuração de agendas relacionadas para uma agenda.
+     * Salva por agendaNome (chave estável) e armazena nomes das relacionadas
+     * (não IDs, que são voláteis e mudam a cada sync do Google Sheets).
      */
     salvarConfig: protectedProcedure
       .input(z.object({
-        agendaId: z.number(),
         agendaNome: z.string(),
-        municipio: z.string().optional(),
-        central: z.string().optional(),
         especialidade: z.string().optional(),
-        relacionadasIds: z.array(z.number()),
+        relacionadasNomes: z.array(z.string()),
       }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Banco de dados não disponível");
+
+        const nomesJson = JSON.stringify(input.relacionadasNomes);
 
         const existing = await db
           .select()
@@ -1427,21 +1437,16 @@ export const appRouter = router({
           .where(eq(agendasRelacionadasConfig.agendaNome, input.agendaNome))
           .limit(1);
 
-        const idsJson = JSON.stringify(input.relacionadasIds);
-
         if (existing.length > 0) {
           await db
             .update(agendasRelacionadasConfig)
-            .set({ relacionadasIds: idsJson })
+            .set({ relacionadasNomes: nomesJson, especialidade: input.especialidade ?? '' })
             .where(eq(agendasRelacionadasConfig.agendaNome, input.agendaNome));
         } else {
           await db.insert(agendasRelacionadasConfig).values({
-            agendaId: input.agendaId,
             agendaNome: input.agendaNome,
-            municipio: input.municipio ?? "",
-            central: input.central ?? "",
-            especialidade: input.especialidade ?? "",
-            relacionadasIds: idsJson,
+            especialidade: input.especialidade ?? '',
+            relacionadasNomes: nomesJson,
           });
         }
 
@@ -1452,24 +1457,13 @@ export const appRouter = router({
      * Resetar configuração de uma agenda (voltar ao padrão: todas da mesma especialidade).
      */
     resetarConfig: protectedProcedure
-      .input(z.object({ agendaId: z.number() }))
+      .input(z.object({ agendaNome: z.string() }))
       .mutation(async ({ input }) => {
         const db = await getDb();
         if (!db) throw new Error("Banco de dados não disponível");
-
-        // Buscar o nome da agenda para usar como chave
-        const agendaRow = await db
-          .select({ agenda: regulacaoData.agenda })
-          .from(regulacaoData)
-          .where(eq(regulacaoData.id, input.agendaId))
-          .limit(1);
-
-        const nomeAgenda = agendaRow[0]?.agenda ?? '';
-        if (nomeAgenda) {
-          await db
-            .delete(agendasRelacionadasConfig)
-            .where(eq(agendasRelacionadasConfig.agendaNome, nomeAgenda));
-        }
+        await db
+          .delete(agendasRelacionadasConfig)
+          .where(eq(agendasRelacionadasConfig.agendaNome, input.agendaNome));
         return { success: true };
       }),
 
