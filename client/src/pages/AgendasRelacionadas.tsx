@@ -42,21 +42,7 @@ function deduplicarPorNome(agendas: Agenda[]): Agenda[] {
 
 // Dado um conjunto de nomes selecionados, retorna todos os IDs correspondentes
 // (expande nome → todos os IDs com aquele nome na lista fornecida)
-function nomesParaIds(nomes: Set<string>, agendas: Agenda[]): number[] {
-  return agendas
-    .filter(a => nomes.has(agendaNome(a)))
-    .map(a => a.id);
-}
-
-// Dado um conjunto de IDs, retorna os nomes únicos correspondentes
-function idsParaNomes(ids: number[], agendas: Agenda[]): Set<string> {
-  const nomes = new Set<string>();
-  for (const id of ids) {
-    const a = agendas.find(x => x.id === id);
-    if (a) nomes.add(agendaNome(a));
-  }
-  return nomes;
-}
+// Mantido para uso futuro se necessário
 
 // ─── Dropdown multi-select por nome com busca e direção inteligente ──────────
 
@@ -268,17 +254,23 @@ export default function AgendasRelacionadas() {
   useEffect(() => {
     if (!configData || !agendaSelecionada) return;
 
-    const idsRelacionadas = configData.relacionadas;
-    const idsEspecialidade = agendasMesmaEsp.map(a => a.id);
+    if (configData.usandoPadrao) {
+      // Padrão: selecionar todos da mesma especialidade
+      setNomesMesmaEsp(nomesUnicosMesmaEsp);
+      setNomesOutras(new Set());
+    } else {
+      // Config personalizada: getConfig retorna nomes estáveis diretamente
+      const nomesRelacionadas = configData.relacionadasNomes ?? [];
+      const nomesMesmaEspSet = new Set(agendasMesmaEsp.map(a => agendaNome(a)));
 
-    const idsMesmaEsp = idsRelacionadas.filter(id => idsEspecialidade.includes(id));
-    const idsOutras = idsRelacionadas.filter(id => !idsEspecialidade.includes(id));
+      const nomesEsp = nomesRelacionadas.filter(n => nomesMesmaEspSet.has(n));
+      const nomesOutrasArr = nomesRelacionadas.filter(n => !nomesMesmaEspSet.has(n));
 
-    // Converter IDs para nomes únicos
-    setNomesMesmaEsp(idsParaNomes(idsMesmaEsp, todasAgendas));
-    setNomesOutras(idsParaNomes(idsOutras, todasAgendas));
+      setNomesMesmaEsp(new Set(nomesEsp));
+      setNomesOutras(new Set(nomesOutrasArr));
+    }
     setUsandoPadrao(configData.usandoPadrao);
-  }, [configData, agendaSelecionada, agendasMesmaEsp, todasAgendas]);
+  }, [configData, agendaSelecionada, agendasMesmaEsp, nomesUnicosMesmaEsp]);
 
   // Mutations
   const salvarMutation = trpc.agendasRelacionadas.salvarConfig.useMutation({
@@ -328,16 +320,15 @@ export default function AgendasRelacionadas() {
     if (!agendaSelecionada) return;
     setSalvando(true);
     try {
-      // Expandir nomes para todos os IDs correspondentes
-      const idsMesmaEsp = nomesParaIds(nomesMesmaEsp, agendasMesmaEsp);
-      const idsOutras = nomesParaIds(nomesOutras, agendasOutrasEsp);
+      // Enviar nomes (não IDs) — nomes são estáveis entre sincronizações
+      const nomesRelacionadas = [
+        ...Array.from(nomesMesmaEsp),
+        ...Array.from(nomesOutras),
+      ];
       await salvarMutation.mutateAsync({
-        agendaId: agendaSelecionada.id,
         agendaNome: agendaNome(agendaSelecionada),
-        municipio: agendaSelecionada.municipio ?? "",
-        central: agendaSelecionada.central ?? "",
-        especialidade: agendaSelecionada.especialidade ?? "",
-        relacionadasIds: [...idsMesmaEsp, ...idsOutras],
+        especialidade: agendaSelecionada.especialidade ?? '',
+        relacionadasNomes: nomesRelacionadas,
       });
     } finally {
       setSalvando(false);
@@ -346,7 +337,7 @@ export default function AgendasRelacionadas() {
 
   async function handleResetar() {
     if (!agendaSelecionada) return;
-    await resetarMutation.mutateAsync({ agendaId: agendaSelecionada.id });
+    await resetarMutation.mutateAsync({ agendaNome: agendaNome(agendaSelecionada) });
   }
 
   // Fechar dropdown principal ao clicar fora
