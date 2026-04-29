@@ -1342,7 +1342,8 @@ export const appRouter = router({
   }),
 
   // ─── Agendas Relacionadas Config ─────────────────────────────────────────────
-  agendasRelacionadas: router({\n    /**
+  agendasRelacionadas: router({
+    /**
      * Buscar configuração de agendas relacionadas para uma agenda específica.
      * Se não houver configuração salva, retorna todas as agendas da mesma especialidade.
      * Usa agendaNome como chave (IDs são voláteis — mudam a cada sync).
