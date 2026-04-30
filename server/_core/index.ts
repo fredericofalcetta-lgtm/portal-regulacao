@@ -110,7 +110,7 @@ async function runPendingMigrations() {
       }
 
       // Adicionar nova coluna
-      await db.execute("ALTER TABLE `agendas_relacionadas_config` ADD COLUMN `relacionadas_nomes` text NOT NULL DEFAULT ''");
+      await db.execute("ALTER TABLE `agendas_relacionadas_config` ADD COLUMN `relacionadas_nomes` text NOT NULL");
 
       // Adicionar unique em agenda_nome
       try { await db.execute("ALTER TABLE `agendas_relacionadas_config` ADD CONSTRAINT `agendas_relacionadas_config_agenda_nome_unique` UNIQUE(`agenda_nome`)"); }
@@ -133,7 +133,22 @@ async function runPendingMigrations() {
   }
 }
 
+async function runDrizzleMigrations() {
+  try {
+    console.log('[Drizzle] Rodando migrations...');
+    const { migrate } = await import('drizzle-orm/mysql2/migrator');
+    const { getDb, getConnection } = await import('../db');
+    const db = await getDb();
+    if (!db) { console.error('[Drizzle] Banco não disponível'); return; }
+    await migrate(db, { migrationsFolder: './drizzle' });
+    console.log('[Drizzle] Migrations concluídas!');
+  } catch (err) {
+    console.error('[Drizzle] Erro nas migrations:', err);
+  }
+}
+
 startServer()
+  .then(() => runDrizzleMigrations())
   .then(() => runPendingMigrations())
   .then(() => syncAndSeedIfEmpty(false))
   .catch(console.error);
