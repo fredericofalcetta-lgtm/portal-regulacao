@@ -1,0 +1,1 @@
+ALTER TABLE `agendas_relacionadas_config` MODIFY COLUMN `relacionadas_nomes` text;

@@ -236,7 +236,7 @@ export const agendasRelacionadasConfig = mysqlTable("agendas_relacionadas_config
   agendaNome: varchar("agenda_nome", { length: 255 }).notNull().unique(),
   especialidade: varchar("especialidade", { length: 255 }),
   // JSON array de nomes das agendas relacionadas (ex: ["Agenda A", "Agenda B"])
-  relacionadasNomes: text("relacionadas_nomes").notNull().default("[]"),
+  relacionadasNomes: text("relacionadas_nomes"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 

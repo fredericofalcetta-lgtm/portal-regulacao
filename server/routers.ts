@@ -918,7 +918,7 @@ export const appRouter = router({
         if (configPersonalizada.length > 0) {
           // Usar nomes configurados, filtrados pela central do check-in
           let nomesConfigurados: string[] = [];
-          try { nomesConfigurados = JSON.parse(configPersonalizada[0].relacionadasNomes); } catch { nomesConfigurados = []; }
+          try { nomesConfigurados = JSON.parse(configPersonalizada[0].relacionadasNomes ?? '[]'); } catch { nomesConfigurados = []; }
 
           agendasRelacionadas = todasAgendas
             .filter(a => {
@@ -1378,7 +1378,7 @@ export const appRouter = router({
         if (config.length > 0) {
           // Retornar os nomes diretamente — estáveis entre sincronizações
           let nomes: string[] = [];
-          try { nomes = JSON.parse(config[0].relacionadasNomes); } catch { nomes = []; }
+          try { nomes = JSON.parse(config[0].relacionadasNomes ?? '[]'); } catch { nomes = []; }
           return { relacionadasNomes: nomes, usandoPadrao: false };
         }
 
