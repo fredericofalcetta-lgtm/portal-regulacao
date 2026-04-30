@@ -4,6 +4,7 @@ import { trpc } from '@/lib/trpc';
 import EncaminharCell from './EncaminharCell';
 import EncaminharGrupoCell from './EncaminharGrupoCell';
 import AutoEncaminharCell from './AutoEncaminharCell';
+import AutoEncaminharGrupoCell from './AutoEncaminharGrupoCell';
 import CheckInCell from './CheckInCell';
 import { getCorRowStyle, getCorBadgeStyle, getCorPrioridade } from '@/lib/corAgenda';
 
@@ -244,11 +245,13 @@ const GrupoRow = memo(function GrupoRow({
             ) : isAdminOuMonitor ? (
               <EncaminharGrupoCell linhas={linhas} encaminhadosGrupo={encaminhadosGrupo} reguladoresList={reguladoresList} onUpdate={onUpdate} />
             ) : (
-              (() => {
-                const primeira = linhas.find(r => { const id = typeof r[17] === 'number' ? r[17] : 0; return !(id > 0 && concluidasSet.has(id)); }) ?? linhas[0];
-                const id = typeof primeira[17] === 'number' ? primeira[17] : 0;
-                return <AutoEncaminharCell agendaId={id} agendaNome={String(primeira[0])} municipio={String(primeira[1])} central={String(primeira[11])} especialidade={String(primeira[12])} emailUsuario={emailUsuario} encaminhadosAtuais={encaminhamentosPorAgenda.get(id) ?? []} onUpdate={onUpdate} />;
-              })()
+              <AutoEncaminharGrupoCell
+                linhas={linhas}
+                emailUsuario={emailUsuario}
+                encaminhamentosPorAgenda={encaminhamentosPorAgenda}
+                onUpdate={onUpdate}
+                concluidasSet={concluidasSet}
+              />
             )}
           </td>
         )}
