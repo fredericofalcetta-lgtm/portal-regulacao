@@ -70,6 +70,30 @@ export function registerOAuthRoutes(app: Express) {
         lastSignedIn: new Date(),
       });
 
+      // Se for o owner, cadastrar automaticamente como administrador na tabela reguladores
+      const ownerEmail = process.env.OWNER_EMAIL ?? "";
+      if (ownerEmail && email.toLowerCase() === ownerEmail.toLowerCase()) {
+        try {
+          const { getDb } = await import("../db");
+          const { reguladores } = await import("../../drizzle/schema");
+          const { eq } = await import("drizzle-orm");
+          const dbConn = await getDb();
+          if (dbConn) {
+            const existing = await dbConn.select().from(reguladores).where(eq(reguladores.email, email)).limit(1);
+            if (existing.length === 0) {
+              await dbConn.insert(reguladores).values({
+                nome: name || email,
+                email,
+                perfil: "administrador",
+              });
+              console.log(`[Auth] Owner ${email} cadastrado automaticamente como administrador`);
+            }
+          }
+        } catch (e) {
+          console.error("[Auth] Erro ao cadastrar owner:", e);
+        }
+      }
+
       // Criar sessão JWT
       const sessionToken = await sdk.createSessionToken(id, {
         name: name || "",
