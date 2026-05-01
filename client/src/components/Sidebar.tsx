@@ -96,6 +96,7 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     { href: '/monitor-checkins', page: 'monitor-checkins', icon: Activity, label: 'Monitor de Check-ins', visible: isAdminOrMonitor },
     { href: '/reguladores', page: 'reguladores', icon: Users, label: 'Reguladores', visible: isAdminOrMonitorOnly },
     { href: '/agendas-relacionadas', page: 'agendas-relacionadas', icon: Link2, label: 'Agendas Relacionadas', visible: isAdminOrMonitorOnly },
+    { href: '/novas-agendas', page: 'novas-agendas', icon: Sparkles, label: 'Novas Agendas', visible: isAdminOrMonitorOnly },
     { href: '/sem-cotas', page: 'sem-cotas', icon: TrendingDown, label: 'Sem Cotas', visible: isAdminOrMonitorOnly },
     { href: '/dashboard', page: 'dashboard', icon: BarChart3, label: 'Dashboard', visible: true },
     { href: '/documentos', page: 'documentos', icon: FolderOpen, label: 'Documentos', visible: true },
