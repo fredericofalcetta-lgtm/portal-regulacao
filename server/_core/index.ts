@@ -128,6 +128,17 @@ async function runPendingMigrations() {
     } else {
       console.log('[Migration] agendas_relacionadas_config já está atualizada.');
     }
+
+    // Migration: adicionar coluna createdAt em sem_cotas
+    const colsSemCotas = await db.execute(
+      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sem_cotas' AND TABLE_SCHEMA = DATABASE()"
+    ) as unknown as [{ COLUMN_NAME: string }[], unknown];
+    const semCotasCols = colsSemCotas[0].map((r: { COLUMN_NAME: string }) => r.COLUMN_NAME);
+    if (!semCotasCols.includes('createdAt')) {
+      console.log('[Migration] Adicionando createdAt em sem_cotas...');
+      await db.execute("ALTER TABLE sem_cotas ADD COLUMN createdAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP");
+      console.log('[Migration] createdAt em sem_cotas OK!');
+    }
   } catch (err) {
     console.error('[Migration] Erro:', err);
   }
