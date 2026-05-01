@@ -10,6 +10,7 @@ import MonitorCheckIns from './MonitorCheckIns';
 import Reguladores from './Reguladores';
 import AgendasRelacionadas from './AgendasRelacionadas';
 import SemCotas from './SemCotas';
+import NovasAgendas from './NovasAgendas';
 import { trpc } from '@/lib/trpc';
 import { useRegulador } from '@/contexts/ReguladorContext';
 
@@ -32,13 +33,28 @@ export default function Home() {
     utils.sheets.getData.invalidate();
   }, [utils]);
 
-  // Limpar check-ins quando o usuário fechar a aba ou o navegador
+  // Limpar check-ins apenas quando o usuário FECHAR a aba (não ao atualizar)
+  // Estratégia: marcar sessionStorage no pagehide e verificar no próximo load
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      navigator.sendBeacon('/api/checkins/clear');
+    // Se a página está sendo recarregada (F5), o sessionStorage persiste — não limpar
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // persisted=true indica que a página vai para o bfcache (não fechar)
+      // Usamos sessionStorage para distinguir reload de fechar
+      sessionStorage.setItem('portal_reloading', '1');
+    };
+    const handlePageHide = (e: PageTransitionEvent) => {
+      if (!e.persisted && !sessionStorage.getItem('portal_reloading')) {
+        // Aba sendo fechada de verdade — limpar check-ins
+        navigator.sendBeacon('/api/checkins/clear');
+      }
+      sessionStorage.removeItem('portal_reloading');
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handlePageHide);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
+    };
   }, []);
 
   // staleTime de 5 minutos: não refaz a query ao trocar de aba
@@ -97,6 +113,7 @@ export default function Home() {
           <Route path="/monitor-checkins" component={MonitorCheckIns} />
           <Route path="/reguladores" component={Reguladores} />
           <Route path="/agendas-relacionadas" component={AgendasRelacionadas} />
+          <Route path="/novas-agendas" component={NovasAgendas} />
           <Route path="/sem-cotas" component={SemCotas} />
         </Switch>
       </main>
