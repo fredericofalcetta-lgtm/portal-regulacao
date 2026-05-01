@@ -918,7 +918,7 @@ export const appRouter = router({
         if (configPersonalizada.length > 0) {
           // Usar nomes configurados, filtrados pela central do check-in
           let nomesConfigurados: string[] = [];
-          try { nomesConfigurados = JSON.parse(configPersonalizada[0].relacionadasNomes ?? '[]'); } catch { nomesConfigurados = []; }
+          try { nomesConfigurados = JSON.parse(configPersonalizada[0].relacionadasNomes); } catch { nomesConfigurados = []; }
 
           agendasRelacionadas = todasAgendas
             .filter(a => {
@@ -1233,6 +1233,32 @@ export const appRouter = router({
      * Atualizar o perfil de um regulador (regulador | monitoramento | administrador).
      * Apenas admin e monitor podem alterar perfis.
      */
+    atualizarDados: protectedProcedure
+      .input(z.object({
+        reguladorEmail: z.string().email(),
+        nome: z.string().min(1),
+        novoEmail: z.string().email().optional(),
+        vinculo: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error('Banco de dados não disponível');
+        const userEmail = ctx.user?.email ?? '';
+        const meReg = await db.select({ perfil: reguladores.perfil })
+          .from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+        const meuPerfil = (meReg[0]?.perfil ?? '').toLowerCase();
+        const temPermissao = meuPerfil.includes('administrador') || meuPerfil.includes('monitoramento');
+        if (!temPermissao) throw new Error('Sem permissão para alterar dados de reguladores');
+        await db.update(reguladores)
+          .set({
+            nome: input.nome,
+            ...(input.novoEmail ? { email: input.novoEmail } : {}),
+            ...(input.vinculo !== undefined ? { vinculo: input.vinculo } : {}),
+          })
+          .where(eq(reguladores.email, input.reguladorEmail));
+        return { success: true };
+      }),
+
     atualizarPerfil: protectedProcedure
       .input(z.object({
         reguladorEmail: z.string().email(),
@@ -1378,7 +1404,7 @@ export const appRouter = router({
         if (config.length > 0) {
           // Retornar os nomes diretamente — estáveis entre sincronizações
           let nomes: string[] = [];
-          try { nomes = JSON.parse(config[0].relacionadasNomes ?? '[]'); } catch { nomes = []; }
+          try { nomes = JSON.parse(config[0].relacionadasNomes); } catch { nomes = []; }
           return { relacionadasNomes: nomes, usandoPadrao: false };
         }
 
@@ -1527,6 +1553,41 @@ export const appRouter = router({
         const novas = filtered.filter(r => r.isNova === 'sim');
         return { rows: filtered, novas };
       }),
+
+    /**
+     * Listar apenas agendas novas (isNova = 'sim') com createdAt
+     */
+    listarNovas: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db
+        .select()
+        .from(semCotas)
+        .where(eq(semCotas.isNova, 'sim'))
+        .orderBy(desc(semCotas.updatedAt));
+    }),
+
+    /**
+     * Marcar uma agenda como não-nova (check individual)
+     */
+    marcarNaoNova: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error('Banco não disponível');
+        await db.update(semCotas).set({ isNova: 'nao' }).where(eq(semCotas.id, input.id));
+        return { success: true };
+      }),
+
+    /**
+     * Marcar todas as agendas novas como não-novas
+     */
+    marcarTodasNaoNovas: protectedProcedure.mutation(async () => {
+      const db = await getDb();
+      if (!db) throw new Error('Banco não disponível');
+      const result = await db.update(semCotas).set({ isNova: 'nao' }).where(eq(semCotas.isNova, 'sim'));
+      return { count: result[0].affectedRows };
+    }),
 
     /**
      * Sincronizar manualmente a aba Sem Cotas.
