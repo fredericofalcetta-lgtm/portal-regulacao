@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useRegulador } from '@/contexts/ReguladorContext';
-import { ExternalLink, RefreshCw, Search, FileText, BookOpen, ListChecks, ScrollText, Plus, Pencil, Trash2, X, Check } from 'lucide-react';
+import { ExternalLink, Search, FileText, BookOpen, ListChecks, ScrollText, Plus, Pencil, Trash2, X, Check } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -123,14 +123,6 @@ function PrioridadesTab() {
     onError: (e) => toast.error(e.message),
   });
 
-  const syncMutation = trpc.prioridades.sync.useMutation({
-    onSuccess: () => {
-      toast.success('Prioridades sincronizadas');
-      utils.prioridades.getAll.invalidate();
-    },
-    onError: (e) => toast.error(e.message),
-  });
-
   function resetForm() {
     setFormGrupo('');
     setFormNome('');
@@ -187,11 +179,7 @@ function PrioridadesTab() {
         <div className="flex items-center gap-2">
           {isAdmin && (
             <>
-              <Button size="sm" variant="outline" onClick={() => syncMutation.mutate()} disabled={syncMutation.isPending}>
-                <RefreshCw size={14} className={syncMutation.isPending ? 'animate-spin mr-1.5' : 'mr-1.5'} />
-                Sincronizar
-              </Button>
-              <Button size="sm" onClick={openCreate}>
+<Button size="sm" onClick={openCreate}>
                 <Plus size={14} className="mr-1.5" />
                 Nova Prioridade
               </Button>
