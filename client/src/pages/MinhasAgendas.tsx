@@ -309,8 +309,17 @@ export default function MinhasAgendas() {
   const { data: concluidas = [], isLoading: loadingConcluidas, refetch: refetchConcluidas } =
     trpc.agendasConcluidas.getMeus.useQuery();
 
+  const removerEncaminhamentoMutation = trpc.encaminhamentos.removerMeu.useMutation();
+
   const checkInMutation = trpc.checkIns.checkIn.useMutation({
-    onSuccess: () => {
+    onSuccess: (result, variables) => {
+      // Se fez check-in (não checkout), remover o encaminhamento correspondente
+      if (result.action === 'checkin') {
+        const enc = encaminhadas.find(e => e.agendaId === variables.agendaId);
+        if (enc) {
+          removerEncaminhamentoMutation.mutate({ id: enc.id });
+        }
+      }
       refetchCheckIns();
       refetchEncaminhadas();
     },
