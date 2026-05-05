@@ -265,7 +265,8 @@ export async function syncSemCotasToDb(): Promise<number> {
   const rows: (string | number)[][] = response.data.values || [];
   const dataRows = rows.slice(1); // pular cabeçalho
 
-  // Layout: [0] Espec Sem Cotas, [1] Município, [2] Aguardando, [3] Autorizados, [4] Central
+  // Layout: [0] Espec Sem Cotas, [1] Município, [2] Aguardando, [3] Autorizados,
+  //          [4] Novas cotas, [5] Central, [6] Especialidade
   const novasLinhas = dataRows
     .filter(row => row.length >= 1 && row[0])
     .map(row => ({
@@ -273,7 +274,9 @@ export async function syncSemCotasToDb(): Promise<number> {
       municipio: row[1] != null ? String(row[1]).trim() || null : null,
       aguardando: row[2] != null ? parseInt(String(row[2])) || 0 : 0,
       autorizados: row[3] != null ? parseInt(String(row[3])) || 0 : 0,
-      central: row[4] != null ? String(row[4]).trim() || null : null,
+      novasCotas: row[4] != null ? parseInt(String(row[4])) || null : null,
+      central: row[5] != null ? String(row[5]).trim() || null : null,
+      especialidadeCategoria: row[6] != null ? String(row[6]).trim() || null : null,
     }));
 
   // Buscar chaves existentes antes de limpar (para detectar novas)
