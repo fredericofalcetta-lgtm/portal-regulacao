@@ -250,11 +250,20 @@ export type InsertAgendasRelacionadasConfig = typeof agendasRelacionadasConfig.$
  */
 export const semCotas = mysqlTable("sem_cotas", {
   id: int("id").autoincrement().primaryKey(),
+  // Coluna 0: Espec Sem Cotas (nome da agenda)
   especialidade: varchar("especialidade", { length: 255 }),
+  // Coluna 1: Município
   municipio: varchar("municipio", { length: 255 }),
+  // Coluna 2: Aguardando
   aguardando: int("aguardando"),
+  // Coluna 3: Autorizados
   autorizados: int("autorizados"),
+  // Coluna 4: Novas cotas
+  novasCotas: int("novas_cotas"),
+  // Coluna 5: Central
   central: varchar("central", { length: 100 }),
+  // Coluna 6: Especialidade (categoria)
+  especialidadeCategoria: varchar("especialidade_categoria", { length: 255 }),
   // Flag para indicar que esta agenda não existia no banco do dia anterior
   isNova: mysqlEnum("is_nova", ["sim", "nao"]).default("nao").notNull(),
   // Data em que a agenda apareceu pela primeira vez no banco
