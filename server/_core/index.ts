@@ -139,6 +139,17 @@ async function runPendingMigrations() {
       await db.execute("ALTER TABLE sem_cotas ADD COLUMN createdAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP");
       console.log('[Migration] createdAt em sem_cotas OK!');
     }
+    // Migration: adicionar novas_cotas e especialidade_categoria em sem_cotas
+    if (!semCotasCols.includes('novas_cotas')) {
+      console.log('[Migration] Adicionando novas_cotas em sem_cotas...');
+      await db.execute("ALTER TABLE sem_cotas ADD COLUMN novas_cotas int NULL");
+      console.log('[Migration] novas_cotas OK!');
+    }
+    if (!semCotasCols.includes('especialidade_categoria')) {
+      console.log('[Migration] Adicionando especialidade_categoria em sem_cotas...');
+      await db.execute("ALTER TABLE sem_cotas ADD COLUMN especialidade_categoria varchar(255) NULL");
+      console.log('[Migration] especialidade_categoria OK!');
+    }
   } catch (err) {
     console.error('[Migration] Erro:', err);
   }
