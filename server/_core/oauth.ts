@@ -1,53 +1,121 @@
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
+import axios from "axios";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
-
-function getQueryParam(req: Request, key: string): string | undefined {
-  const value = req.query[key];
-  return typeof value === "string" ? value : undefined;
-}
+import { ENV } from "./env";
 
 export function registerOAuthRoutes(app: Express) {
-  app.get("/api/oauth/callback", async (req: Request, res: Response) => {
-    const code = getQueryParam(req, "code");
-    const state = getQueryParam(req, "state");
+  // Redirecionar para o Google OAuth
+  app.get("/api/auth/login", (req: Request, res: Response) => {
+    const redirectUri = `${ENV.appUrl}/api/auth/callback/google`;
+    const params = new URLSearchParams({
+      client_id: ENV.googleClientId,
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope: "openid email profile",
+      access_type: "offline",
+      prompt: "select_account",
+    });
+    res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
+  });
 
-    if (!code || !state) {
-      res.status(400).json({ error: "code and state are required" });
+  // Callback do Google OAuth
+  app.get("/api/auth/callback/google", async (req: Request, res: Response) => {
+    const code = req.query.code as string;
+
+    if (!code) {
+      res.status(400).json({ error: "Código de autorização ausente" });
       return;
     }
 
     try {
-      const tokenResponse = await sdk.exchangeCodeForToken(code, state);
-      const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
+      const redirectUri = `${ENV.appUrl}/api/auth/callback/google`;
 
-      if (!userInfo.openId) {
-        res.status(400).json({ error: "openId missing from user info" });
+      // Trocar código por token
+      const tokenRes = await axios.post(
+        "https://oauth2.googleapis.com/token",
+        new URLSearchParams({
+          code,
+          client_id: ENV.googleClientId,
+          client_secret: ENV.googleClientSecret,
+          redirect_uri: redirectUri,
+          grant_type: "authorization_code",
+        }),
+        { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+      );
+
+      const { access_token } = tokenRes.data;
+
+      // Buscar informações do usuário
+      const userRes = await axios.get(
+        "https://www.googleapis.com/oauth2/v2/userinfo",
+        { headers: { Authorization: `Bearer ${access_token}` } }
+      );
+
+      const { id, name, email } = userRes.data;
+
+      if (!id || !email) {
+        res.status(400).json({ error: "Informações do usuário incompletas" });
         return;
       }
 
+      // Salvar/atualizar usuário no banco
       await db.upsertUser({
-        openId: userInfo.openId,
-        name: userInfo.name || null,
-        email: userInfo.email ?? null,
-        loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+        openId: id,
+        name: name || null,
+        email,
+        loginMethod: "google",
         lastSignedIn: new Date(),
       });
 
-      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
-        name: userInfo.name || "",
+      // Se for o owner, cadastrar automaticamente como administrador na tabela reguladores
+      const ownerEmail = process.env.OWNER_EMAIL ?? "";
+      if (ownerEmail && email.toLowerCase() === ownerEmail.toLowerCase()) {
+        try {
+          const { getDb } = await import("../db");
+          const { reguladores } = await import("../../drizzle/schema");
+          const { eq } = await import("drizzle-orm");
+          const dbConn = await getDb();
+          if (dbConn) {
+            const existing = await dbConn.select().from(reguladores).where(eq(reguladores.email, email)).limit(1);
+            if (existing.length === 0) {
+              await dbConn.insert(reguladores).values({
+                nome: name || email,
+                email,
+                perfil: "administrador",
+              });
+              console.log(`[Auth] Owner ${email} cadastrado automaticamente como administrador`);
+            }
+          }
+        } catch (e) {
+          console.error("[Auth] Erro ao cadastrar owner:", e);
+        }
+      }
+
+      // Criar sessão JWT
+      const sessionToken = await sdk.createSessionToken(id, {
+        name: name || "",
+        email,
         expiresInMs: ONE_YEAR_MS,
       });
 
       const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+      res.cookie(COOKIE_NAME, sessionToken, {
+        ...cookieOptions,
+        maxAge: ONE_YEAR_MS,
+      });
 
       res.redirect(302, "/");
     } catch (error) {
       console.error("[OAuth] Callback failed", error);
-      res.status(500).json({ error: "OAuth callback failed" });
+      res.status(500).json({ error: "Falha no login com Google" });
     }
+  });
+
+  // Mantém compatibilidade com rota antiga do Manus (redireciona para nova)
+  app.get("/api/oauth/callback", (req: Request, res: Response) => {
+    res.redirect(302, "/api/auth/login");
   });
 }

@@ -430,6 +430,9 @@ function parsePerfis(perfil: string | null): string[] {
 function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved, onExcluir }: ReguladorLinhaProps) {
   const [expanded, setExpanded] = useState(false);
   const [editando, setEditando] = useState(false);
+  const [nomeEdit, setNomeEdit] = useState(reg.nome ?? '');
+  const [emailEdit, setEmailEdit] = useState(reg.email ?? '');
+  const [vinculoEdit, setVinculoEdit] = useState(reg.vinculo ?? '');
   const [especialidades, setEspecialidades] = useState<string[]>(splitList(reg.especialidades));
   const [agendasFiltro, setAgendasFiltro] = useState<string[]>(splitList(reg.agendasFiltro));
   const [perfisSelecionados, setPerfisSelecionados] = useState<string[]>(
@@ -444,25 +447,41 @@ function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved, onExc
     onError: (e) => toast.error(`Erro ao salvar perfil: ${e.message}`),
   });
 
+  const atualizarDados = trpc.reguladores.atualizarDados.useMutation({
+    onError: (e) => toast.error(`Erro ao salvar dados: ${e.message}`),
+  });
+
   const handleSalvar = async () => {
+    // Salvar dados básicos (nome, email, vínculo) se foram alterados
+    if (nomeEdit !== reg.nome || emailEdit !== reg.email || vinculoEdit !== (reg.vinculo ?? '')) {
+      await atualizarDados.mutateAsync({
+        reguladorEmail: reg.email,
+        nome: nomeEdit.trim(),
+        novoEmail: emailEdit.trim() !== reg.email ? emailEdit.trim() : undefined,
+        vinculo: vinculoEdit.trim(),
+      });
+    }
     // Salvar config (especialidades + agendas filtro)
     await atualizarConfig.mutateAsync({
-      reguladorEmail: reg.email,
+      reguladorEmail: emailEdit.trim() || reg.email,
       especialidades: especialidades.join(', '),
       agendasFiltro: agendasFiltro.join(', '),
     });
-    // Salvar perfil (sempre salva para garantir consistência)
+    // Salvar perfil
     const novosPerfis = perfisSelecionados.length > 0 ? perfisSelecionados : ['regulador'];
     await atualizarPerfil.mutateAsync({
-      reguladorEmail: reg.email,
+      reguladorEmail: emailEdit.trim() || reg.email,
       perfil: novosPerfis.join(', '),
     });
-    toast.success(`${reg.nome} atualizado com sucesso.`);
+    toast.success(`${nomeEdit || reg.nome} atualizado com sucesso.`);
     setEditando(false);
     onSaved();
   };
 
   const handleCancelar = () => {
+    setNomeEdit(reg.nome ?? '');
+    setEmailEdit(reg.email ?? '');
+    setVinculoEdit(reg.vinculo ?? '');
     setEspecialidades(splitList(reg.especialidades));
     setAgendasFiltro(splitList(reg.agendasFiltro));
     setPerfisSelecionados(parsePerfis(reg.perfil));
@@ -550,6 +569,42 @@ function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved, onExc
               </div>
             )}
           </div>
+
+          {/* Dados básicos — nome, email, vínculo */}
+          {editando && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-lg bg-muted/40 border border-border">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Nome</label>
+                <input
+                  type="text"
+                  value={nomeEdit}
+                  onChange={e => setNomeEdit(e.target.value)}
+                  className="w-full text-sm px-2.5 py-1.5 rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  placeholder="Nome completo"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">E-mail</label>
+                <input
+                  type="email"
+                  value={emailEdit}
+                  onChange={e => setEmailEdit(e.target.value)}
+                  className="w-full text-sm px-2.5 py-1.5 rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Vínculo</label>
+                <input
+                  type="text"
+                  value={vinculoEdit}
+                  onChange={e => setVinculoEdit(e.target.value)}
+                  className="w-full text-sm px-2.5 py-1.5 rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  placeholder="Ex: TelessaúdeRS, ICI..."
+                />
+              </div>
+            </div>
+          )}
 
           {/* Perfil — seletor de múltiplos perfis */}
           <div className="space-y-1.5">

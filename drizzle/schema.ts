@@ -236,7 +236,7 @@ export const agendasRelacionadasConfig = mysqlTable("agendas_relacionadas_config
   agendaNome: varchar("agenda_nome", { length: 255 }).notNull().unique(),
   especialidade: varchar("especialidade", { length: 255 }),
   // JSON array de nomes das agendas relacionadas (ex: ["Agenda A", "Agenda B"])
-  relacionadasNomes: text("relacionadas_nomes"),
+  relacionadasNomes: text("relacionadas_nomes").notNull().default("[]"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
@@ -257,6 +257,8 @@ export const semCotas = mysqlTable("sem_cotas", {
   central: varchar("central", { length: 100 }),
   // Flag para indicar que esta agenda não existia no banco do dia anterior
   isNova: mysqlEnum("is_nova", ["sim", "nao"]).default("nao").notNull(),
+  // Data em que a agenda apareceu pela primeira vez no banco
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
