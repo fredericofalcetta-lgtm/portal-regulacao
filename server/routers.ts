@@ -1607,7 +1607,7 @@ export const appRouter = router({
       const rows = await db
         .select({
           central: semCotas.central,
-          especialidade: semCotas.especialidade,
+          especialidadeCategoria: semCotas.especialidadeCategoria,
         })
         .from(semCotas);
 
@@ -1615,7 +1615,7 @@ export const appRouter = router({
       const especialidadesSet = new Set<string>();
       for (const r of rows) {
         if (r.central) centraisSet.add(r.central);
-        if (r.especialidade) especialidadesSet.add(r.especialidade);
+        if (r.especialidadeCategoria) especialidadesSet.add(r.especialidadeCategoria);
       }
 
       // Ordenar centrais na ordem padrão: CRA, 1CRS..18CRS
