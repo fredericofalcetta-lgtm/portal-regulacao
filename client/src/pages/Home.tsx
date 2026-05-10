@@ -34,27 +34,21 @@ export default function Home() {
   }, [utils]);
 
   // Limpar check-ins apenas quando o usuário FECHAR a aba (não ao atualizar)
-  // Estratégia: marcar sessionStorage no pagehide e verificar no próximo load
+  // Estratégia: usar performance.navigation para detectar reload vs fechamento
   useEffect(() => {
-    // Se a página está sendo recarregada (F5), o sessionStorage persiste — não limpar
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // persisted=true indica que a página vai para o bfcache (não fechar)
-      // Usamos sessionStorage para distinguir reload de fechar
-      sessionStorage.setItem('portal_reloading', '1');
-    };
     const handlePageHide = (e: PageTransitionEvent) => {
-      if (!e.persisted && !sessionStorage.getItem('portal_reloading')) {
-        // Aba sendo fechada de verdade — limpar check-ins
+      // e.persisted = true → página vai para bfcache (navegação normal), não limpar
+      if (e.persisted) return;
+      // Verificar se é reload usando performance.getEntriesByType
+      const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+      const isReload = navEntries.length > 0 && navEntries[0].type === 'reload';
+      if (!isReload) {
+        // Aba sendo fechada ou navegando para fora — limpar check-ins
         navigator.sendBeacon('/api/checkins/clear');
       }
-      sessionStorage.removeItem('portal_reloading');
     };
-    window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('pagehide', handlePageHide);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('pagehide', handlePageHide);
-    };
+    return () => window.removeEventListener('pagehide', handlePageHide);
   }, []);
 
   // staleTime de 5 minutos: não refaz a query ao trocar de aba
