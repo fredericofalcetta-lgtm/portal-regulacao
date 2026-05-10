@@ -13,8 +13,9 @@ export async function syncSheetsToDb(): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Banco de dados não disponível");
 
-  // FORMATTED_VALUE retorna os valores exibidos na planilha (evita #N/A de erros de fórmula)
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}?key=${apiKey}&majorDimension=ROWS&valueRenderOption=FORMATTED_VALUE`;
+  // UNFORMATTED_VALUE retorna valores brutos (números como 1234.5, sem formatação pt-BR)
+  // Isso evita problemas com números formatados como "1.234,5" e erros de fórmula como #N/A
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}?key=${apiKey}&majorDimension=ROWS&valueRenderOption=UNFORMATTED_VALUE`;
   const response = await axios.get(url, { timeout: 60000 });
   const rows: string[][] = response.data.values || [];
 
@@ -30,11 +31,18 @@ export async function syncSheetsToDb(): Promise<number> {
   // [8] >7d, [9] >28d, [10] >90d, [11] Central, [12] Especialidade,
   // [13] Flag Index, [14] Cor Index, [15] Flag Aut/Cotas, [16] Cor Aut/Cotas
 
-  // Função auxiliar para converter número formatado em pt-BR ("1.234,5" → 1234.5)
-  const parseNum = (v: string | undefined | null): number | null => {
-    if (v == null || v === '' || v === '#N/A' || v === '#VALUE!' || v === '#REF!') return null;
-    // Remove separador de milhar e troca vírgula decimal por ponto
-    const cleaned = String(v).replace(/\./g, '').replace(',', '.');
+  // Função auxiliar para converter valor numérico bruto (UNFORMATTED_VALUE)
+  // Trata tanto números reais quanto strings com formatação pt-BR (fallback)
+  const parseNum = (v: string | number | undefined | null): number | null => {
+    if (v == null || v === '') return null;
+    if (typeof v === 'number') return isNaN(v) ? null : v;
+    const s = String(v).trim();
+    if (s === '#N/A' || s === '#VALUE!' || s === '#REF!' || s === '#VALOR!' || s.startsWith('#')) return null;
+    // Tentar parse direto (número sem formatação)
+    const direct = parseFloat(s);
+    if (!isNaN(direct)) return direct;
+    // Fallback: formato pt-BR "1.234,5"
+    const cleaned = s.replace(/\./g, '').replace(',', '.');
     const n = parseFloat(cleaned);
     return isNaN(n) ? null : n;
   };
@@ -54,7 +62,15 @@ export async function syncSheetsToDb(): Promise<number> {
       saldo: parseInt2(row[3]),
       aguardando: parseInt2(row[4]),
       autorizadas: parseInt2(row[5]),
-      autCotas: row[6]?.trim() || null,
+      autCotas: (() => {
+        const v = row[6];
+        if (v == null || v === '') return null;
+        const s = String(v).trim();
+        if (s.startsWith('#')) return null;
+        // Formatar como número se possível
+        const n = parseNum(s);
+        return n != null ? String(n).replace('.', ',') : s;
+      })(),
       indexRegula: parseNum(row[7]),
       aguardando28d: parseInt2(row[8]),
       aguardando60d: parseInt2(row[9]),
