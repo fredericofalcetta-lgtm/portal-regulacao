@@ -271,8 +271,20 @@ const GrupoRow = memo(function GrupoRow({
         <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.saldo || '—'}</td>
         <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.aguardando || '—'}</td>
         <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.autorizadas || '—'}</td>
-        <td className="px-3 py-3 text-center text-sm text-muted-foreground">—</td>
-        <td className="px-3 py-3 text-center text-sm text-muted-foreground">—</td>
+        <td className="px-3 py-3 text-center">
+          {isSingle ? (
+            <span className="text-sm font-semibold text-foreground">
+              {(() => { const raw = String(linhas[0][6] ?? ''); const v = parseFloat(raw.replace(/\./g, '').replace(',', '.')); return isNaN(v) ? (raw || '—') : v.toFixed(2); })()}
+            </span>
+          ) : <span className="text-sm text-muted-foreground">—</span>}
+        </td>
+        <td className="px-3 py-3 text-center">
+          {isSingle ? (
+            <span className="text-sm font-semibold text-foreground">
+              {(() => { const v = parseFloat(String(linhas[0][7] ?? 0)); return isNaN(v) ? '—' : v.toFixed(2); })()}
+            </span>
+          ) : <span className="text-sm text-muted-foreground">—</span>}
+        </td>
         <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.ag7d || '—'}</td>
         <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.ag28d || '—'}</td>
         <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.ag90d || '—'}</td>
