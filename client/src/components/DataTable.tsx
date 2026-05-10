@@ -357,6 +357,15 @@ export default function DataTable({
       };
       const aVal = getVal(a), bVal = getVal(b);
       if (typeof aVal === 'number' && typeof bVal === 'number') return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
+      // Ordenação especial para Central (col 11) — segue ordem CRA, 1CRS, 2CRS...
+      if (sortColumn === 11) {
+        const ORDEM_CENTRAL = ['CRA','1CRS','2CRS','3CRS','4CRS','5CRS','6CRS','7CRS','8CRS','9CRS','10CRS','11CRS','12CRS','13CRS','14CRS','15CRS','16CRS','17CRS','18CRS'];
+        const ia = ORDEM_CENTRAL.indexOf(String(aVal));
+        const ib = ORDEM_CENTRAL.indexOf(String(bVal));
+        const posA = ia === -1 ? 999 : ia;
+        const posB = ib === -1 ? 999 : ib;
+        return sortOrder === 'desc' ? posB - posA : posA - posB;
+      }
       return sortOrder === 'desc' ? String(bVal).localeCompare(String(aVal), 'pt-BR') : String(aVal).localeCompare(String(bVal), 'pt-BR');
     });
     return lista;
