@@ -5,6 +5,7 @@ import CheckInDetalhes from '@/components/CheckInDetalhes';
 import { trpc } from '@/lib/trpc';
 import { Link } from 'wouter';
 import { Settings } from 'lucide-react';
+import { useRegulador } from '@/contexts/ReguladorContext';
 import { UltimaAtualizacao } from '@/components/UltimaAtualizacao';
 import {
   AlertDialog,
@@ -302,6 +303,10 @@ function TableHeader({
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function MinhasAgendas() {
+  const { perfilAtivo, regulador } = useRegulador();
+  const perfilNorm = (perfilAtivo ?? regulador?.perfil ?? '').toLowerCase();
+  const isAdminOuMonitor = perfilNorm.includes('administrador') || perfilNorm.includes('monitoramento');
+
   const { data: checkIns = [], isLoading: loadingCheckIns, refetch: refetchCheckIns, dataUpdatedAt: checkInsUpdatedAt } =
     trpc.checkIns.getMeus.useQuery();
 
