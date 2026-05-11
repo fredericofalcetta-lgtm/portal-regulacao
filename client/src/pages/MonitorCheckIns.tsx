@@ -5,6 +5,9 @@ import { UltimaAtualizacao } from '@/components/UltimaAtualizacao';
 import { useMemo, useEffect, useState } from 'react';
 
 export default function MonitorCheckIns() {
+  const [filtroEspecialidade, setFiltroEspecialidade] = useState('');
+  const [filtroRegulador, setFiltroRegulador] = useState('');
+
   const { data: checkIns = [], isLoading, refetch, dataUpdatedAt } =
     trpc.checkIns.getAll.useQuery(undefined, {
       staleTime: 30_000,
@@ -25,6 +28,27 @@ export default function MonitorCheckIns() {
   }, [dataUpdatedAt]);
 
   // Agrupar check-ins por agendaId para mostrar múltiplos reguladores na mesma agenda
+  // Opções de filtro
+  const especialidadesUnicas = useMemo(() => {
+    const s = new Set<string>();
+    checkIns.forEach(ci => { if (ci.especialidade) s.add(ci.especialidade); });
+    return Array.from(s).sort();
+  }, [checkIns]);
+
+  const reguladoresUnicos = useMemo(() => {
+    const s = new Set<string>();
+    checkIns.forEach(ci => s.add(ci.usuarioNome || ci.usuarioEmail));
+    return Array.from(s).sort();
+  }, [checkIns]);
+
+  const checkInsFiltrados = useMemo(() => {
+    return checkIns.filter(ci => {
+      if (filtroEspecialidade && ci.especialidade !== filtroEspecialidade) return false;
+      if (filtroRegulador && (ci.usuarioNome || ci.usuarioEmail) !== filtroRegulador) return false;
+      return true;
+    });
+  }, [checkIns, filtroEspecialidade, filtroRegulador]);
+
   const agendasAgrupadas = useMemo(() => {
     const map = new Map<number, {
       agendaId: number;
@@ -42,7 +66,7 @@ export default function MonitorCheckIns() {
       reguladores: { nome: string; email: string; desde: Date }[];
     }>();
 
-    for (const ci of checkIns) {
+    for (const ci of checkInsFiltrados) {
       if (!map.has(ci.agendaId)) {
         map.set(ci.agendaId, {
           agendaId: ci.agendaId,
@@ -83,6 +107,8 @@ export default function MonitorCheckIns() {
     return 'bg-muted text-muted-foreground';
   };
 
+  const totalAtivos = agendasAgrupadas.reduce((s, a) => s + a.reguladores.length, 0);
+
   return (
     <div className="flex-1 flex flex-col bg-background min-h-screen">
       {/* Header */}
@@ -100,11 +126,22 @@ export default function MonitorCheckIns() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {/* Filtros */}
+            <select value={filtroEspecialidade} onChange={e => setFiltroEspecialidade(e.target.value)}
+              className="text-sm border border-border rounded-md px-2.5 py-1.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
+              <option value="">Todas especialidades</option>
+              {especialidadesUnicas.map(e => <option key={e} value={e}>{e}</option>)}
+            </select>
+            <select value={filtroRegulador} onChange={e => setFiltroRegulador(e.target.value)}
+              className="text-sm border border-border rounded-md px-2.5 py-1.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary">
+              <option value="">Todos reguladores</option>
+              {reguladoresUnicos.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
             {/* Contador total */}
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-sm text-foreground">
               <UserCheck size={14} className="text-primary" />
-              <span className="font-medium">{checkIns.length}</span>
-              <span className="text-muted-foreground">check-in{checkIns.length !== 1 ? 's' : ''} ativo{checkIns.length !== 1 ? 's' : ''}</span>
+              <span className="font-medium">{totalAtivos}</span>
+              <span className="text-muted-foreground">check-in{totalAtivos !== 1 ? 's' : ''} ativo{totalAtivos !== 1 ? 's' : ''}</span>
             </div>
             <UltimaAtualizacao compact />
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-muted/50 text-xs text-muted-foreground">
