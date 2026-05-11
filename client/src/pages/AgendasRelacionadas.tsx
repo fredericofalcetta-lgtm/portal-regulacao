@@ -493,7 +493,7 @@ function AbaObservacoes({ agendaSelecionada, todasAgendas }: { agendaSelecionada
 
 
 // ─── Página principal ────────────────────────────────────────────────────────
-type TabId = "agendas-mesma" | "agendas-outras" | "protocolos" | "observacoes";
+type TabId = "agendas-mesma" | "protocolos" | "observacoes";
 
 export default function AgendasRelacionadas() {
   const { perfilAtivo, regulador } = useRegulador();
@@ -547,8 +547,7 @@ export default function AgendasRelacionadas() {
   }
 
   const ABAS: { id: TabId; label: string; icon: React.ReactNode }[] = [
-    { id: "agendas-mesma", label: "Mesma especialidade", icon: <Link2 size={14} /> },
-    { id: "agendas-outras", label: "Outras especialidades", icon: <Link2 size={14} /> },
+    { id: "agendas-mesma", label: "Agendas relacionadas", icon: <Link2 size={14} /> },
     { id: "protocolos", label: "Protocolos e Prioridades", icon: <BookOpen size={14} /> },
     { id: "observacoes", label: "Observações", icon: <MessageSquare size={14} /> },
   ];
@@ -623,7 +622,7 @@ export default function AgendasRelacionadas() {
 
           {/* Conteúdo da aba */}
           <div className="p-5">
-            {(abaAtiva === "agendas-mesma" || abaAtiva === "agendas-outras") && (
+            {abaAtiva === "agendas-mesma" && (
               <AbaAgendasRelacionadas agendaSelecionada={agendaSelecionada} todasAgendas={todasAgendas} />
             )}
             {abaAtiva === "protocolos" && (
