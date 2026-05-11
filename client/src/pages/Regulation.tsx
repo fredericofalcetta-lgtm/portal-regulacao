@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useState,
+ useMemo } from 'react';
 import FilterPanel from '@/components/FilterPanel';
 import DataTable from '@/components/DataTable';
 import { useRegulador } from '@/contexts/ReguladorContext';
@@ -31,6 +32,8 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
     setSortColumn,
     setSortOrder,
   } = usePersistedFilters();
+
+  const [selectedCores, setSelectedCores] = useState<Set<string>>(new Set());
 
   // Verifica se o perfil ATIVO tem acesso irrestrito
   const isIrrestrito = useMemo(() => {
@@ -192,7 +195,7 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
     });
 
     return Array.from(agendasSet).sort();
-  }, [dadosFiltradosPorPerfil, selectedEspecialidades, selectedCentrais]);
+  }, [dadosFiltradosPorPerfil, selectedEspecialidades, selectedCentrais, selectedCores]);
 
   const headers = [
     'Agenda',
@@ -242,6 +245,8 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
         selectedAgendas={selectedAgendas}
         selectedCentrais={selectedCentrais}
         selectedEspecialidades={selectedEspecialidades}
+        selectedCores={selectedCores}
+        onCoresChange={setSelectedCores}
         onAgendasChange={setSelectedAgendas}
         onCentraisChange={setSelectedCentrais}
         onEspecialidadesChange={setSelectedEspecialidades}
