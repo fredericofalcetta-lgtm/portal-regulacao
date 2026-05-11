@@ -261,6 +261,7 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
         selectedAgendas={selectedAgendas}
         selectedCentrais={selectedCentrais}
         selectedEspecialidades={selectedEspecialidades}
+        selectedCores={selectedCores}
         sortColumn={sortColumn}
         sortOrder={sortOrder}
         onSort={handleSort}
