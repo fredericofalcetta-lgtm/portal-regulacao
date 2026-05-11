@@ -181,7 +181,6 @@ async function runPendingMigrations() {
       await db.execute("DELETE FROM check_ins WHERE createdAt < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
       console.log('[Migration] Check-ins antigos removidos.');
     } catch(e) { console.warn('[Migration] Limpeza check-ins:', e); }
-    }
   } catch (err) {
     console.error('[Migration] Erro:', err);
   }
