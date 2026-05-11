@@ -122,6 +122,20 @@ export const appRouter = router({
       return { rows, concluidasIds };
     }),
 
+    // Retornar cores únicas disponíveis na coluna corIndex (para filtro dinâmico)
+    getCoresDisponiveis: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const rows = await db
+        .selectDistinct({ corIndex: regulacaoData.corIndex })
+        .from(regulacaoData)
+        .where(sql`cor_index IS NOT NULL AND cor_index != ''`);
+      return rows
+        .map(r => r.corIndex ?? '')
+        .filter(Boolean)
+        .sort();
+    }),
+
     // Sincronizar dados manualmente
     sync: protectedProcedure.mutation(async () => {
       try {
@@ -967,27 +981,51 @@ export const appRouter = router({
             }));
         }
 
-        // Buscar prioridades da especialidade (match por grandeGrupo)
-        const todasPrioridades = await db
-          .select()
-          .from(prioridades)
-          .orderBy(asc(prioridades.nomeArquivo));
+        // Buscar configuração de protocolos/prioridades específica da agenda
+        // (tabela agenda_protocolos, configurada na aba Agendas Relacionadas)
+        let prioridadesRelacionadas: typeof prioridades.$inferSelect[] = [];
+        let protocolosRelacionados: typeof protocolos.$inferSelect[] = [];
 
-        const prioridadesRelacionadas = todasPrioridades.filter(p => {
-          const grupo = (p.grandeGrupo ?? "").toLowerCase();
-          return especialidades.some(e => grupo.includes(e) || e.includes(grupo));
-        });
+        if (nomeAgendaEmRegulacao) {
+          const configProto = await db
+            .select()
+            .from(agendaProtocolos)
+            .where(eq(agendaProtocolos.agendaNome, nomeAgendaEmRegulacao))
+            .limit(1);
 
-        // Buscar protocolos da especialidade (match por nome)
-        const todosProtocolos = await db
-          .select()
-          .from(protocolos)
-          .orderBy(asc(protocolos.nome));
+          if (configProto.length > 0) {
+            // Usar configuração específica da agenda
+            let nomesProto: string[] = [];
+            let nomesPrio: string[] = [];
+            try { nomesProto = JSON.parse(configProto[0].protocolosNomes); } catch {}
+            try { nomesPrio = JSON.parse(configProto[0].prioridadesNomes); } catch {}
 
-        const protocolosRelacionados = todosProtocolos.filter(p => {
-          const nome = (p.nome ?? "").toLowerCase();
-          return especialidades.some(e => nome.includes(e) || e.includes(nome.split(" ")[0]));
-        });
+            if (nomesPrio.length > 0) {
+              const todasPrio = await db.select().from(prioridades).orderBy(asc(prioridades.nomeArquivo));
+              prioridadesRelacionadas = todasPrio.filter(p => {
+                const label = p.nomeArquivo ?? p.grandeGrupo ?? '';
+                return nomesPrio.includes(label);
+              });
+            }
+
+            if (nomesProto.length > 0) {
+              const todosProto = await db.select().from(protocolos).orderBy(asc(protocolos.nome));
+              protocolosRelacionados = todosProto.filter(p => nomesProto.includes(p.nome ?? ''));
+            }
+          } else {
+            // Sem configuração: fallback por especialidade (comportamento anterior)
+            const todasPrioridades = await db.select().from(prioridades).orderBy(asc(prioridades.nomeArquivo));
+            prioridadesRelacionadas = todasPrioridades.filter(p => {
+              const grupo = (p.grandeGrupo ?? "").toLowerCase();
+              return especialidades.some(e => grupo.includes(e) || e.includes(grupo));
+            });
+            const todosProtocolos = await db.select().from(protocolos).orderBy(asc(protocolos.nome));
+            protocolosRelacionados = todosProtocolos.filter(p => {
+              const nome = (p.nome ?? "").toLowerCase();
+              return especialidades.some(e => nome.includes(e) || e.includes(nome.split(" ")[0]));
+            });
+          }
+        }
 
         return {
           agendas: agendasRelacionadas,
