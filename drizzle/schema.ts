@@ -273,3 +273,31 @@ export const semCotas = mysqlTable("sem_cotas", {
 
 export type SemCota = typeof semCotas.$inferSelect;
 export type InsertSemCota = typeof semCotas.$inferInsert;
+
+/**
+ * Configuração de protocolos/prioridades vinculados a uma agenda
+ */
+export const agendaProtocolos = mysqlTable("agenda_protocolos", {
+  id: int("id").autoincrement().primaryKey(),
+  agendaNome: varchar("agenda_nome", { length: 255 }).notNull(),
+  protocolosNomes: text("protocolos_nomes").notNull().default("[]"),
+  prioridadesNomes: text("prioridades_nomes").notNull().default("[]"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AgendaProtocolo = typeof agendaProtocolos.$inferSelect;
+export type InsertAgendaProtocolo = typeof agendaProtocolos.$inferInsert;
+
+/**
+ * Observações específicas por agenda + central
+ */
+export const agendaObservacoes = mysqlTable("agenda_observacoes", {
+  id: int("id").autoincrement().primaryKey(),
+  agendaNome: varchar("agenda_nome", { length: 255 }).notNull(),
+  central: varchar("central", { length: 100 }).notNull(),
+  observacao: text("observacao").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type AgendaObservacao = typeof agendaObservacoes.$inferSelect;
+export type InsertAgendaObservacao = typeof agendaObservacoes.$inferInsert;
