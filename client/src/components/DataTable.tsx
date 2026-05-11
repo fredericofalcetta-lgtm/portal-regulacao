@@ -14,6 +14,7 @@ interface DataTableProps {
   selectedAgendas: Set<string>;
   selectedCentrais: Set<string>;
   selectedEspecialidades: Set<string>;
+  selectedCores?: Set<string>;
   sortColumn: number;
   sortOrder: 'asc' | 'desc';
   onSort: (column: number) => void;
@@ -308,7 +309,7 @@ const GrupoRow = memo(function GrupoRow({
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function DataTable({
-  headers, rows, selectedAgendas, selectedCentrais, selectedEspecialidades,
+  headers, rows, selectedAgendas, selectedCentrais, selectedEspecialidades, selectedCores = new Set(),
   sortColumn, sortOrder, onSort, perfilUsuario, emailUsuario,
   concluidasIds = [], onConcluir, onRefresh, dataUpdatedAt,
 }: DataTableProps) {
@@ -348,8 +349,10 @@ export default function DataTable({
     const matchesCentral = selectedCentrais.size === 0 || selectedCentrais.has(central);
     const partes = expandirEspecialidades(espBruta);
     const matchesEsp = selectedEspecialidades.size === 0 || partes.some(p => selectedEspecialidades.has(p));
-    return matchesAgenda && matchesCentral && matchesEsp;
-  }), [rows, selectedAgendas, selectedCentrais, selectedEspecialidades]);
+    const cor = String(row[14] ?? '');
+    const matchesCor = selectedCores.size === 0 || selectedCores.has(cor) || (selectedCores.has('Sem cor') && !cor);
+    return matchesAgenda && matchesCentral && matchesEsp && matchesCor;
+  }), [rows, selectedAgendas, selectedCentrais, selectedEspecialidades, selectedCores]);
 
   const grupos = useMemo((): Grupo[] => {
     const mapa = new Map<string, Grupo>();
