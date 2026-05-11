@@ -154,6 +154,344 @@ function NomeSelectDropdown({
   );
 }
 
+// ─── Aba: Agendas Relacionadas ────────────────────────────────────────────────
+function AbaAgendasRelacionadas({ agendaSelecionada, todasAgendas }: { agendaSelecionada: Agenda; todasAgendas: Agenda[] }) {
+  const utils = trpc.useUtils();
+  const isDirty = useRef(false);
+  const [nomesMesmaEsp, setNomesMesmaEsp] = useState<Set<string>>(new Set());
+  const [nomesOutras, setNomesOutras] = useState<Set<string>>(new Set());
+  const [usandoPadrao, setUsandoPadrao] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [subAba, setSubAba] = useState<"mesma" | "outras">("mesma");
+
+  const especialidades = useMemo(() => {
+    const esp = agendaSelecionada.especialidade ?? "";
+    return esp.split(/[,;]/).map(e => e.trim()).filter(Boolean);
+  }, [agendaSelecionada]);
+
+  const agendasMesmaEsp = useMemo(() => {
+    const nomeExcluir = agendaNome(agendaSelecionada);
+    return todasAgendas.filter(a => {
+      if (agendaNome(a) === nomeExcluir) return false;
+      const aEsps = (a.especialidade ?? "").split(/[,;]/).map(e => e.trim());
+      return especialidades.some(e => aEsps.includes(e));
+    });
+  }, [todasAgendas, agendaSelecionada, especialidades]);
+
+  const nomesUnicosMesmaEsp = useMemo(() => new Set(deduplicarPorNome(agendasMesmaEsp).map(agendaNome)), [agendasMesmaEsp]);
+
+  const agendasOutrasEsp = useMemo(() => {
+    const nomeExcluir = agendaNome(agendaSelecionada);
+    return todasAgendas.filter(a => {
+      if (agendaNome(a) === nomeExcluir) return false;
+      const aEsps = (a.especialidade ?? "").split(/[,;]/).map(e => e.trim());
+      return !especialidades.some(e => aEsps.includes(e));
+    });
+  }, [todasAgendas, agendaSelecionada, especialidades]);
+
+  const { data: configData } = trpc.agendasRelacionadas.getConfig.useQuery(
+    { agendaId: agendaSelecionada.id, especialidade: agendaSelecionada.especialidade ?? "" },
+    { enabled: true }
+  );
+
+  useEffect(() => {
+    if (!configData || isDirty.current) return;
+    if (configData.usandoPadrao) {
+      setNomesMesmaEsp(nomesUnicosMesmaEsp);
+      setNomesOutras(new Set());
+    } else {
+      const nomes = configData.relacionadasNomes ?? [];
+      const mesmaSet = new Set(agendasMesmaEsp.map(a => agendaNome(a)));
+      setNomesMesmaEsp(new Set(nomes.filter(n => mesmaSet.has(n))));
+      setNomesOutras(new Set(nomes.filter(n => !mesmaSet.has(n))));
+    }
+    setUsandoPadrao(configData.usandoPadrao);
+  }, [configData, agendasMesmaEsp, nomesUnicosMesmaEsp]);
+
+  const salvarMutation = trpc.agendasRelacionadas.salvarConfig.useMutation({
+    onSuccess: () => { toast.success("Configuração salva!"); setUsandoPadrao(false); isDirty.current = false; utils.agendasRelacionadas.getConfig.invalidate(); },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+  const resetarMutation = trpc.agendasRelacionadas.resetarConfig.useMutation({
+    onSuccess: () => { toast.success("Resetado para o padrão"); setUsandoPadrao(true); setNomesMesmaEsp(nomesUnicosMesmaEsp); setNomesOutras(new Set()); isDirty.current = false; utils.agendasRelacionadas.getConfig.invalidate(); },
+    onError: () => toast.error("Erro ao resetar"),
+  });
+
+  const toggle = (set: Set<string>, nome: string): Set<string> => {
+    isDirty.current = true;
+    const next = new Set(set);
+    if (next.has(nome)) next.delete(nome); else next.add(nome);
+    return next;
+  };
+
+  const handleSalvar = async () => {
+    setSalvando(true);
+    try {
+      await salvarMutation.mutateAsync({
+        agendaNome: agendaNome(agendaSelecionada),
+        especialidade: agendaSelecionada.especialidade ?? "",
+        relacionadasNomes: [...Array.from(nomesMesmaEsp), ...Array.from(nomesOutras)],
+      });
+    } finally { setSalvando(false); }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 text-sm">
+        {usandoPadrao ? (
+          <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-xs">Usando padrão</span>
+        ) : (
+          <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs">Configuração personalizada</span>
+        )}
+        {especialidades.length > 1 && (
+          <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs">{especialidades.length} especialidades</span>
+        )}
+      </div>
+      <div className="flex border-b border-border">
+        <button onClick={() => setSubAba("mesma")} className={`px-4 py-2 text-sm font-medium transition-colors ${subAba === "mesma" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+          Mesma especialidade ({nomesUnicosMesmaEsp.size})
+        </button>
+        <button onClick={() => setSubAba("outras")} className={`px-4 py-2 text-sm font-medium transition-colors ${subAba === "outras" ? "border-b-2 border-primary text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+          Outras especialidades {nomesOutras.size > 0 && `(${nomesOutras.size} sel.)`}
+        </button>
+      </div>
+      {subAba === "mesma" && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-muted-foreground">{nomesMesmaEsp.size} de {nomesUnicosMesmaEsp.size} selecionadas</span>
+            <div className="flex gap-2">
+              <button onClick={() => { isDirty.current = true; setNomesMesmaEsp(nomesUnicosMesmaEsp); }} className="text-xs text-blue-600 hover:underline">Selecionar todas</button>
+              <span className="text-muted-foreground">·</span>
+              <button onClick={() => { isDirty.current = true; setNomesMesmaEsp(new Set()); }} className="text-xs text-red-500 hover:underline">Remover todas</button>
+            </div>
+          </div>
+          <NomeSelectDropdown options={agendasMesmaEsp} selected={nomesMesmaEsp}
+            onToggle={n => setNomesMesmaEsp(toggle(nomesMesmaEsp, n))}
+            placeholder="Buscar agenda da mesma especialidade..." showEspecialidade={especialidades.length > 1} />
+          {nomesMesmaEsp.size > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {Array.from(nomesMesmaEsp).map(n => (
+                <span key={n} className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-xs">
+                  {n}<button onClick={() => setNomesMesmaEsp(toggle(nomesMesmaEsp, n))}><X size={10} /></button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {subAba === "outras" && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-muted-foreground">{nomesOutras.size} selecionadas de outras especialidades</span>
+            {nomesOutras.size > 0 && (
+              <button onClick={() => { isDirty.current = true; setNomesOutras(new Set()); }} className="text-xs text-red-500 hover:underline">Remover todas</button>
+            )}
+          </div>
+          <NomeSelectDropdown options={agendasOutrasEsp} selected={nomesOutras}
+            onToggle={n => setNomesOutras(toggle(nomesOutras, n))}
+            placeholder="Buscar agenda de outra especialidade..." showEspecialidade />
+          {nomesOutras.size > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {Array.from(nomesOutras).map(n => (
+                <span key={n} className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-xs">
+                  {n}<button onClick={() => setNomesOutras(toggle(nomesOutras, n))}><X size={10} /></button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="flex gap-2 pt-2">
+        <Button onClick={handleSalvar} disabled={salvando} size="sm">
+          <Save size={14} className="mr-1.5" />{salvando ? "Salvando..." : "Salvar"}
+        </Button>
+        {!usandoPadrao && (
+          <Button onClick={() => resetarMutation.mutate({ agendaNome: agendaNome(agendaSelecionada) })} variant="outline" size="sm">
+            <RotateCcw size={14} className="mr-1.5" />Restaurar padrão
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Aba: Protocolos e Prioridades ────────────────────────────────────────────
+function AbaProtocolos({ agendaSelecionada }: { agendaSelecionada: Agenda }) {
+  const utils = trpc.useUtils();
+  const nome = agendaNome(agendaSelecionada);
+  const { data: todosProtocolos = [] } = trpc.protocolos.getAll.useQuery();
+  const { data: todasPrioridades = [] } = trpc.prioridades.getAll.useQuery();
+  const { data: config } = trpc.agendaConfig.getProtocolos.useQuery({ agendaNome: nome });
+  const [protSelecionados, setProtSelecionados] = useState<Set<string>>(new Set());
+  const [prioSelecionadas, setPrioSelecionadas] = useState<Set<string>>(new Set());
+  const [searchProt, setSearchProt] = useState("");
+  const [searchPrio, setSearchPrio] = useState("");
+
+  useEffect(() => {
+    if (!config) return;
+    setProtSelecionados(new Set(config.protocolosNomes));
+    setPrioSelecionadas(new Set(config.prioridadesNomes));
+  }, [config]);
+
+  const salvarMutation = trpc.agendaConfig.salvarProtocolos.useMutation({
+    onSuccess: () => { toast.success("Protocolos salvos!"); utils.agendaConfig.getProtocolos.invalidate(); },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const protFiltrados = todosProtocolos.filter(p => p.nome.toLowerCase().includes(searchProt.toLowerCase()));
+  const prioFiltradas = todasPrioridades.filter(p => (p.nomeArquivo ?? p.grandeGrupo ?? "").toLowerCase().includes(searchPrio.toLowerCase()));
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+          <BookOpen size={14} />Protocolos
+          <span className="text-xs font-normal text-muted-foreground">({protSelecionados.size} selecionados)</span>
+        </h3>
+        <div className="relative mb-2">
+          <Search size={12} className="absolute left-2.5 top-2.5 text-muted-foreground" />
+          <input value={searchProt} onChange={e => setSearchProt(e.target.value)}
+            className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder="Buscar protocolo..." />
+        </div>
+        <div className="max-h-48 overflow-y-auto border border-border rounded-md">
+          {protFiltrados.map(p => (
+            <label key={p.id} className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 cursor-pointer text-sm border-b border-border last:border-0">
+              <input type="checkbox" checked={protSelecionados.has(p.nome)}
+                onChange={() => setProtSelecionados(prev => { const n = new Set(prev); if (n.has(p.nome)) n.delete(p.nome); else n.add(p.nome); return n; })}
+                className="w-3.5 h-3.5 rounded" />
+              <span className="flex-1">{p.nome}</span>
+              {(p as any).linkUrl && <ExternalLink size={11} className="text-muted-foreground flex-shrink-0" />}
+            </label>
+          ))}
+          {protFiltrados.length === 0 && <p className="px-3 py-4 text-sm text-muted-foreground text-center">Nenhum protocolo encontrado</p>}
+        </div>
+      </div>
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+          <ListChecks size={14} />Listas de prioridades
+          <span className="text-xs font-normal text-muted-foreground">({prioSelecionadas.size} selecionadas)</span>
+        </h3>
+        <div className="relative mb-2">
+          <Search size={12} className="absolute left-2.5 top-2.5 text-muted-foreground" />
+          <input value={searchPrio} onChange={e => setSearchPrio(e.target.value)}
+            className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder="Buscar lista de prioridades..." />
+        </div>
+        <div className="max-h-48 overflow-y-auto border border-border rounded-md">
+          {prioFiltradas.map(p => {
+            const label = (p as any).nomeArquivo ?? p.grandeGrupo ?? String(p.id);
+            return (
+              <label key={p.id} className="flex items-center gap-2 px-3 py-2 hover:bg-muted/50 cursor-pointer text-sm border-b border-border last:border-0">
+                <input type="checkbox" checked={prioSelecionadas.has(label)}
+                  onChange={() => setPrioSelecionadas(prev => { const n = new Set(prev); if (n.has(label)) n.delete(label); else n.add(label); return n; })}
+                  className="w-3.5 h-3.5 rounded" />
+                <span className="flex-1">{label}</span>
+                {p.grandeGrupo && <span className="text-xs text-muted-foreground">{p.grandeGrupo}</span>}
+              </label>
+            );
+          })}
+          {prioFiltradas.length === 0 && <p className="px-3 py-4 text-sm text-muted-foreground text-center">Nenhuma lista encontrada</p>}
+        </div>
+      </div>
+      <Button onClick={() => salvarMutation.mutate({ agendaNome: nome, protocolosNomes: Array.from(protSelecionados), prioridadesNomes: Array.from(prioSelecionadas) })}
+        disabled={salvarMutation.isPending} size="sm">
+        <Save size={14} className="mr-1.5" />{salvarMutation.isPending ? "Salvando..." : "Salvar"}
+      </Button>
+    </div>
+  );
+}
+
+// ─── Aba: Observações ─────────────────────────────────────────────────────────
+function AbaObservacoes({ agendaSelecionada, todasAgendas }: { agendaSelecionada: Agenda; todasAgendas: Agenda[] }) {
+  const utils = trpc.useUtils();
+  const nome = agendaNome(agendaSelecionada);
+  const centraisDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    todasAgendas.filter(a => agendaNome(a) === nome && a.central).forEach(a => set.add(a.central!));
+    return Array.from(set).sort();
+  }, [todasAgendas, nome]);
+
+  const [centralSelecionada, setCentralSelecionada] = useState<string>("");
+  const [textoObs, setTextoObs] = useState("");
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    if (centraisDisponiveis.length > 0 && !centralSelecionada) setCentralSelecionada(centraisDisponiveis[0]);
+  }, [centraisDisponiveis]);
+
+  const { data: todasObs = [] } = trpc.agendaConfig.getTodasObservacoes.useQuery({ agendaNome: nome });
+  const { data: obsAtual } = trpc.agendaConfig.getObservacao.useQuery(
+    { agendaNome: nome, central: centralSelecionada },
+    { enabled: !!centralSelecionada }
+  );
+
+  useEffect(() => { setTextoObs(obsAtual?.observacao ?? ""); }, [obsAtual, centralSelecionada]);
+
+  const salvarMutation = trpc.agendaConfig.salvarObservacao.useMutation({
+    onSuccess: () => { toast.success("Observação salva!"); utils.agendaConfig.getTodasObservacoes.invalidate(); utils.agendaConfig.getObservacao.invalidate(); },
+    onError: (err) => toast.error(`Erro: ${err.message}`),
+  });
+  const deletarMutation = trpc.agendaConfig.deletarObservacao.useMutation({
+    onSuccess: () => { toast.success("Observação removida"); setTextoObs(""); utils.agendaConfig.getTodasObservacoes.invalidate(); utils.agendaConfig.getObservacao.invalidate(); },
+    onError: () => toast.error("Erro ao remover"),
+  });
+
+  return (
+    <div className="space-y-4">
+      <p className="text-xs text-muted-foreground">Observações específicas por central. Aparecem no check-in desta agenda.</p>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Central</label>
+        <div className="flex flex-wrap gap-2">
+          {centraisDisponiveis.map(c => (
+            <button key={c} onClick={() => setCentralSelecionada(c)}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors border ${centralSelecionada === c ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>
+              {c}
+              {todasObs.some(o => o.central === c) && <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-500" />}
+            </button>
+          ))}
+          {centraisDisponiveis.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma central encontrada.</p>}
+        </div>
+      </div>
+      {centralSelecionada && (
+        <div>
+          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Observação para {centralSelecionada}</label>
+          <textarea value={textoObs} onChange={e => setTextoObs(e.target.value)} rows={4}
+            className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+            placeholder="Digite a observação..." />
+          <div className="flex gap-2 mt-2">
+            <Button onClick={async () => { setSalvando(true); try { await salvarMutation.mutateAsync({ agendaNome: nome, central: centralSelecionada, observacao: textoObs }); } finally { setSalvando(false); } }}
+              disabled={salvando} size="sm">
+              <Save size={14} className="mr-1.5" />{salvando ? "Salvando..." : "Salvar"}
+            </Button>
+            {textoObs && (
+              <Button onClick={() => deletarMutation.mutate({ agendaNome: nome, central: centralSelecionada })}
+                variant="outline" size="sm" className="text-red-600 hover:bg-red-50">
+                <Trash2 size={14} className="mr-1.5" />Remover
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+      {todasObs.length > 0 && (
+        <div className="mt-4">
+          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Observações cadastradas</h4>
+          <div className="space-y-2">
+            {todasObs.map(o => (
+              <div key={o.id} onClick={() => setCentralSelecionada(o.central)}
+                className={`p-3 rounded-md border text-sm cursor-pointer transition-colors ${o.central === centralSelecionada ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}>
+                <span className="font-medium text-xs text-primary">{o.central}</span>
+                <p className="text-muted-foreground mt-0.5 line-clamp-2">{o.observacao}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // ─── Página principal ────────────────────────────────────────────────────────
 type TabId = "agendas-mesma" | "agendas-outras" | "protocolos" | "observacoes";
 
