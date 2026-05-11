@@ -7,6 +7,8 @@ import {
   regulacaoData,
   syncLog,
   prioridades,
+  agendaProtocolos,
+  agendaObservacoes,
   reguladores,
   protocolos,
   encaminhamentos,
@@ -78,27 +80,16 @@ export const appRouter = router({
         .from(regulacaoData)
         .orderBy(desc(regulacaoData.indexRegula));
 
-      // Buscar agendas concluídas pelo usuário logado hoje
-      // (para marcar na aba Regulação e bloquear reencaminhamento)
-      const email = ctx.user?.email ?? "";
+      // Buscar agendas concluídas por QUALQUER usuário hoje
+      // (para marcar como concluída para todos na aba Regulação)
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
       const concluidasHoje = await db
-        .select({ agendaId: agendasConcluidas.agendaId })
-        .from(agendasConcluidas)
-        .where(
-          and(
-            eq(agendasConcluidas.usuarioEmail, email),
-            // concluidoEm é timestamp em ms; comparar com início do dia atual
-            // Usamos SQL raw para comparar timestamp com data
-          )
-        );
-      // Filtrar apenas as concluídas hoje no JavaScript (mais simples e compatível)
+        .select({ agendaId: agendasConcluidas.agendaId, concluidoEm: agendasConcluidas.concluidoEm })
+        .from(agendasConcluidas);
+      // Filtrar apenas as concluídas hoje
       const concluidasIds = concluidasHoje
-        .filter(c => {
-          // agendaId é o id da agenda — retornar todos (a filtragem por data é feita no frontend)
-          return true;
-        })
+        .filter(c => new Date(c.concluidoEm) >= hoje)
         .map(c => c.agendaId);
 
       // Layout de índices (novo cabeçalho a partir de 2026-04):
@@ -1633,5 +1624,125 @@ export const appRouter = router({
       return { centrais, especialidades };
     }),
   }),
+
+  // ─── Configuração por Agenda (protocolos, observações) ──────────────────────
+  agendaConfig: router({
+
+    // Buscar configuração de protocolos/prioridades de uma agenda
+    getProtocolos: protectedProcedure
+      .input(z.object({ agendaNome: z.string() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { protocolosNomes: [], prioridadesNomes: [] };
+        const rows = await db.select().from(agendaProtocolos)
+          .where(eq(agendaProtocolos.agendaNome, input.agendaNome)).limit(1);
+        if (!rows.length) return { protocolosNomes: [], prioridadesNomes: [] };
+        let protocolosNomes: string[] = [];
+        let prioridadesNomes: string[] = [];
+        try { protocolosNomes = JSON.parse(rows[0].protocolosNomes); } catch {}
+        try { prioridadesNomes = JSON.parse(rows[0].prioridadesNomes); } catch {}
+        return { protocolosNomes, prioridadesNomes };
+      }),
+
+    // Salvar configuração de protocolos/prioridades de uma agenda
+    salvarProtocolos: protectedProcedure
+      .input(z.object({
+        agendaNome: z.string(),
+        protocolosNomes: z.array(z.string()),
+        prioridadesNomes: z.array(z.string()),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error('Banco não disponível');
+        const existing = await db.select().from(agendaProtocolos)
+          .where(eq(agendaProtocolos.agendaNome, input.agendaNome)).limit(1);
+        const protJson = JSON.stringify(input.protocolosNomes);
+        const prioJson = JSON.stringify(input.prioridadesNomes);
+        if (existing.length > 0) {
+          await db.update(agendaProtocolos)
+            .set({ protocolosNomes: protJson, prioridadesNomes: prioJson })
+            .where(eq(agendaProtocolos.agendaNome, input.agendaNome));
+        } else {
+          await db.insert(agendaProtocolos).values({
+            agendaNome: input.agendaNome,
+            protocolosNomes: protJson,
+            prioridadesNomes: prioJson,
+          });
+        }
+        return { success: true };
+      }),
+
+    // Buscar observação de uma agenda para uma central específica
+    getObservacao: protectedProcedure
+      .input(z.object({ agendaNome: z.string(), central: z.string() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return { observacao: '' };
+        const rows = await db.select().from(agendaObservacoes)
+          .where(and(
+            eq(agendaObservacoes.agendaNome, input.agendaNome),
+            eq(agendaObservacoes.central, input.central)
+          )).limit(1);
+        return { observacao: rows[0]?.observacao ?? '' };
+      }),
+
+    // Buscar todas as observações de uma agenda (todas as centrais)
+    getTodasObservacoes: protectedProcedure
+      .input(z.object({ agendaNome: z.string() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        return db.select().from(agendaObservacoes)
+          .where(eq(agendaObservacoes.agendaNome, input.agendaNome))
+          .orderBy(agendaObservacoes.central);
+      }),
+
+    // Salvar observação para uma agenda+central
+    salvarObservacao: protectedProcedure
+      .input(z.object({
+        agendaNome: z.string(),
+        central: z.string(),
+        observacao: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error('Banco não disponível');
+        const existing = await db.select().from(agendaObservacoes)
+          .where(and(
+            eq(agendaObservacoes.agendaNome, input.agendaNome),
+            eq(agendaObservacoes.central, input.central)
+          )).limit(1);
+        if (existing.length > 0) {
+          await db.update(agendaObservacoes)
+            .set({ observacao: input.observacao })
+            .where(and(
+              eq(agendaObservacoes.agendaNome, input.agendaNome),
+              eq(agendaObservacoes.central, input.central)
+            ));
+        } else if (input.observacao.trim()) {
+          await db.insert(agendaObservacoes).values({
+            agendaNome: input.agendaNome,
+            central: input.central,
+            observacao: input.observacao,
+          });
+        }
+        return { success: true };
+      }),
+
+    // Deletar observação de uma agenda+central
+    deletarObservacao: protectedProcedure
+      .input(z.object({ agendaNome: z.string(), central: z.string() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error('Banco não disponível');
+        await db.delete(agendaObservacoes)
+          .where(and(
+            eq(agendaObservacoes.agendaNome, input.agendaNome),
+            eq(agendaObservacoes.central, input.central)
+          ));
+        return { success: true };
+      }),
+  }),
+
 });
 export type AppRouter = typeof appRouter;
