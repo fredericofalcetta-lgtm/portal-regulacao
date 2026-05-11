@@ -55,6 +55,7 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
 
   // Buscar dicionário de especialidades (agenda → especialidade)
   const { data: dicionario = [] } = trpc.dicionario.getAll.useQuery();
+  const { data: coresDisponiveis = [] } = trpc.regulacao.getCoresDisponiveis.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
 
   // Mapa normalizado: nome_agenda_lower → especialidade_lower
   const mapaAgendaEspecialidade = useMemo(() => {
@@ -247,6 +248,7 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
         selectedEspecialidades={selectedEspecialidades}
         selectedCores={selectedCores}
         onCoresChange={setSelectedCores}
+        coresDisponiveis={coresDisponiveis}
         onAgendasChange={setSelectedAgendas}
         onCentraisChange={setSelectedCentrais}
         onEspecialidadesChange={setSelectedEspecialidades}
