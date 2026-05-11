@@ -620,17 +620,17 @@ export default function AgendasRelacionadas() {
             ))}
           </div>
 
-          {/* Conteúdo da aba */}
+          {/* Conteúdo da aba — sempre montado para preservar estado e cache */}
           <div className="p-5">
-            {abaAtiva === "agendas-mesma" && (
+            <div className={abaAtiva === "agendas-mesma" ? "" : "hidden"}>
               <AbaAgendasRelacionadas agendaSelecionada={agendaSelecionada} todasAgendas={todasAgendas} />
-            )}
-            {abaAtiva === "protocolos" && (
+            </div>
+            <div className={abaAtiva === "protocolos" ? "" : "hidden"}>
               <AbaProtocolos agendaSelecionada={agendaSelecionada} />
-            )}
-            {abaAtiva === "observacoes" && (
+            </div>
+            <div className={abaAtiva === "observacoes" ? "" : "hidden"}>
               <AbaObservacoes agendaSelecionada={agendaSelecionada} todasAgendas={todasAgendas} />
-            )}
+            </div>
           </div>
         </div>
       ) : (
