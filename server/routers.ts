@@ -128,8 +128,7 @@ export const appRouter = router({
       if (!db) return [];
       const rows = await db
         .selectDistinct({ corIndex: regulacaoData.corIndex })
-        .from(regulacaoData)
-        .where(sql`cor_index IS NOT NULL AND cor_index != ''`);
+        .from(regulacaoData);
       return rows
         .map(r => r.corIndex ?? '')
         .filter(Boolean)
