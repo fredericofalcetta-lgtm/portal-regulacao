@@ -3,6 +3,8 @@ import { LogIn, LogOut, Loader2, ClipboardList, Send, CheckCircle2, Trash2, Flag
 import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 import CheckInDetalhes from '@/components/CheckInDetalhes';
 import { trpc } from '@/lib/trpc';
+import { Link } from 'wouter';
+import { Settings } from 'lucide-react';
 import { UltimaAtualizacao } from '@/components/UltimaAtualizacao';
 import {
   AlertDialog,
@@ -520,6 +522,16 @@ export default function MinhasAgendas() {
                             central={ci.central}
                             municipio={ci.municipio}
                           />
+                          {isAdminOuMonitor && (
+                            <div className="px-4 py-2 bg-muted/30 border-t border-border flex justify-end">
+                              <Link href={`/agendas-relacionadas?agenda=${encodeURIComponent(ci.agendaNome)}`}>
+                                <a className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors px-2.5 py-1.5 rounded-md hover:bg-muted">
+                                  <Settings size={12} />
+                                  Configurar agenda
+                                </a>
+                              </Link>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     </React.Fragment>
