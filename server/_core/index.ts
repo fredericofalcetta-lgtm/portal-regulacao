@@ -150,6 +150,38 @@ async function runPendingMigrations() {
       await db.execute("ALTER TABLE sem_cotas ADD COLUMN especialidade_categoria varchar(255) NULL");
       console.log('[Migration] especialidade_categoria OK!');
     }
+
+    // Migration: criar tabela agenda_protocolos
+    try {
+      await db.execute(`CREATE TABLE IF NOT EXISTS agenda_protocolos (
+        id int AUTO_INCREMENT PRIMARY KEY,
+        agenda_nome varchar(255) NOT NULL UNIQUE,
+        protocolos_nomes text NOT NULL DEFAULT '[]',
+        prioridades_nomes text NOT NULL DEFAULT '[]',
+        updatedAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )`);
+      console.log('[Migration] agenda_protocolos OK!');
+    } catch(e) { console.warn('[Migration] agenda_protocolos:', e); }
+
+    // Migration: criar tabela agenda_observacoes
+    try {
+      await db.execute(`CREATE TABLE IF NOT EXISTS agenda_observacoes (
+        id int AUTO_INCREMENT PRIMARY KEY,
+        agenda_nome varchar(255) NOT NULL,
+        central varchar(100) NOT NULL,
+        observacao text NOT NULL,
+        updatedAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY agenda_central (agenda_nome, central)
+      )`);
+      console.log('[Migration] agenda_observacoes OK!');
+    } catch(e) { console.warn('[Migration] agenda_observacoes:', e); }
+
+    // Limpeza diária: remover check-ins com mais de 24h
+    try {
+      await db.execute("DELETE FROM check_ins WHERE createdAt < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
+      console.log('[Migration] Check-ins antigos removidos.');
+    } catch(e) { console.warn('[Migration] Limpeza check-ins:', e); }
+    }
   } catch (err) {
     console.error('[Migration] Erro:', err);
   }
