@@ -155,10 +155,11 @@ async function runPendingMigrations() {
     try {
       await db.execute(`CREATE TABLE IF NOT EXISTS agenda_protocolos (
         id int AUTO_INCREMENT PRIMARY KEY,
-        agenda_nome varchar(255) NOT NULL UNIQUE,
-        protocolos_nomes text NOT NULL DEFAULT '[]',
-        prioridades_nomes text NOT NULL DEFAULT '[]',
-        updatedAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        agenda_nome varchar(255) NOT NULL,
+        protocolos_nomes text NOT NULL,
+        prioridades_nomes text NOT NULL,
+        updatedAt timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY agenda_nome_unique (agenda_nome)
       )`);
       console.log('[Migration] agenda_protocolos OK!');
     } catch(e) { console.warn('[Migration] agenda_protocolos:', e); }
