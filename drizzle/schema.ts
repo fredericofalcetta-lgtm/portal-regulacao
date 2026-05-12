@@ -279,9 +279,9 @@ export type InsertSemCota = typeof semCotas.$inferInsert;
  */
 export const agendaProtocolos = mysqlTable("agenda_protocolos", {
   id: int("id").autoincrement().primaryKey(),
-  agendaNome: varchar("agenda_nome", { length: 255 }).notNull(),
-  protocolosNomes: text("protocolos_nomes").notNull().default("[]"),
-  prioridadesNomes: text("prioridades_nomes").notNull().default("[]"),
+  agendaNome: varchar("agenda_nome", { length: 255 }).notNull().unique(),
+  protocolosNomes: text("protocolos_nomes").notNull(),
+  prioridadesNomes: text("prioridades_nomes").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
