@@ -1693,8 +1693,8 @@ export const appRouter = router({
         if (!db) throw new Error('Banco não disponível');
         const existing = await db.select().from(agendaProtocolos)
           .where(eq(agendaProtocolos.agendaNome, input.agendaNome)).limit(1);
-        const protJson = JSON.stringify(input.protocolosNomes);
-        const prioJson = JSON.stringify(input.prioridadesNomes);
+        const protJson = JSON.stringify(input.protocolosNomes ?? []);
+        const prioJson = JSON.stringify(input.prioridadesNomes ?? []);
         if (existing.length > 0) {
           await db.update(agendaProtocolos)
             .set({ protocolosNomes: protJson, prioridadesNomes: prioJson })
@@ -1702,8 +1702,8 @@ export const appRouter = router({
         } else {
           await db.insert(agendaProtocolos).values({
             agendaNome: input.agendaNome,
-            protocolosNomes: protJson,
-            prioridadesNomes: prioJson,
+            protocolosNomes: protJson || '[]',
+            prioridadesNomes: prioJson || '[]',
           });
         }
         return { success: true };
