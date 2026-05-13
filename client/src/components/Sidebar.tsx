@@ -90,7 +90,7 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     ));
 
   const navItems = [
-    { href: '/', page: 'inicio', icon: Home, label: 'Início', visible: true },
+    { href: '/', page: 'inicio', icon: Home, label: 'Início', visible: isAdminOrMonitorOnly || perfilAtivo?.toLowerCase().includes('administrador') || perfilAtivo?.toLowerCase().includes('monitoramento') },
     { href: '/regulacao', page: 'regulacao', icon: Table2, label: 'Regulação', visible: true },
     { href: '/minhas-agendas', page: 'minhas-agendas', icon: ClipboardList, label: 'Minhas Agendas', visible: true },
     { href: '/monitor-checkins', page: 'monitor-checkins', icon: Activity, label: 'Monitor de Check-ins', visible: isAdminOrMonitor },
@@ -98,7 +98,6 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     { href: '/agendas-relacionadas', page: 'agendas-relacionadas', icon: Link2, label: 'Agendas Relacionadas', visible: isAdminOrMonitorOnly },
     { href: '/novas-agendas', page: 'novas-agendas', icon: Sparkles, label: 'Novas Agendas', visible: isAdminOrMonitorOnly },
     { href: '/sem-cotas', page: 'sem-cotas', icon: TrendingDown, label: 'Sem Cotas', visible: isAdminOrMonitorOnly },
-    { href: '/dashboard', page: 'dashboard', icon: BarChart3, label: 'Dashboard', visible: true },
     { href: '/documentos', page: 'documentos', icon: FolderOpen, label: 'Documentos', visible: true },
   ].filter(item => item.visible);
 
