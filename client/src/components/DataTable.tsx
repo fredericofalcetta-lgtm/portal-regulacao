@@ -124,6 +124,7 @@ const TableRow = memo(function TableRow({
           </div>
         ) : <span className="text-xs text-muted-foreground">—</span>}
       </td>
+      <td className="px-3 py-3 text-center text-xs font-medium text-foreground">{String(row[11])}</td>
       <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{String(row[2])}</td>
       <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{String(row[3])}</td>
       <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{String(row[4])}</td>
@@ -141,7 +142,6 @@ const TableRow = memo(function TableRow({
       <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{row[8] ? String(row[8]) : '—'}</td>
       <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{row[9] ? String(row[9]) : '—'}</td>
       <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{row[10] ? String(row[10]) : '—'}</td>
-      <td className="px-3 py-3 text-center text-xs font-medium text-foreground">{String(row[11])}</td>
     </tr>
   );
 });
@@ -268,6 +268,7 @@ const GrupoRow = memo(function GrupoRow({
             </div>
           ) : <span className="text-xs text-muted-foreground">—</span>}
         </td>
+        <td className="px-3 py-3 text-center text-xs font-medium text-foreground">{central}</td>
         <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.cotas || '—'}</td>
         <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.saldo || '—'}</td>
         <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.aguardando || '—'}</td>
@@ -289,7 +290,6 @@ const GrupoRow = memo(function GrupoRow({
         <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.ag7d || '—'}</td>
         <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.ag28d || '—'}</td>
         <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.ag90d || '—'}</td>
-        <td className="px-3 py-3 text-center text-xs font-medium text-foreground">{central}</td>
       </tr>
       {isExpanded && !isSingle && linhas.map(row => {
         const agendaId = typeof row[17] === 'number' ? row[17] : 0;
@@ -409,7 +409,7 @@ export default function DataTable({
               </th>
               {(isAdminOuMonitor || isRegulador) && <th className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">Encaminhar</th>}
               <th className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">Regulando</th>
-              {[{label:'Cotas',col:2},{label:'Saldo',col:3},{label:'Aguardando',col:4},{label:'Autorizadas',col:5},{label:'Aut/Cotas',col:6},{label:'Index',col:7},{label:'>7d',col:8},{label:'>28d',col:9},{label:'>90d',col:10},{label:'Central',col:11}].map(({label,col}) => (
+              {[{label:'Central',col:11},{label:'Cotas',col:2},{label:'Saldo',col:3},{label:'Aguardando',col:4},{label:'Autorizadas',col:5},{label:'Aut/Cotas',col:6},{label:'Index',col:7},{label:'>7d',col:8},{label:'>28d',col:9},{label:'>90d',col:10}].map(({label,col}) => (
                 <th key={col} onClick={() => onSort(col)} className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
                   <div className="flex items-center justify-center space-x-1"><span>{label}</span><SortIcon col={col} /></div>
                 </th>
