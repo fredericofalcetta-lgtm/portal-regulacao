@@ -318,14 +318,25 @@ export default function MinhasAgendas() {
 
   const removerEncaminhamentoMutation = trpc.encaminhamentos.removerMeu.useMutation();
 
+  const autoEncaminharMutation = trpc.encaminhamentos.autoEncaminhar.useMutation();
+
   const checkInMutation = trpc.checkIns.checkIn.useMutation({
     onSuccess: (result, variables) => {
-      // Se fez check-in (não checkout), remover o encaminhamento correspondente
       if (result.action === 'checkin') {
+        // Check-in: remover o encaminhamento correspondente
         const enc = encaminhadas.find(e => e.agendaId === variables.agendaId);
         if (enc) {
           removerEncaminhamentoMutation.mutate({ id: enc.id });
         }
+      } else if (result.action === 'checkout') {
+        // Checkout: recriar o encaminhamento para que volte à tabela "Encaminhadas"
+        autoEncaminharMutation.mutate({
+          agendaId: variables.agendaId,
+          agendaNome: variables.agendaNome,
+          municipio: variables.municipio,
+          central: variables.central,
+          especialidade: variables.especialidade,
+        });
       }
       refetchCheckIns();
       refetchEncaminhadas();
