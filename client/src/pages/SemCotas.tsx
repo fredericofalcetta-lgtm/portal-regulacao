@@ -158,11 +158,11 @@ export default function SemCotas() {
                 <tr>
                   {[
                     { label: "Espec Sem Cotas", col: "especialidade" as SortCol },
-                    { label: "Município", col: "municipio" as SortCol },
+                    { label: "Município indicado", col: "municipio" as SortCol },
+                    { label: "Central", col: "central" as SortCol },
                     { label: "Aguardando", col: "aguardando" as SortCol },
                     { label: "Autorizados", col: "autorizados" as SortCol },
-                    { label: "Novas Cotas", col: "novasCotas" as SortCol },
-                    { label: "Central", col: "central" as SortCol },
+                    { label: "Cotas mês seguinte", col: "novasCotas" as SortCol },
                     { label: "Especialidade", col: "especialidadeCategoria" as SortCol },
                     { label: "Status", col: null },
                   ].map(({ label, col }) => (
@@ -187,6 +187,9 @@ export default function SemCotas() {
                   >
                     <td className="px-4 py-2.5 font-medium text-foreground">{r.especialidade ?? "—"}</td>
                     <td className="px-4 py-2.5 text-muted-foreground">{r.municipio ?? "—"}</td>
+                    <td className="px-4 py-2.5">
+                      <span className="text-xs bg-muted rounded px-1.5 py-0.5 text-muted-foreground">{r.central ?? "—"}</span>
+                    </td>
                     <td className="px-4 py-2.5 text-center">
                       <span className={`font-semibold ${(r.aguardando ?? 0) > 50 ? "text-red-600" : (r.aguardando ?? 0) > 10 ? "text-orange-500" : "text-foreground"}`}>
                         {r.aguardando ?? 0}
@@ -199,9 +202,6 @@ export default function SemCotas() {
                           {r.novasCotas}
                         </span>
                       ) : <span className="text-muted-foreground">—</span>}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span className="text-xs bg-muted rounded px-1.5 py-0.5 text-muted-foreground">{r.central ?? "—"}</span>
                     </td>
                     <td className="px-4 py-2.5 text-muted-foreground">{r.especialidadeCategoria ?? "—"}</td>
                     <td className="px-4 py-2.5 text-center">
