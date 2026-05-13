@@ -2,7 +2,6 @@ import { useCallback, useEffect } from 'react';
 import { Route, Switch, useLocation, Redirect } from 'wouter';
 import Sidebar from '@/components/Sidebar';
 import Regulation from './Regulation';
-import Dashboard from './Dashboard';
 import Documentos from './Documentos';
 import Landing from './Landing';
 import MinhasAgendas from './MinhasAgendas';
