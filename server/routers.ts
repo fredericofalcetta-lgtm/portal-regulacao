@@ -20,7 +20,7 @@ import {
   agendasRelacionadasConfig,
   semCotas,
 } from "../drizzle/schema";
-import { asc, desc, eq, and, inArray } from "drizzle-orm";
+import { asc, desc, eq, and, inArray, sql } from "drizzle-orm";
 import { syncSheetsToDb, syncPrioridadesToDb, syncDicionarioToDb, syncSemCotasToDb } from "./syncSheets";
 import { z } from "zod";
 
@@ -84,13 +84,13 @@ export const appRouter = router({
       // (para marcar como concluída para todos na aba Regulação)
       const hoje = new Date();
       hoje.setHours(0, 0, 0, 0);
+      // Buscar concluídas de hoje diretamente no banco (evita problemas de timezone)
+      const inicioHoje = hoje.toISOString().slice(0, 10); // "YYYY-MM-DD"
       const concluidasHoje = await db
-        .select({ agendaId: agendasConcluidas.agendaId, concluidoEm: agendasConcluidas.concluidoEm })
-        .from(agendasConcluidas);
-      // Filtrar apenas as concluídas hoje
-      const concluidasIds = concluidasHoje
-        .filter(c => new Date(c.concluidoEm) >= hoje)
-        .map(c => c.agendaId);
+        .select({ agendaId: agendasConcluidas.agendaId })
+        .from(agendasConcluidas)
+        .where(sql`DATE(concluido_em) = ${inicioHoje}`);
+      const concluidasIds = concluidasHoje.map(c => c.agendaId);
 
       // Layout de índices (novo cabeçalho a partir de 2026-04):
       // [0] agenda, [1] municipio, [2] cotas, [3] saldo, [4] aguardando,
@@ -885,7 +885,8 @@ export const appRouter = router({
         especialidade: z.string(),
         central: z.string().optional(),
         municipio: z.string().optional(),
-        agendaIdExcluir: z.number(), // excluir a agenda do próprio check-in
+        agendaIdExcluir: z.number(),
+        agendaNomeExcluir: z.string().optional(),
       }))
       .query(async ({ input }) => {
         const db = await getDb();
@@ -906,8 +907,9 @@ export const appRouter = router({
         // Verificar se há configuração personalizada de agendas relacionadas.
         // A config é salva por nome de agenda (não por ID), pois a mesma agenda
         // existe em múltiplas centrais e a config deve ser compartilhada entre elas.
+        // Usar nome direto se disponível (mais robusto após ressync que muda IDs)
         const agendaEmRegulacao = todasAgendas.find(a => a.id === input.agendaIdExcluir);
-        const nomeAgendaEmRegulacao = agendaEmRegulacao?.agenda ?? '';
+        const nomeAgendaEmRegulacao = input.agendaNomeExcluir || agendaEmRegulacao?.agenda || '';
 
         const configPersonalizada = nomeAgendaEmRegulacao
           ? await db
