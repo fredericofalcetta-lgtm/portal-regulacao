@@ -66,8 +66,8 @@ export default function EncaminharGrupoCell({
       await encaminharMutation.mutateAsync({
         agendaId,
         agendaNome: String(row[0]),
-        municipio: String(row[1]),
-        central: String(row[11]),
+        municipio: row[1] != null && String(row[1]) !== '' ? String(row[1]) : undefined,
+        central: row[11] != null && String(row[11]) !== '' ? String(row[11]) : undefined,
         especialidade: String(row[12]),
         reguladores: reguladoresSelecionados,
       });
