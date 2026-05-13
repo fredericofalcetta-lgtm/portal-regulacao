@@ -356,6 +356,8 @@ export default function MinhasAgendas() {
       utils.checkIns.getMeus.invalidate();
       utils.encaminhamentos.getMinhas.invalidate();
       utils.agendasConcluidas.getMeus.invalidate();
+      // Invalidar dados da Regulação para atualizar o status de concluída imediatamente
+      utils.sheets.getData.invalidate();
     },
   });
 
