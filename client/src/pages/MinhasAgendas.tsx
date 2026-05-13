@@ -318,7 +318,14 @@ export default function MinhasAgendas() {
 
   const removerEncaminhamentoMutation = trpc.encaminhamentos.removerMeu.useMutation();
 
-  const autoEncaminharMutation = trpc.encaminhamentos.autoEncaminhar.useMutation();
+  const utils = trpc.useUtils();
+
+  const autoEncaminharMutation = trpc.encaminhamentos.autoEncaminhar.useMutation({
+    onSuccess: () => {
+      // Após recriar o encaminhamento, atualizar a lista
+      utils.encaminhamentos.getMinhas.invalidate();
+    },
+  });
 
   const checkInMutation = trpc.checkIns.checkIn.useMutation({
     onSuccess: (result, variables) => {
@@ -329,7 +336,7 @@ export default function MinhasAgendas() {
           removerEncaminhamentoMutation.mutate({ id: enc.id });
         }
       } else if (result.action === 'checkout') {
-        // Checkout: recriar o encaminhamento para que volte à tabela "Encaminhadas"
+        // Checkout: recriar encaminhamento em background (sem aguardar)
         autoEncaminharMutation.mutate({
           agendaId: variables.agendaId,
           agendaNome: variables.agendaNome,
@@ -338,16 +345,17 @@ export default function MinhasAgendas() {
           especialidade: variables.especialidade,
         });
       }
-      refetchCheckIns();
-      refetchEncaminhadas();
+      // Atualizar ambas as listas imediatamente
+      utils.checkIns.getMeus.invalidate();
+      utils.encaminhamentos.getMinhas.invalidate();
     },
   });
 
   const concluirMutation = trpc.agendasConcluidas.concluir.useMutation({
     onSuccess: () => {
-      refetchCheckIns();
-      refetchEncaminhadas();
-      refetchConcluidas();
+      utils.checkIns.getMeus.invalidate();
+      utils.encaminhamentos.getMinhas.invalidate();
+      utils.agendasConcluidas.getMeus.invalidate();
     },
   });
 
@@ -433,8 +441,8 @@ export default function MinhasAgendas() {
   );
 
   const handleRefresh = () => {
-    refetchCheckIns();
-    refetchEncaminhadas();
+    utils.checkIns.getMeus.invalidate();
+    utils.encaminhamentos.getMinhas.invalidate();
     refetchConcluidas();
   };
 
