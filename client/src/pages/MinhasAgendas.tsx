@@ -523,6 +523,7 @@ export default function MinhasAgendas() {
                         <td colSpan={13} className="p-0">
                           <CheckInDetalhes
                             agendaId={ci.agendaId}
+                            agendaNome={ci.agendaNome}
                             especialidade={ci.especialidade}
                             central={ci.central}
                             municipio={ci.municipio}
