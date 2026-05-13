@@ -101,12 +101,16 @@ const TableRow = memo(function TableRow({
           {isConcluida ? <span className="text-xs text-muted-foreground italic">bloqueado</span>
           : agendaId > 0 ? (
             isAdminOuMonitor ? (
-              <EncaminharCell agendaId={agendaId} agendaNome={String(row[0])} municipio={String(row[1])}
-                central={String(row[11])} especialidade={String(row[12])}
+              <EncaminharCell agendaId={agendaId} agendaNome={String(row[0])}
+                municipio={row[1] != null && String(row[1]) !== '' ? String(row[1]) : undefined}
+                central={row[11] != null && String(row[11]) !== '' ? String(row[11]) : undefined}
+                especialidade={String(row[12])}
                 encaminhadosAtuais={encaminhadosAtuais} reguladoresList={reguladoresList} onUpdate={onUpdate} />
             ) : (
-              <AutoEncaminharCell agendaId={agendaId} agendaNome={String(row[0])} municipio={String(row[1])}
-                central={String(row[11])} especialidade={String(row[12])} emailUsuario={emailUsuario}
+              <AutoEncaminharCell agendaId={agendaId} agendaNome={String(row[0])}
+                municipio={row[1] != null && String(row[1]) !== '' ? String(row[1]) : undefined}
+                central={row[11] != null && String(row[11]) !== '' ? String(row[11]) : undefined}
+                especialidade={String(row[12])} emailUsuario={emailUsuario}
                 encaminhadosAtuais={encaminhadosAtuais} onUpdate={onUpdate} />
             )
           ) : <span className="text-xs text-muted-foreground">—</span>}
