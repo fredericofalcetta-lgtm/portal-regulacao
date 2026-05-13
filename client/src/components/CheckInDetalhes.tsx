@@ -5,13 +5,21 @@ import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 
 interface CheckInDetalhesProps {
   agendaId: number;
+  agendaNome?: string;
   especialidade: string;
   central?: string | null;
   municipio?: string | null;
 }
 
-export default function CheckInDetalhes({ agendaId, especialidade, central, municipio }: CheckInDetalhesProps) {
+export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, central, municipio }: CheckInDetalhesProps) {
   const [expandido, setExpandido] = useState(false);
+
+  const { data: obsData } = trpc.agendaConfig.getObservacao.useQuery(
+    { agendaNome: agendaNome ?? '', central: central ?? '' },
+    { enabled: expandido && !!agendaNome && !!central }
+  );
+
+  const observacao = obsData?.observacao ?? '';
 
   const { data, isLoading } = trpc.checkIns.getRelacionadas.useQuery(
     {
@@ -19,6 +27,7 @@ export default function CheckInDetalhes({ agendaId, especialidade, central, muni
       central: central ?? undefined,
       municipio: municipio ?? undefined,
       agendaIdExcluir: agendaId,
+      agendaNomeExcluir: agendaNome,
     },
     {
       enabled: expandido, // só busca quando o painel está aberto
@@ -106,6 +115,16 @@ export default function CheckInDetalhes({ agendaId, especialidade, central, muni
                 <p className="text-xs text-muted-foreground italic">
                   Nenhum protocolo ou lista de prioridades cadastrado para esta especialidade.
                 </p>
+              )}
+
+              {/* Observação específica da central */}
+              {observacao && (
+                <div className="flex items-start gap-2 px-3 py-2.5 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                  <svg className="w-3.5 h-3.5 mt-0.5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-xs text-amber-800 dark:text-amber-300">{observacao}</p>
+                </div>
               )}
 
               {/* ── Agendas relacionadas ── */}
