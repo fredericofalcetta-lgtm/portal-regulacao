@@ -465,8 +465,8 @@ export const appRouter = router({
           regulacaoData,
           and(
             eq(encaminhamentos.agendaNome, regulacaoData.agenda),
-            eq(encaminhamentos.municipio, regulacaoData.municipio),
-            eq(encaminhamentos.central, regulacaoData.central)
+            sql`${encaminhamentos.municipio} <=> ${regulacaoData.municipio}`,
+            sql`${encaminhamentos.central} <=> ${regulacaoData.central}`
           )
         )
         .where(eq(encaminhamentos.reguladorEmail, email))
@@ -501,8 +501,8 @@ export const appRouter = router({
           regulacaoData,
           and(
             eq(agendasFavoritas.agendaNome, regulacaoData.agenda),
-            eq(agendasFavoritas.municipio, regulacaoData.municipio),
-            eq(agendasFavoritas.central, regulacaoData.central)
+            sql`${agendasFavoritas.municipio} <=> ${regulacaoData.municipio}`,
+            sql`${agendasFavoritas.central} <=> ${regulacaoData.central}`
           )
         )
         .where(eq(agendasFavoritas.reguladorEmail, email));
