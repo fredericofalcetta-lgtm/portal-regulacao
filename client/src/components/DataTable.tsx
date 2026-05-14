@@ -38,8 +38,8 @@ interface Grupo {
 
 // ─── Linha individual ─────────────────────────────────────────────────────────
 const TableRow = memo(function TableRow({
-  row, isAdminOuMonitor, isRegulador, encaminhadosAtuais, checkInsAtuais,
-  reguladoresList, emailUsuario, onUpdate, isConcluida, isSubRow = false,
+  row, isAdminOuMonitor, isRegulador, encaminhadosAtuais = [], checkInsAtuais = [],
+  reguladoresList = [], emailUsuario, onUpdate, isConcluida, isSubRow = false,
 }: {
   row: (string | number)[];
   isAdminOuMonitor: boolean;
@@ -117,9 +117,9 @@ const TableRow = memo(function TableRow({
         </td>
       )}
       <td className="px-3 py-3 text-center">
-        {checkInsAtuais.length > 0 ? (
+        {(checkInsAtuais ?? []).length > 0 ? (
           <div className="flex flex-col gap-1 items-center">
-            {checkInsAtuais.map(ci => (
+            {(checkInsAtuais ?? []).map(ci => (
               <span key={ci.usuarioEmail} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300">
                 <svg className="w-2.5 h-2.5 flex-shrink-0" fill="currentColor" viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" /></svg>
                 {ci.usuarioNome || ci.usuarioEmail}
@@ -153,7 +153,7 @@ const TableRow = memo(function TableRow({
 // ─── Linha de grupo ───────────────────────────────────────────────────────────
 const GrupoRow = memo(function GrupoRow({
   grupo, isExpanded, onToggle, isAdminOuMonitor, isRegulador,
-  encaminhamentosPorAgenda, checkInsPorAgenda, reguladoresList,
+  encaminhamentosPorAgenda = new Map(), checkInsPorAgenda = new Map(), reguladoresList = [],
   emailUsuario, onUpdate, concluidasSet,
 }: {
   grupo: Grupo;
@@ -295,7 +295,8 @@ const GrupoRow = memo(function GrupoRow({
         <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.ag28d || '—'}</td>
         <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.ag90d || '—'}</td>
       </tr>
-      {isExpanded && !isSingle && linhas.map(row => {
+      {isExpanded && !isSingle && (linhas ?? []).map(row => {
+        if (!row || !Array.isArray(row)) return null;
         const agendaId = typeof row[17] === 'number' ? row[17] : 0;
         const isConcluida = agendaId > 0 && concluidasSet.has(agendaId);
         return (
@@ -303,7 +304,7 @@ const GrupoRow = memo(function GrupoRow({
             isAdminOuMonitor={isAdminOuMonitor} isRegulador={isRegulador}
             encaminhadosAtuais={encaminhamentosPorAgenda.get(agendaId) ?? []}
             checkInsAtuais={checkInsPorAgenda.get(agendaId) ?? []}
-            reguladoresList={reguladoresList} emailUsuario={emailUsuario}
+            reguladoresList={reguladoresList ?? []} emailUsuario={emailUsuario}
             onUpdate={onUpdate} isConcluida={isConcluida} isSubRow />
         );
       })}
