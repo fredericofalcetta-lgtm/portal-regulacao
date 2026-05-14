@@ -106,12 +106,12 @@ function NomeSelectDropdown({
           <div className="p-2 border-b flex-shrink-0">
             <div className="relative">
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-              <Input
+              <input
                 autoFocus
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar por nome da agenda..."
-                className="pl-7 h-8 text-sm"
+                className="w-full pl-7 h-8 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary px-2"
               />
             </div>
           </div>
