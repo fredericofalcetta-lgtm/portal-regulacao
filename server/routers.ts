@@ -1043,10 +1043,17 @@ export const appRouter = router({
       const db = await getDb();
       if (!db) return [];
       const email = ctx.user?.email ?? "";
+      // Retornar apenas as concluídas de hoje (somem com a virada do dia)
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const inicioHoje = hoje.toISOString().slice(0, 10);
       return db
         .select()
         .from(agendasConcluidas)
-        .where(eq(agendasConcluidas.usuarioEmail, email))
+        .where(and(
+          eq(agendasConcluidas.usuarioEmail, email),
+          sql`DATE(concluido_em) = ${inicioHoje}`
+        ))
         .orderBy(desc(agendasConcluidas.concluidoEm));
     }),
 
