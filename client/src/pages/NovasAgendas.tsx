@@ -91,10 +91,19 @@ export default function NovasAgendas() {
             Carregando...
           </div>
         ) : novas.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 gap-2 text-muted-foreground">
-            <Check size={32} className="text-green-500" />
-            <p className="text-sm font-medium">Nenhuma nova agenda pendente</p>
-            <p className="text-xs">Todas as agendas sem cota já foram verificadas</p>
+          <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground border border-dashed border-border rounded-lg">
+            <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <Check size={32} className="text-green-500" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-foreground">Nenhuma nova agenda pendente</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Todas as agendas sem cota já foram verificadas ou ainda não há novas agendas desde a última sincronização.
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground/60">
+              As novas agendas aparecem aqui automaticamente após a sincronização diária.
+            </p>
           </div>
         ) : (
           <div className="bg-card border border-border rounded-lg overflow-hidden">
