@@ -96,9 +96,6 @@ export default function Home() {
           <Route path="/regulacao">
             {() => <Regulation data={rows} concluidasIds={concluidasIds} onConcluir={invalidateSheetsData} onRefresh={handleRefresh} dataUpdatedAt={sheetsDataUpdatedAt} />}
           </Route>
-          <Route path="/dashboard">
-            {() => <Dashboard data={rows} onRefresh={handleRefresh} />}
-          </Route>
           <Route path="/prioridades" component={Documentos} />
           <Route path="/protocolos" component={Documentos} />
           <Route path="/documentos" component={Documentos} />
