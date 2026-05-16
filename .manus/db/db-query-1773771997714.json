@@ -1,9 +1,0 @@
-{
-  "query": "CREATE TABLE IF NOT EXISTS `agendas_concluidas` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `agenda_id` int NOT NULL,\n  `agenda_nome` varchar(255) NOT NULL,\n  `municipio` varchar(255),\n  `especialidade` varchar(255) NOT NULL,\n  `central` varchar(100),\n  `cotas` int,\n  `saldo` int,\n  `aguardando` int,\n  `index_regula` double,\n  `usuario_email` varchar(320) NOT NULL,\n  `usuario_nome` varchar(255) NOT NULL,\n  `concluido_em` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `agendas_concluidas_id` PRIMARY KEY(`id`)\n);",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user pYL55nDNDyx6afF.a1234ddf1d1d --database hXtc2JpcmaPLqpdM6HSR6t --execute CREATE TABLE IF NOT EXISTS `agendas_concluidas` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `agenda_id` int NOT NULL,\n  `agenda_nome` varchar(255) NOT NULL,\n  `municipio` varchar(255),\n  `especialidade` varchar(255) NOT NULL,\n  `central` varchar(100),\n  `cotas` int,\n  `saldo` int,\n  `aguardando` int,\n  `index_regula` double,\n  `usuario_email` varchar(320) NOT NULL,\n  `usuario_nome` varchar(255) NOT NULL,\n  `concluido_em` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `agendas_concluidas_id` PRIMARY KEY(`id`)\n);",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 189
-}
