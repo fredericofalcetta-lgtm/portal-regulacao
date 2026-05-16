@@ -92,6 +92,13 @@ function Router() {
           </AuthGuard>
         )}
       </Route>
+      <Route path="/novas-agendas">
+        {() => (
+          <AuthGuard>
+            <Home />
+          </AuthGuard>
+        )}
+      </Route>
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
