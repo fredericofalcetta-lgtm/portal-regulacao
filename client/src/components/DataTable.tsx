@@ -7,12 +7,14 @@ import AutoEncaminharCell from './AutoEncaminharCell';
 import AutoEncaminharGrupoCell from './AutoEncaminharGrupoCell';
 import CheckInCell from './CheckInCell';
 import { getCorRowStyle, getCorBadgeStyle, getCorPrioridade } from '@/lib/corAgenda';
+import { UltimaAtualizacao } from '@/components/UltimaAtualizacao';
 
 interface DataTableProps {
   headers: string[];
   rows: (string | number)[][];
   selectedAgendas: Set<string>;
   selectedCentrais: Set<string>;
+  selectedMunicipios?: Set<string>;
   selectedEspecialidades: Set<string>;
   selectedCores?: Set<string>;
   sortColumn: number;
@@ -315,6 +317,7 @@ const GrupoRow = memo(function GrupoRow({
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function DataTable({
   headers, rows, selectedAgendas, selectedCentrais, selectedEspecialidades, selectedCores = new Set(),
+  selectedMunicipios = new Set(),
   sortColumn, sortOrder, onSort, perfilUsuario, emailUsuario,
   concluidasIds = [], onConcluir, onRefresh, dataUpdatedAt,
 }: DataTableProps) {
@@ -350,14 +353,16 @@ export default function DataTable({
 
   const filteredRows = useMemo(() => rows.filter(row => {
     const agenda = String(row[0]), central = String(row[11]), espBruta = String(row[12]);
+    const municipio = String(row[1]);
     const matchesAgenda = selectedAgendas.size === 0 || selectedAgendas.has(agenda);
     const matchesCentral = selectedCentrais.size === 0 || selectedCentrais.has(central);
+    const matchesMunicipio = selectedMunicipios.size === 0 || selectedMunicipios.has(municipio);
     const partes = expandirEspecialidades(espBruta);
     const matchesEsp = selectedEspecialidades.size === 0 || partes.some(p => selectedEspecialidades.has(p));
     const cor = String(row[14] ?? '');
     const matchesCor = selectedCores.size === 0 || selectedCores.has(cor) || (selectedCores.has('Sem cor') && !cor);
-    return matchesAgenda && matchesCentral && matchesEsp && matchesCor;
-  }), [rows, selectedAgendas, selectedCentrais, selectedEspecialidades, selectedCores]);
+    return matchesAgenda && matchesCentral && matchesMunicipio && matchesEsp && matchesCor;
+  }), [rows, selectedAgendas, selectedCentrais, selectedMunicipios, selectedEspecialidades, selectedCores]);
 
   const grupos = useMemo((): Grupo[] => {
     const mapa = new Map<string, Grupo>();
@@ -399,11 +404,14 @@ export default function DataTable({
   return (
     <div className="flex-1 flex flex-col bg-card">
       <div className="px-6 py-4 border-b border-border">
-        <h1 className="text-2xl font-semibold text-foreground">Regulação de Encaminhamentos</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {grupos.length} agenda{grupos.length !== 1 ? 's' : ''}
-          {grupos.length !== filteredRows.length && <span className="ml-1 text-muted-foreground/70">· {filteredRows.length} linha{filteredRows.length !== 1 ? 's' : ''} no total</span>}
-        </p>
+        <h1 className="text-2xl font-semibold text-foreground">Lista de agendas</h1>
+        <div className="flex items-center gap-4 mt-1">
+          <p className="text-sm text-muted-foreground">
+            {grupos.length} agenda{grupos.length !== 1 ? 's' : ''}
+            {grupos.length !== filteredRows.length && <span className="ml-1 text-muted-foreground/70">· {filteredRows.length} linha{filteredRows.length !== 1 ? 's' : ''} no total</span>}
+          </p>
+          <UltimaAtualizacao compact />
+        </div>
       </div>
       <div className="flex-1 overflow-x-auto">
         <table className="w-full border-collapse">

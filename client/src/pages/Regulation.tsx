@@ -34,6 +34,7 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
   } = usePersistedFilters();
 
   const [selectedCores, setSelectedCores] = useState<Set<string>>(new Set());
+  const [selectedMunicipios, setSelectedMunicipios] = useState<Set<string>>(new Set());
 
   // Verifica se o perfil ATIVO tem acesso irrestrito
   const isIrrestrito = useMemo(() => {
@@ -157,20 +158,23 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
 
   // Todas as opções únicas de filtro (sem cascata) — base para Especialidade e Central
   // Especialidades compostas (ex: "Fisiatria, Reumatologia") são expandidas em itens individuais
-  const { centrais, especialidades } = useMemo(() => {
+  const { centrais, especialidades, municipios } = useMemo(() => {
     const centraisSet = new Set<string>();
     const especialidadesSet = new Set<string>();
+    const municipiosSet = new Set<string>();
 
     dadosFiltradosPorPerfil.forEach(row => {
       const central = String(row[11]);
+      const municipio = String(row[1]);
       if (central) centraisSet.add(central);
-      // Expande especialidades compostas
+      if (municipio) municipiosSet.add(municipio);
       expandirEspecialidades(String(row[12])).forEach(esp => { if (esp) especialidadesSet.add(esp); });
     });
 
     return {
       centrais: sortCentrais(Array.from(centraisSet)),
       especialidades: Array.from(especialidadesSet).sort(),
+      municipios: Array.from(municipiosSet).sort(),
     };
   }, [dadosFiltradosPorPerfil]);
 
@@ -222,10 +226,6 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Indicador de última atualização */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-        <UltimaAtualizacao compact />
-      </div>
       {/* Aviso de restrição por perfil */}
       {!isIrrestrito && regulador?.grandeGrupo && (
         <div className="absolute top-2 right-4 z-10">
@@ -243,15 +243,18 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
         agendas={agendas}
         centrais={centrais}
         especialidades={especialidades}
+        municipios={municipios}
         selectedAgendas={selectedAgendas}
         selectedCentrais={selectedCentrais}
         selectedEspecialidades={selectedEspecialidades}
+        selectedMunicipios={selectedMunicipios}
         selectedCores={selectedCores}
         onCoresChange={setSelectedCores}
         coresDisponiveis={coresDisponiveis}
         onAgendasChange={setSelectedAgendas}
         onCentraisChange={setSelectedCentrais}
         onEspecialidadesChange={setSelectedEspecialidades}
+        onMunicipiosChange={setSelectedMunicipios}
       />
 
       {/* Tabela de Dados */}
@@ -261,6 +264,7 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
         selectedAgendas={selectedAgendas}
         selectedCentrais={selectedCentrais}
         selectedEspecialidades={selectedEspecialidades}
+        selectedMunicipios={selectedMunicipios}
         selectedCores={selectedCores}
         sortColumn={sortColumn}
         sortOrder={sortOrder}

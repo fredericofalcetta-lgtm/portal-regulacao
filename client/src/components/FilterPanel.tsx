@@ -1,16 +1,18 @@
-import { useState } from 'react';
 import MultiSelectFilter from './MultiSelectFilter';
 
 interface FilterPanelProps {
   agendas: string[];
   centrais: string[];
   especialidades: string[];
+  municipios?: string[];
   selectedAgendas: Set<string>;
   selectedCentrais: Set<string>;
   selectedEspecialidades: Set<string>;
+  selectedMunicipios?: Set<string>;
   onAgendasChange: (agendas: Set<string>) => void;
   onCentraisChange: (centrais: Set<string>) => void;
   onEspecialidadesChange: (especialidades: Set<string>) => void;
+  onMunicipiosChange?: (municipios: Set<string>) => void;
   selectedCores?: Set<string>;
   onCoresChange?: (cores: Set<string>) => void;
   coresDisponiveis?: string[];
@@ -20,23 +22,27 @@ export default function FilterPanel({
   agendas,
   centrais,
   especialidades,
+  municipios = [],
   selectedAgendas,
   selectedCentrais,
   selectedEspecialidades,
+  selectedMunicipios = new Set(),
   onAgendasChange,
   onCentraisChange,
   onEspecialidadesChange,
+  onMunicipiosChange,
   selectedCores = new Set(),
   onCoresChange,
   coresDisponiveis,
 }: FilterPanelProps) {
   const totalFiltersApplied =
-    selectedAgendas.size + selectedCentrais.size + selectedEspecialidades.size;
+    selectedAgendas.size + selectedCentrais.size + selectedEspecialidades.size + selectedMunicipios.size;
 
   const clearAllFilters = () => {
     onAgendasChange(new Set());
     onCentraisChange(new Set());
     onEspecialidadesChange(new Set());
+    onMunicipiosChange?.(new Set());
   };
 
   return (
@@ -72,6 +78,17 @@ export default function FilterPanel({
           placeholder="Selecione centrais..."
         />
 
+        {/* Filtro de Município (item 9) */}
+        {onMunicipiosChange && municipios.length > 0 && (
+          <MultiSelectFilter
+            label="Município"
+            options={municipios}
+            selectedValues={selectedMunicipios}
+            onChange={onMunicipiosChange}
+            placeholder="Selecione municípios..."
+          />
+        )}
+
         <MultiSelectFilter
           label="Agenda"
           options={agendas}
@@ -81,7 +98,7 @@ export default function FilterPanel({
         />
       </div>
 
-      {/* Filtro de Cor do Index — dropdown dinâmico com cores do banco */}
+      {/* Filtro de Cor do Index */}
       {onCoresChange && coresDisponiveis && coresDisponiveis.length > 0 && (
         <MultiSelectFilter
           label="Cor do Index"
@@ -109,6 +126,12 @@ export default function FilterPanel({
               <div className="flex justify-between">
                 <span className="text-foreground">Centrais:</span>
                 <span className="text-primary font-semibold">{selectedCentrais.size}</span>
+              </div>
+            )}
+            {selectedMunicipios.size > 0 && (
+              <div className="flex justify-between">
+                <span className="text-foreground">Municípios:</span>
+                <span className="text-primary font-semibold">{selectedMunicipios.size}</span>
               </div>
             )}
             {selectedAgendas.size > 0 && (

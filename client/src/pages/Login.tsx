@@ -42,7 +42,7 @@ export default function Login() {
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-white mb-2">Portal Regulação</h1>
             <p className="text-slate-400 text-sm leading-relaxed">
-              Sistema de Regulação de Encaminhamentos para Consultas Especializadas
+              Portal de Monitoramento da Regulação TSRS
             </p>
           </div>
 

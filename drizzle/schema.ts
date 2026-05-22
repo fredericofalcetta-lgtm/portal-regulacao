@@ -301,3 +301,18 @@ export const agendaObservacoes = mysqlTable("agenda_observacoes", {
 
 export type AgendaObservacao = typeof agendaObservacoes.$inferSelect;
 export type InsertAgendaObservacao = typeof agendaObservacoes.$inferInsert;
+
+/**
+ * Log de login/logout dos reguladores.
+ * Registra horário de entrada e saída para monitoramento.
+ */
+export const loginLog = mysqlTable("login_log", {
+  id: int("id").autoincrement().primaryKey(),
+  reguladorEmail: varchar("regulador_email", { length: 320 }).notNull(),
+  reguladorNome: varchar("regulador_nome", { length: 255 }),
+  loginAt: timestamp("login_at").defaultNow().notNull(),
+  logoutAt: timestamp("logout_at"),
+});
+
+export type LoginLog = typeof loginLog.$inferSelect;
+export type InsertLoginLog = typeof loginLog.$inferInsert;

@@ -19,6 +19,7 @@ import {
   agendasFavoritas,
   agendasRelacionadasConfig,
   semCotas,
+  loginLog,
 } from "../drizzle/schema";
 import { asc, desc, eq, and, inArray, sql } from "drizzle-orm";
 import { syncSheetsToDb, syncPrioridadesToDb, syncDicionarioToDb, syncSemCotasToDb } from "./syncSheets";
@@ -28,7 +29,19 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
-    logout: publicProcedure.mutation(({ ctx }) => {
+    logout: publicProcedure.mutation(async ({ ctx }) => {
+      // Registrar logout no log (fechar sessão aberta)
+      const userEmail = ctx.user?.email?.toLowerCase();
+      if (userEmail) {
+        try {
+          const db = await getDb();
+          if (db) {
+            await db.execute(
+              sql`UPDATE login_log SET logout_at = NOW() WHERE regulador_email = ${userEmail} AND logout_at IS NULL ORDER BY login_at DESC LIMIT 1`
+            );
+          }
+        } catch { /* ignora erros no log */ }
+      }
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
@@ -56,6 +69,18 @@ export const appRouter = router({
       }
 
       const reg = result[0];
+
+      // Registrar login no log (apenas quando autorizado)
+      if (reg.ativo === "sim") {
+        try {
+          await db.insert(loginLog).values({
+            reguladorEmail: userEmail,
+            reguladorNome: reg.nome,
+            loginAt: new Date(),
+          });
+        } catch { /* ignora erros no log */ }
+      }
+
       return {
         authorized: reg.ativo === "sim",
         regulador: {
@@ -82,14 +107,11 @@ export const appRouter = router({
 
       // Buscar agendas concluídas por QUALQUER usuário hoje
       // (para marcar como concluída para todos na aba Regulação)
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0);
-      // Buscar concluídas de hoje diretamente no banco (evita problemas de timezone)
-      const inicioHoje = hoje.toISOString().slice(0, 10); // "YYYY-MM-DD"
+      // Usa horário de Brasília (UTC-3) para virada do dia correta
       const concluidasHoje = await db
         .select({ agendaId: agendasConcluidas.agendaId })
         .from(agendasConcluidas)
-        .where(sql`DATE(concluido_em) = ${inicioHoje}`);
+        .where(sql`DATE(CONVERT_TZ(concluido_em, '+00:00', '-03:00')) = DATE(CONVERT_TZ(NOW(), '+00:00', '-03:00'))`);
       const concluidasIds = concluidasHoje.map(c => c.agendaId);
 
       // Layout de índices (novo cabeçalho a partir de 2026-04):
@@ -962,7 +984,6 @@ export const appRouter = router({
               const espAgenda = (a.especialidade ?? "").split(/[,;/]+/).map(e => e.trim().toLowerCase());
               return especialidades.some(e => espAgenda.includes(e));
             })
-            .slice(0, 20)
             .map(a => ({
               id: a.id,
               agenda: a.agenda,
@@ -1043,16 +1064,13 @@ export const appRouter = router({
       const db = await getDb();
       if (!db) return [];
       const email = ctx.user?.email ?? "";
-      // Retornar apenas as concluídas de hoje (somem com a virada do dia)
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0);
-      const inicioHoje = hoje.toISOString().slice(0, 10);
+      // Retornar apenas as concluídas de hoje no horário de Brasília (UTC-3)
       return db
         .select()
         .from(agendasConcluidas)
         .where(and(
           eq(agendasConcluidas.usuarioEmail, email),
-          sql`DATE(concluido_em) = ${inicioHoje}`
+          sql`DATE(CONVERT_TZ(concluido_em, '+00:00', '-03:00')) = DATE(CONVERT_TZ(NOW(), '+00:00', '-03:00'))`
         ))
         .orderBy(desc(agendasConcluidas.concluidoEm));
     }),
@@ -1787,6 +1805,26 @@ export const appRouter = router({
             eq(agendaObservacoes.central, input.central)
           ));
         return { success: true };
+      }),
+  }),
+
+  loginLog: router({
+    // Listar todos os registros de login/logout (admin e monitoramento apenas)
+    listar: protectedProcedure
+      .input(z.object({ limite: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        // Verificar perfil do solicitante
+        const userEmail = ctx.user?.email?.toLowerCase() ?? '';
+        const reg = await db.select({ perfil: reguladores.perfil }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+        const perfil = (reg[0]?.perfil ?? '').toLowerCase();
+        if (!perfil.includes('administrador') && !perfil.includes('monitoramento')) return [];
+        return db
+          .select()
+          .from(loginLog)
+          .orderBy(desc(loginLog.loginAt))
+          .limit(input.limite ?? 500);
       }),
   }),
 

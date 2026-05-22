@@ -18,7 +18,7 @@ const NAV_CARDS = [
   {
     href: '/regulacao',
     icon: Table2,
-    title: 'Regulação de Encaminhamentos',
+    title: 'Portal de Monitoramento da Regulação TSRS',
     description:
       'Consulte e filtre as agendas disponíveis por especialidade, central e município. Dados ordenados por índice de regulação.',
     color: 'bg-blue-600',
@@ -148,7 +148,7 @@ export default function Landing() {
             </span>
           </div>
           <h1 className="text-4xl font-bold leading-tight mb-3">
-            Portal de Regulação de<br />Encaminhamentos
+            Portal de Monitoramento<br />da Regulação TSRS
           </h1>
           <p className="text-slate-300 text-lg max-w-2xl">
             Plataforma centralizada para consulta, análise e gestão de encaminhamentos para

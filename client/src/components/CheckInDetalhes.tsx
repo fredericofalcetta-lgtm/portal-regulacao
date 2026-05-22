@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Loader2, FileText, ListOrdered, ExternalLink, TrendingDown } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, FileText, ListOrdered, ExternalLink, TrendingDown, ChevronsUpDown } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 
@@ -13,6 +13,14 @@ interface CheckInDetalhesProps {
 
 export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, central, municipio }: CheckInDetalhesProps) {
   const [expandido, setExpandido] = useState(false);
+  type SortCol = 'agenda' | 'municipio' | 'cotas' | 'saldo' | 'aguardando' | 'autorizadas' | 'autCotas' | 'indexRegula';
+  const [sortCol, setSortCol] = useState<SortCol>('indexRegula');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const handleSortCol = (col: SortCol) => {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir('desc'); }
+  };
 
   const { data: obsData } = trpc.agendaConfig.getObservacao.useQuery(
     { agendaNome: agendaNome ?? '', central: central ?? '' },
@@ -34,9 +42,23 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
     }
   );
 
-  const agendas = data?.agendas ?? [];
+  const agendasRaw = data?.agendas ?? [];
   const prioridadesList = data?.prioridades ?? [];
   const protocolosList = data?.protocolos ?? [];
+
+  const agendas = [...agendasRaw].sort((a, b) => {
+    const parseNum = (v: unknown) => {
+      const n = parseFloat(String(v ?? '').replace(/\./g, '').replace(',', '.'));
+      return isNaN(n) ? 0 : n;
+    };
+    let av: number | string, bv: number | string;
+    if (sortCol === 'agenda') { av = a.agenda ?? ''; bv = b.agenda ?? ''; }
+    else if (sortCol === 'municipio') { av = a.municipio ?? ''; bv = b.municipio ?? ''; }
+    else if (sortCol === 'autCotas') { av = parseNum(a.autCotas); bv = parseNum(b.autCotas); }
+    else { av = (a[sortCol] as number) ?? 0; bv = (b[sortCol] as number) ?? 0; }
+    if (typeof av === 'number' && typeof bv === 'number') return sortDir === 'desc' ? bv - av : av - bv;
+    return sortDir === 'desc' ? String(bv).localeCompare(String(av), 'pt-BR') : String(av).localeCompare(String(bv), 'pt-BR');
+  });
 
   const getIndexColor = (value: number | null | undefined): string => {
     if (!value) return 'text-muted-foreground';
@@ -143,14 +165,30 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                     <table className="w-full text-xs border-collapse">
                       <thead className="bg-secondary">
                         <tr>
-                          <th className="px-3 py-2 text-left font-semibold text-foreground">Agenda</th>
-                          <th className="px-3 py-2 text-center font-semibold text-foreground">Município</th>
-                          <th className="px-3 py-2 text-center font-semibold text-foreground">Cotas</th>
-                          <th className="px-3 py-2 text-center font-semibold text-foreground">Saldo</th>
-                          <th className="px-3 py-2 text-center font-semibold text-foreground">Aguardando</th>
-                          <th className="px-3 py-2 text-center font-semibold text-foreground">Autorizadas</th>
-                          <th className="px-3 py-2 text-center font-semibold text-foreground">Aut/Cotas</th>
-                          <th className="px-3 py-2 text-center font-semibold text-foreground">Índice</th>
+                          {([
+                            { label: 'Agenda', col: 'agenda' as SortCol },
+                            { label: 'Município', col: 'municipio' as SortCol },
+                            { label: 'Cotas', col: 'cotas' as SortCol },
+                            { label: 'Saldo', col: 'saldo' as SortCol },
+                            { label: 'Aguardando', col: 'aguardando' as SortCol },
+                            { label: 'Autorizadas', col: 'autorizadas' as SortCol },
+                            { label: 'Aut/Cotas', col: 'autCotas' as SortCol },
+                            { label: 'Índice', col: 'indexRegula' as SortCol },
+                          ]).map(({ label, col }) => (
+                            <th
+                              key={col}
+                              onClick={() => handleSortCol(col)}
+                              className={`px-3 py-2 font-semibold text-foreground cursor-pointer hover:bg-muted transition-colors select-none ${col === 'agenda' || col === 'municipio' ? 'text-left' : 'text-center'}`}
+                            >
+                              <div className={`flex items-center gap-1 ${col === 'agenda' || col === 'municipio' ? '' : 'justify-center'}`}>
+                                {label}
+                                {sortCol === col
+                                  ? sortDir === 'desc' ? <ChevronDown size={11} className="text-primary" /> : <ChevronUp size={11} className="text-primary" />
+                                  : <ChevronsUpDown size={11} className="text-muted-foreground/50" />
+                                }
+                              </div>
+                            </th>
+                          ))}
                         </tr>
                       </thead>
                       <tbody>

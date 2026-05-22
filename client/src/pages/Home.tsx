@@ -10,6 +10,7 @@ import Reguladores from './Reguladores';
 import AgendasRelacionadas from './AgendasRelacionadas';
 import SemCotas from './SemCotas';
 import NovasAgendas from './NovasAgendas';
+import MonitorLogins from './MonitorLogins';
 import { trpc } from '@/lib/trpc';
 import { useRegulador } from '@/contexts/ReguladorContext';
 
@@ -104,6 +105,7 @@ export default function Home() {
           <Route path="/reguladores" component={Reguladores} />
           <Route path="/agendas-relacionadas" component={AgendasRelacionadas} />
           <Route path="/novas-agendas" component={NovasAgendas} />
+          <Route path="/monitor-logins" component={MonitorLogins} />
           <Route path="/sem-cotas" component={SemCotas} />
         </Switch>
       </main>

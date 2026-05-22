@@ -142,6 +142,12 @@ function AgendaRow({
       <td className="px-4 py-3 text-center text-xs text-foreground">{central ?? '—'}</td>
       {/* Cotas */}
       <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{cotas ?? '—'}</td>
+      {/* Saldo */}
+      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{saldo ?? '—'}</td>
+      {/* Aguardando */}
+      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando ?? '—'}</td>
+      {/* Autorizadas */}
+      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{autorizadas ?? '—'}</td>
       {/* Aut/Cotas */}
       <td className="px-4 py-3 text-center">
         <span
@@ -156,23 +162,12 @@ function AgendaRow({
         >
           {autCotas != null
             ? (() => {
-                // autCotas vem como string pt-BR (ex: "21,2") — converter antes de formatar
                 const v = parseFloat(String(autCotas).replace(/\./g, '').replace(',', '.'));
                 return isNaN(v) ? String(autCotas) : v.toFixed(2);
               })()
             : (autorizadas != null ? `${autorizadas}` : '—')}
         </span>
       </td>
-      {/* Saldo */}
-      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{saldo ?? '—'}</td>
-      {/* Aguardando */}
-      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando ?? '—'}</td>
-      {/* >7d */}
-      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando28d ?? '—'}</td>
-      {/* >28d */}
-      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando60d ?? '—'}</td>
-      {/* >90d */}
-      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando90d ?? '—'}</td>
       {/* IndexRegula */}
       <td className="px-4 py-3 text-center">
         <span
@@ -182,6 +177,12 @@ function AgendaRow({
           {indexRegula != null ? indexRegula.toFixed(2) : '—'}
         </span>
       </td>
+      {/* >7d */}
+      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando28d ?? '—'}</td>
+      {/* >28d */}
+      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando60d ?? '—'}</td>
+      {/* >90d */}
+      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando90d ?? '—'}</td>
 
       {/* ── Colunas extras contextuais (após Flags) ── */}
 
@@ -270,17 +271,18 @@ function TableHeader({
   return (
     <thead className="bg-secondary">
       <tr>
-        {/* Colunas fixas — iguais nas três tabelas */}
+        {/* Colunas fixas — mesma ordem da aba Lista de agendas */}
         <th className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Agenda</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Central</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Cotas</th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aut/Cotas</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Saldo</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aguardando</th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Autorizadas</th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aut/Cotas</th>
+        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Index</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;7d</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;28d</th>
         <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;90d</th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Index</th>
         {/* Colunas extras contextuais */}
         {showEncaminhadoPor && (
           <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Encaminhado por</th>
@@ -450,7 +452,27 @@ export default function MinhasAgendas() {
 
   // Número de colunas fixas (Agenda…Index = 10) + Data = 11
   // Usado para colSpan no rodapé e nas linhas de detalhe
-  const FIXED_COLS = 11; // Agenda, Central, Cotas, Aut/Cotas, Saldo, Aguardando, >7d, >28d, >90d, Index, Data
+  const FIXED_COLS = 12; // Agenda, Central, Cotas, Saldo, Aguardando, Autorizadas, Aut/Cotas, Index, >7d, >28d, >90d, Data
+
+  // Agrupar encaminhadas por nome+central para check-in em grupo (item 8)
+  const gruposEncaminhadas = React.useMemo(() => {
+    const mapa = new Map<string, typeof encaminhadas>();
+    encaminhadas.forEach(enc => {
+      const chave = `${enc.agendaNome}|${enc.central ?? ''}`;
+      const grupo = mapa.get(chave) ?? [];
+      grupo.push(enc);
+      mapa.set(chave, grupo);
+    });
+    return Array.from(mapa.values());
+  }, [encaminhadas]);
+
+  const handleCheckInGrupo = (grupo: typeof encaminhadas) => {
+    grupo.forEach(enc => {
+      if (!checkInIds.has(enc.agendaId)) {
+        handleCheckIn(enc);
+      }
+    });
+  };
 
   return (
     <div className="flex-1 flex flex-col bg-background min-h-screen">
@@ -541,7 +563,7 @@ export default function MinhasAgendas() {
                       />
                       <tr key={`detalhes-${ci.id}`}>
                         {/* Check-ins ativos: FIXED_COLS(11) + Check-in(1) + Ação(1) = 13 */}
-                        <td colSpan={13} className="p-0">
+                        <td colSpan={14} className="p-0">
                           <CheckInDetalhes
                             agendaId={ci.agendaId}
                             agendaNome={ci.agendaNome}
@@ -627,47 +649,83 @@ export default function MinhasAgendas() {
                   dateLabel="Encaminhado em"
                 />
                 <tbody>
-                  {encaminhadas.map((enc) => (
-                    <AgendaRow
-                      key={enc.id}
-                      agendaId={enc.agendaId}
-                      agendaNome={enc.agendaNome}
-                      municipio={enc.municipio}
-                      central={enc.central}
-                      cotas={enc.cotas}
-                      saldo={enc.saldo}
-                      aguardando={enc.aguardando}
-                      aguardando28d={enc.aguardando28d}
-                      aguardando60d={enc.aguardando60d}
-                      aguardando90d={enc.aguardando90d}
-                      autorizadas={enc.autorizadas}
-                      autCotas={enc.autCotas}
-                      indexRegula={enc.indexRegula}
-                      flagIndex={enc.flagIndex}
-                      corIndex={enc.corIndex}
-                      flagAutCotas={enc.flagAutCotas}
-                      corAutCotas={enc.corAutCotas}
-                      temCheckIn={checkInIds.has(enc.agendaId)}
-                      reguladoresAtivos={checkInsPorAgenda[enc.agendaId] ?? []}
-                      encaminhadoPor={enc.encaminhadoPorNome}
-                      createdAt={enc.createdAt}
-                      onCheckIn={() => handleCheckIn({
-                        agendaId: enc.agendaId, agendaNome: enc.agendaNome,
-                        municipio: enc.municipio, especialidade: enc.especialidade,
-                        central: enc.central, cotas: enc.cotas,
-                        saldo: enc.saldo, aguardando: enc.aguardando,
-                        indexRegula: enc.indexRegula,
-                      })}
-                      onConcluir={() => handleConcluirEncaminhada(enc)}
-                      isCheckInPending={checkInMutation.isPending}
-                      isRemoverPending={false}
-                      isConcluirPending={concluirMutation.isPending}
-                      showEncaminhadoPor={true}
-                      showCheckIn={true}
-                      showConcluir={true}
-                      dateLabel="Encaminhado em"
-                    />
-                  ))}
+                  {gruposEncaminhadas.map((grupo) => {
+                    const isGrupo = grupo.length > 1;
+                    const primeiroEnc = grupo[0];
+                    const todasComCheckIn = grupo.every(e => checkInIds.has(e.agendaId));
+                    return (
+                      <React.Fragment key={`grupo-${primeiroEnc.agendaNome}|${primeiroEnc.central}`}>
+                        {/* Linha de cabeçalho do grupo (quando há múltiplos municípios) */}
+                        {isGrupo && (
+                          <tr className="bg-blue-50/60 dark:bg-blue-950/20 border-t-2 border-blue-200 dark:border-blue-800">
+                            <td colSpan={3} className="px-4 py-2">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-sm text-foreground">{primeiroEnc.agendaNome}</span>
+                                <span className="text-xs text-muted-foreground">· {primeiroEnc.central}</span>
+                                <span className="px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-medium">{grupo.length} municípios</span>
+                              </div>
+                            </td>
+                            <td colSpan={8} />
+                            <td className="px-4 py-2 text-center">
+                              {!todasComCheckIn && (
+                                <button
+                                  onClick={() => handleCheckInGrupo(grupo)}
+                                  disabled={checkInMutation.isPending}
+                                  className="flex items-center gap-1 mx-auto px-2 py-1 rounded text-xs font-medium bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors disabled:opacity-50 whitespace-nowrap"
+                                >
+                                  {checkInMutation.isPending ? <Loader2 size={11} className="animate-spin" /> : <LogIn size={11} />}
+                                  Check-in em grupo
+                                </button>
+                              )}
+                            </td>
+                            <td colSpan={2} />
+                          </tr>
+                        )}
+                        {/* Linhas individuais do grupo */}
+                        {grupo.map((enc) => (
+                          <AgendaRow
+                            key={enc.id}
+                            agendaId={enc.agendaId}
+                            agendaNome={enc.agendaNome}
+                            municipio={enc.municipio}
+                            central={enc.central}
+                            cotas={enc.cotas}
+                            saldo={enc.saldo}
+                            aguardando={enc.aguardando}
+                            aguardando28d={enc.aguardando28d}
+                            aguardando60d={enc.aguardando60d}
+                            aguardando90d={enc.aguardando90d}
+                            autorizadas={enc.autorizadas}
+                            autCotas={enc.autCotas}
+                            indexRegula={enc.indexRegula}
+                            flagIndex={enc.flagIndex}
+                            corIndex={enc.corIndex}
+                            flagAutCotas={enc.flagAutCotas}
+                            corAutCotas={enc.corAutCotas}
+                            temCheckIn={checkInIds.has(enc.agendaId)}
+                            reguladoresAtivos={checkInsPorAgenda[enc.agendaId] ?? []}
+                            encaminhadoPor={enc.encaminhadoPorNome}
+                            createdAt={enc.createdAt}
+                            onCheckIn={() => handleCheckIn({
+                              agendaId: enc.agendaId, agendaNome: enc.agendaNome,
+                              municipio: enc.municipio, especialidade: enc.especialidade,
+                              central: enc.central, cotas: enc.cotas,
+                              saldo: enc.saldo, aguardando: enc.aguardando,
+                              indexRegula: enc.indexRegula,
+                            })}
+                            onConcluir={() => handleConcluirEncaminhada(enc)}
+                            isCheckInPending={checkInMutation.isPending}
+                            isRemoverPending={false}
+                            isConcluirPending={concluirMutation.isPending}
+                            showEncaminhadoPor={true}
+                            showCheckIn={true}
+                            showConcluir={true}
+                            dateLabel="Encaminhado em"
+                          />
+                        ))}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -773,7 +831,7 @@ export default function MinhasAgendas() {
                     <td className="px-4 py-3 text-center text-sm font-bold text-emerald-700 dark:text-emerald-300">
                       {totalAguardandoConcluidas}
                     </td>
-                    <td colSpan={7} />
+                    <td colSpan={8} />
                   </tr>
                 </tfoot>
               </table>

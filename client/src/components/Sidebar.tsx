@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Menu, X, BarChart3, Table2, FolderOpen, Home, LogOut, UserCircle2, Sun, Moon, ClipboardList, Activity, RefreshCw, Users, Link2, TrendingDown, Sparkles } from 'lucide-react';
+import { Menu, X, BarChart3, Table2, FolderOpen, Home, LogOut, UserCircle2, Sun, Moon, ClipboardList, Activity, RefreshCw, Users, Link2, TrendingDown, Sparkles, LogIn } from 'lucide-react';
 import { Link } from 'wouter';
 import { useRegulador } from '@/contexts/ReguladorContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -91,12 +91,13 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
 
   const navItems = [
     { href: '/', page: 'inicio', icon: Home, label: 'Início', visible: isAdminOrMonitorOnly || perfilAtivo?.toLowerCase().includes('administrador') || perfilAtivo?.toLowerCase().includes('monitoramento') },
-    { href: '/regulacao', page: 'regulacao', icon: Table2, label: 'Regulação', visible: true },
+    { href: '/regulacao', page: 'regulacao', icon: Table2, label: 'Lista de agendas', visible: true },
     { href: '/minhas-agendas', page: 'minhas-agendas', icon: ClipboardList, label: 'Minhas Agendas', visible: true },
     { href: '/monitor-checkins', page: 'monitor-checkins', icon: Activity, label: 'Monitor de Check-ins', visible: isAdminOrMonitor },
     { href: '/reguladores', page: 'reguladores', icon: Users, label: 'Reguladores', visible: isAdminOrMonitorOnly },
     { href: '/agendas-relacionadas', page: 'agendas-relacionadas', icon: Link2, label: 'Agendas Relacionadas', visible: isAdminOrMonitorOnly },
     { href: '/novas-agendas', page: 'novas-agendas', icon: Sparkles, label: 'Novas Agendas', visible: isAdminOrMonitorOnly },
+    { href: '/monitor-logins', page: 'monitor-logins', icon: LogIn, label: 'Monitor de Logins', visible: isAdminOrMonitorOnly },
     { href: '/sem-cotas', page: 'sem-cotas', icon: TrendingDown, label: 'Sem Cotas', visible: isAdminOrMonitorOnly },
     { href: '/documentos', page: 'documentos', icon: FolderOpen, label: 'Documentos', visible: true },
   ].filter(item => item.visible);
@@ -121,7 +122,7 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
       {/* Header */}
       <div className={`flex items-center h-16 border-b border-slate-700 shrink-0 ${isOpen ? 'justify-between px-4' : 'justify-center px-2'}`}>
         {isOpen && (
-          <h1 className="text-base font-bold truncate">Portal Regulação</h1>
+          <h1 className="text-base font-bold truncate">Portal Monitoramento</h1>
         )}
         <button
           onClick={toggleSidebar}
