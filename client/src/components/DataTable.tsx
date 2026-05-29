@@ -74,33 +74,29 @@ const TableRow = memo(function TableRow({
   return (
     <tr className={`border-b border-border hover:bg-secondary transition-colors ${isSubRow ? 'bg-muted/30 dark:bg-muted/10' : ''} ${isConcluida ? 'opacity-60 bg-emerald-50 dark:bg-emerald-950/20' : ''}`}
       style={isConcluida || isSubRow ? undefined : corRowStyle}>
-      <td className={`py-3 text-foreground ${isSubRow ? 'pl-10 pr-6' : 'px-6'}`}>
+      <td className={`py-1.5 text-foreground ${isSubRow ? 'pl-8 pr-2' : 'px-3'}`}>
         {isSubRow ? (
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30 flex-shrink-0" />
-            <div>
-              <div className="text-sm text-foreground font-medium">{String(row[1])}</div>
-            </div>
+            <div className="text-xs text-foreground font-medium">{String(row[0])}</div>
           </div>
         ) : (
-          <>
-            <div className="font-medium text-sm flex items-center gap-2">
-              {cor && !isConcluida && <span style={corBadgeStyle} title={cor} />}
-              {isConcluida && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Concluída
-                </span>
-              )}
-              {String(row[0])}
-            </div>
-            <div className="text-xs text-muted-foreground mt-0.5">{String(row[1])}</div>
-          </>
+          <div className="flex items-center gap-2">
+            {cor && !isConcluida && <span style={corBadgeStyle} title={cor} />}
+            {isConcluida && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                Concluída
+              </span>
+            )}
+            <span className="font-medium text-xs text-foreground">{String(row[0])}</span>
+          </div>
         )}
       </td>
-      <td className="px-3 py-3 text-center text-xs font-medium text-foreground">{String(row[11])}</td>
+      <td className="px-2 py-1.5 text-xs text-muted-foreground">{isSubRow ? String(row[1]) : '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[11])}</td>
       {(isAdminOuMonitor || isRegulador) && (
-        <td className="px-3 py-3 text-center">
+        <td className="px-2 py-1.5 text-center">
           {isConcluida ? <span className="text-xs text-muted-foreground italic">bloqueado</span>
           : agendaId > 0 ? (
             isAdminOuMonitor ? (
@@ -119,7 +115,7 @@ const TableRow = memo(function TableRow({
           ) : <span className="text-xs text-muted-foreground">—</span>}
         </td>
       )}
-      <td className="px-3 py-3 text-center">
+      <td className="px-2 py-1.5 text-center">
         {(checkInsAtuais ?? []).length > 0 ? (
           <div className="flex flex-col gap-1 items-center">
             {(checkInsAtuais ?? []).map(ci => (
@@ -131,23 +127,23 @@ const TableRow = memo(function TableRow({
           </div>
         ) : <span className="text-xs text-muted-foreground">—</span>}
       </td>
-      <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{String(row[2])}</td>
-      <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{String(row[3])}</td>
-      <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{String(row[4])}</td>
-      <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{String(row[5])}</td>
-      <td className="px-3 py-3 text-center">
-        <span title={flagAutCotas || undefined} className={`inline-block px-2 py-1 rounded text-sm font-semibold cursor-default ${corAutCotas === 'Vermelho' ? 'bg-red-100 dark:bg-red-950/50 text-red-900 dark:text-red-300' : corAutCotas === 'Laranja' ? 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300' : corAutCotas === 'Amarelo' ? 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-900 dark:text-yellow-300' : corAutCotas === 'Verde' ? 'bg-green-100 dark:bg-green-950/50 text-green-900 dark:text-green-300' : 'text-foreground'}`}>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[2])}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[3])}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[4])}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[5])}</td>
+      <td className="px-2 py-1.5 text-center">
+        <span title={flagAutCotas || undefined} className={`inline-block px-1.5 py-0.5 rounded text-xs font-semibold cursor-default ${corAutCotas === 'Vermelho' ? 'bg-red-100 dark:bg-red-950/50 text-red-900 dark:text-red-300' : corAutCotas === 'Laranja' ? 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300' : corAutCotas === 'Amarelo' ? 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-900 dark:text-yellow-300' : corAutCotas === 'Verde' ? 'bg-green-100 dark:bg-green-950/50 text-green-900 dark:text-green-300' : 'text-foreground'}`}>
           {(() => { const raw = String(row[6] ?? ''); const v = parseFloat(raw.replace(/\./g, '').replace(',', '.')); return isNaN(v) ? (raw || '—') : v.toFixed(2); })()}
         </span>
       </td>
-      <td className="px-3 py-3 text-center">
-        <span title={flagIndex || undefined} className={`inline-block px-2 py-1 rounded text-sm font-semibold cursor-default ${getIndexColor(indexValue) || 'text-foreground'}`}>
+      <td className="px-2 py-1.5 text-center">
+        <span title={flagIndex || undefined} className={`inline-block px-1.5 py-0.5 rounded text-xs font-semibold cursor-default ${getIndexColor(indexValue) || 'text-foreground'}`}>
           {indexValue.toFixed(2)}
         </span>
       </td>
-      <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{row[8] ? String(row[8]) : '—'}</td>
-      <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{row[9] ? String(row[9]) : '—'}</td>
-      <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{row[10] ? String(row[10]) : '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{row[8] ? String(row[8]) : '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{row[9] ? String(row[9]) : '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{row[10] ? String(row[10]) : '—'}</td>
     </tr>
   );
 });
@@ -218,7 +214,7 @@ const GrupoRow = memo(function GrupoRow({
     <>
       <tr className={`border-b border-border transition-colors ${todasConcluidas ? 'opacity-60 bg-emerald-50 dark:bg-emerald-950/20' : isExpanded ? 'bg-blue-50/60 dark:bg-blue-950/20 hover:bg-blue-50 dark:hover:bg-blue-950/30' : 'bg-card hover:bg-secondary'}`}
         style={todasConcluidas || isExpanded ? undefined : corRowStyle}>
-        <td className="px-3 py-3 text-foreground">
+        <td className="px-3 py-1.5 text-foreground">
           <div className="flex items-center gap-2">
             {!isSingle ? (
               <button type="button" onClick={onToggle}
@@ -235,19 +231,21 @@ const GrupoRow = memo(function GrupoRow({
               </span>
             )}
             <div>
-              <div className="font-medium text-sm text-foreground">{nome}</div>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-xs text-muted-foreground">{municipioLabel}</span>
-                {!isSingle && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">{linhas.length}</span>
-                )}
-              </div>
+              <div className="font-medium text-xs text-foreground">{nome}</div>
+              {isSingle && (
+                <span className="text-xs text-muted-foreground">{linhas.length}</span>
+              )}
             </div>
           </div>
         </td>
-        <td className="px-3 py-3 text-center text-xs font-medium text-foreground">{central}</td>
+        <td className="px-2 py-1.5 text-xs text-muted-foreground">
+          {isSingle ? municipioLabel : (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">{linhas.length} municípios</span>
+          )}
+        </td>
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{central}</td>
         {(isAdminOuMonitor || isRegulador) && (
-          <td className="px-3 py-3 text-center">
+          <td className="px-2 py-1.5 text-center">
             {todasConcluidas ? (
               <span className="text-xs text-muted-foreground italic">bloqueado</span>
             ) : isAdminOuMonitor ? (
@@ -263,7 +261,7 @@ const GrupoRow = memo(function GrupoRow({
             )}
           </td>
         )}
-        <td className="px-3 py-3 text-center">
+        <td className="px-2 py-1.5 text-center">
           {checkInsGrupo.length > 0 ? (
             <div className="flex flex-col gap-1 items-center">
               {checkInsGrupo.map(ci => (
@@ -275,27 +273,27 @@ const GrupoRow = memo(function GrupoRow({
             </div>
           ) : <span className="text-xs text-muted-foreground">—</span>}
         </td>
-        <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.cotas || '—'}</td>
-        <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.saldo || '—'}</td>
-        <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.aguardando || '—'}</td>
-        <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.autorizadas || '—'}</td>
-        <td className="px-3 py-3 text-center">
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.cotas || '—'}</td>
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.saldo || '—'}</td>
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.aguardando || '—'}</td>
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.autorizadas || '—'}</td>
+        <td className="px-2 py-1.5 text-center">
           {isSingle ? (
             <span className="text-sm font-semibold text-foreground">
               {(() => { const raw = String(linhas[0][6] ?? ''); const v = parseFloat(raw.replace(/\./g, '').replace(',', '.')); return isNaN(v) ? (raw || '—') : v.toFixed(2); })()}
             </span>
           ) : <span className="text-sm text-muted-foreground">—</span>}
         </td>
-        <td className="px-3 py-3 text-center">
+        <td className="px-2 py-1.5 text-center">
           {isSingle ? (
             <span className="text-sm font-semibold text-foreground">
               {(() => { const v = parseFloat(String(linhas[0][7] ?? 0)); return isNaN(v) ? '—' : v.toFixed(2); })()}
             </span>
           ) : <span className="text-sm text-muted-foreground">—</span>}
         </td>
-        <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.ag7d || '—'}</td>
-        <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.ag28d || '—'}</td>
-        <td className="px-3 py-3 text-center text-sm font-medium text-foreground">{totais.ag90d || '—'}</td>
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.ag7d || '—'}</td>
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.ag28d || '—'}</td>
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.ag90d || '—'}</td>
       </tr>
       {isExpanded && !isSingle && (linhas ?? []).map(row => {
         if (!row || !Array.isArray(row)) return null;
@@ -417,16 +415,19 @@ export default function DataTable({
         <table className="w-full border-collapse">
           <thead className="sticky top-0 bg-secondary z-10">
             <tr>
-              <th onClick={() => onSort(0)} className="px-6 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
+              <th onClick={() => onSort(0)} className="px-3 py-1.5 text-left text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
                 <div className="flex items-center space-x-1"><span>Agenda</span><SortIcon col={0} /></div>
               </th>
-              <th onClick={() => onSort(11)} className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
+              <th onClick={() => onSort(1)} className="px-2 py-1.5 text-left text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
+                <div className="flex items-center space-x-1"><span>Município</span><SortIcon col={1} /></div>
+              </th>
+              <th onClick={() => onSort(11)} className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
                 <div className="flex items-center justify-center space-x-1"><span>Central</span><SortIcon col={11} /></div>
               </th>
-              {(isAdminOuMonitor || isRegulador) && <th className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">Encaminhar</th>}
-              <th className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">Regulando</th>
+              {(isAdminOuMonitor || isRegulador) && <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">Encaminhar</th>}
+              <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">Regulando</th>
               {[{label:'Cotas',col:2},{label:'Saldo',col:3},{label:'Aguardando',col:4},{label:'Autorizadas',col:5},{label:'Aut/Cotas',col:6},{label:'Index',col:7},{label:'>7d',col:8},{label:'>28d',col:9},{label:'>90d',col:10}].map(({label,col}) => (
-                <th key={col} onClick={() => onSort(col)} className="px-3 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
+                <th key={col} onClick={() => onSort(col)} className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
                   <div className="flex items-center justify-center space-x-1"><span>{label}</span><SortIcon col={col} /></div>
                 </th>
               ))}
