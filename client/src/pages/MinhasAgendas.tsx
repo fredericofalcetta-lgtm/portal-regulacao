@@ -116,13 +116,12 @@ function AgendaRow({
       className={`border-t border-border hover:bg-secondary/50 transition-colors ${isConcluida ? 'opacity-75' : ''}`}
       style={corRowStyle}
     >
-      {/* Agenda + Município */}
-      <td className="px-4 py-3">
-        <div className="font-medium text-sm text-foreground flex items-center gap-2">
+      {/* Agenda */}
+      <td className="px-2 py-1.5">
+        <div className="font-medium text-xs text-foreground flex items-center gap-2">
           {corIndex && <span style={corBadgeStyle} title={corIndex} />}
           {agendaNome}
         </div>
-        {municipio && <div className="text-xs text-muted-foreground mt-0.5">{municipio}</div>}
         {reguladoresAtivos && reguladoresAtivos.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
             {reguladoresAtivos.map(r => (
@@ -138,21 +137,23 @@ function AgendaRow({
           </div>
         )}
       </td>
+      {/* Município */}
+      <td className="px-2 py-1.5 text-xs text-muted-foreground">{municipio ?? '—'}</td>
       {/* Central */}
-      <td className="px-4 py-3 text-center text-xs text-foreground">{central ?? '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs text-foreground">{central ?? '—'}</td>
       {/* Cotas */}
-      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{cotas ?? '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{cotas ?? '—'}</td>
       {/* Saldo */}
-      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{saldo ?? '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{saldo ?? '—'}</td>
       {/* Aguardando */}
-      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando ?? '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{aguardando ?? '—'}</td>
       {/* Autorizadas */}
-      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{autorizadas ?? '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{autorizadas ?? '—'}</td>
       {/* Aut/Cotas */}
-      <td className="px-4 py-3 text-center">
+      <td className="px-2 py-1.5 text-center">
         <span
           title={flagAutCotas || undefined}
-          className={`inline-block px-2 py-0.5 rounded text-sm font-medium cursor-default ${
+          className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium cursor-default ${
             corAutCotas === 'Vermelho' ? 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300' :
             corAutCotas === 'Laranja' ? 'bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300' :
             corAutCotas === 'Amarelo' ? 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300' :
@@ -169,26 +170,26 @@ function AgendaRow({
         </span>
       </td>
       {/* IndexRegula */}
-      <td className="px-4 py-3 text-center">
+      <td className="px-2 py-1.5 text-center">
         <span
           title={flagIndex || undefined}
-          className={`inline-block px-2 py-0.5 rounded text-sm cursor-default ${getBadgeColor(indexRegula)}`}
+          className={`inline-block px-1.5 py-0.5 rounded text-xs cursor-default ${getBadgeColor(indexRegula)}`}
         >
           {indexRegula != null ? indexRegula.toFixed(2) : '—'}
         </span>
       </td>
       {/* >7d */}
-      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando28d ?? '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{aguardando28d ?? '—'}</td>
       {/* >28d */}
-      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando60d ?? '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{aguardando60d ?? '—'}</td>
       {/* >90d */}
-      <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{aguardando90d ?? '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{aguardando90d ?? '—'}</td>
 
       {/* ── Colunas extras contextuais (após Flags) ── */}
 
       {/* Encaminhado por — só em "Encaminhadas para mim" */}
       {showEncaminhadoPor && (
-        <td className="px-4 py-3 text-center text-xs text-muted-foreground">
+        <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">
           {encaminhadoPor === 'Favorita' ? (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700">
               ⭐ Favorita
@@ -199,10 +200,10 @@ function AgendaRow({
         </td>
       )}
       {/* Data */}
-      <td className="px-4 py-3 text-center text-xs text-muted-foreground">{dateDisplay}</td>
+      <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">{dateDisplay}</td>
       {/* Check-in/out */}
       {showCheckIn && onCheckIn !== undefined && (
-        <td className="px-4 py-3 text-center">
+        <td className="px-2 py-1.5 text-center">
           <button
             onClick={onCheckIn}
             disabled={isCheckInPending}
@@ -226,7 +227,7 @@ function AgendaRow({
       )}
       {/* Concluído — só em Check-ins ativos */}
       {showConcluir && onConcluir !== undefined && (
-        <td className="px-4 py-3 text-center">
+        <td className="px-2 py-1.5 text-center">
           <button
             onClick={onConcluir}
             disabled={isConcluirPending}
@@ -240,7 +241,7 @@ function AgendaRow({
       )}
       {/* Status — só em Agendas concluídas */}
       {showStatus && (
-        <td className="px-4 py-3 text-center">
+        <td className="px-2 py-1.5 text-center">
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300">
             <CheckCircle2 size={10} />
             Concluído
@@ -272,30 +273,31 @@ function TableHeader({
     <thead className="bg-secondary">
       <tr>
         {/* Colunas fixas — mesma ordem da aba Lista de agendas */}
-        <th className="px-4 py-3 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Agenda</th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Central</th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Cotas</th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Saldo</th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aguardando</th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Autorizadas</th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aut/Cotas</th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Index</th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;7d</th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;28d</th>
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;90d</th>
+        <th className="px-2 py-1.5 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Agenda</th>
+        <th className="px-2 py-1.5 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Município</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Central</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Cotas</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Saldo</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aguardando</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Autorizadas</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aut/Cotas</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Index</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;7d</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;28d</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;90d</th>
         {/* Colunas extras contextuais */}
         {showEncaminhadoPor && (
-          <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Encaminhado por</th>
+          <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Encaminhado por</th>
         )}
-        <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">{dateLabel}</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">{dateLabel}</th>
         {showCheckIn && (
-          <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Check-in</th>
+          <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Check-in</th>
         )}
         {showConcluir && (
-          <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Ação</th>
+          <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Ação</th>
         )}
         {showStatus && (
-          <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Status</th>
+          <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Status</th>
         )}
       </tr>
     </thead>
@@ -452,7 +454,7 @@ export default function MinhasAgendas() {
 
   // Número de colunas fixas (Agenda…Index = 10) + Data = 11
   // Usado para colSpan no rodapé e nas linhas de detalhe
-  const FIXED_COLS = 12; // Agenda, Central, Cotas, Saldo, Aguardando, Autorizadas, Aut/Cotas, Index, >7d, >28d, >90d, Data
+  const FIXED_COLS = 13; // Agenda, Central, Cotas, Saldo, Aguardando, Autorizadas, Aut/Cotas, Index, >7d, >28d, >90d, Data
 
   // Agrupar encaminhadas por nome+central para check-in em grupo (item 8)
   const gruposEncaminhadas = React.useMemo(() => {
@@ -563,7 +565,7 @@ export default function MinhasAgendas() {
                       />
                       <tr key={`detalhes-${ci.id}`}>
                         {/* Check-ins ativos: FIXED_COLS(11) + Check-in(1) + Ação(1) = 13 */}
-                        <td colSpan={14} className="p-0">
+                        <td colSpan={15} className="p-0">
                           <CheckInDetalhes
                             agendaId={ci.agendaId}
                             agendaNome={ci.agendaNome}
@@ -665,7 +667,7 @@ export default function MinhasAgendas() {
                                 <span className="px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-medium">{grupo.length} municípios</span>
                               </div>
                             </td>
-                            <td colSpan={8} />
+                            <td colSpan={9} />
                             <td className="px-4 py-2 text-center">
                               {!todasComCheckIn && (
                                 <button
@@ -831,7 +833,7 @@ export default function MinhasAgendas() {
                     <td className="px-4 py-3 text-center text-sm font-bold text-emerald-700 dark:text-emerald-300">
                       {totalAguardandoConcluidas}
                     </td>
-                    <td colSpan={8} />
+                    <td colSpan={9} />
                   </tr>
                 </tfoot>
               </table>
