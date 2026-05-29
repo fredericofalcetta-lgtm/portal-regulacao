@@ -232,9 +232,6 @@ const GrupoRow = memo(function GrupoRow({
             )}
             <div>
               <div className="font-medium text-xs text-foreground">{nome}</div>
-              {isSingle && (
-                <span className="text-xs text-muted-foreground">{linhas.length}</span>
-              )}
             </div>
           </div>
         </td>
