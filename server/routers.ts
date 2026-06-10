@@ -118,14 +118,23 @@ export const appRouter = router({
         .from(regulacaoData)
         .orderBy(desc(regulacaoData.indexRegula));
 
-      // Buscar agendas concluídas por QUALQUER usuário hoje
-      // (para marcar como concluída para todos na aba Regulação)
-      // Usa horário de Brasília (UTC-3) para virada do dia correta
+      // Buscar agendas concluídas por QUALQUER usuário hoje, resolvendo o ID ATUAL de regulacao_data.
+      // O agendaId salvo nas concluídas pode estar desatualizado após uma sincronização (pois o
+      // DELETE+INSERT da sync recria os IDs). Por isso fazemos JOIN por nome+municipio+central
+      // e retornamos regulacaoData.id (o ID vigente), garantindo que o bloqueio persista após sync.
       const concluidasHoje = await db
-        .select({ agendaId: agendasConcluidas.agendaId })
+        .selectDistinct({ currentId: regulacaoData.id })
         .from(agendasConcluidas)
-        .where(sql`DATE(CONVERT_TZ(concluido_em, '+00:00', '-03:00')) = DATE(CONVERT_TZ(NOW(), '+00:00', '-03:00'))`);
-      const concluidasIds = concluidasHoje.map(c => c.agendaId);
+        .innerJoin(
+          regulacaoData,
+          and(
+            eq(agendasConcluidas.agendaNome, regulacaoData.agenda),
+            sql`${agendasConcluidas.municipio} <=> ${regulacaoData.municipio}`,
+            sql`${agendasConcluidas.central} <=> ${regulacaoData.central}`
+          )
+        )
+        .where(sql`DATE(CONVERT_TZ(${agendasConcluidas.concluidoEm}, '+00:00', '-03:00')) = DATE(CONVERT_TZ(NOW(), '+00:00', '-03:00'))`);
+      const concluidasIds = concluidasHoje.map(c => c.currentId);
 
       // Layout de índices (novo cabeçalho a partir de 2026-04):
       // [0] agenda, [1] municipio, [2] cotas, [3] saldo, [4] aguardando,
@@ -724,7 +733,9 @@ export const appRouter = router({
       return db
         .select({
           id: checkIns.id,
-          agendaId: checkIns.agendaId,
+          // Retorna o ID ATUAL de regulacao_data (não o agendaId salvo no check-in,
+          // que pode estar desatualizado após uma sync DELETE+INSERT).
+          agendaId: regulacaoData.id,
           agendaNome: checkIns.agendaNome,
           municipio: checkIns.municipio,
           especialidade: checkIns.especialidade,
@@ -769,31 +780,46 @@ export const appRouter = router({
       .query(async ({ input }) => {
         const db = await getDb();
         if (!db || input.agendaIds.length === 0) return {};
+        // O frontend passa IDs atuais de regulacao_data (row[17]).
+        // Fazemos JOIN para resolver o ID atual e filtrar corretamente,
+        // mesmo que checkIns.agendaId esteja desatualizado após uma sync.
         const rows = await db
           .select({
-            agendaId: checkIns.agendaId,
+            agendaId: regulacaoData.id,
             usuarioEmail: checkIns.usuarioEmail,
             usuarioNome: checkIns.usuarioNome,
           })
           .from(checkIns)
-          .where(inArray(checkIns.agendaId, input.agendaIds));
-        // Agrupar por agendaId
+          .innerJoin(
+            regulacaoData,
+            and(
+              eq(checkIns.agendaNome, regulacaoData.agenda),
+              sql`${checkIns.municipio} <=> ${regulacaoData.municipio}`,
+              sql`${checkIns.central} <=> ${regulacaoData.central}`
+            )
+          )
+          .where(inArray(regulacaoData.id, input.agendaIds));
+        // Agrupar por agendaId atual
         const grouped: Record<number, { usuarioEmail: string; usuarioNome: string }[]> = {};
         for (const row of rows) {
+          if (row.agendaId == null) continue;
           if (!grouped[row.agendaId]) grouped[row.agendaId] = [];
           grouped[row.agendaId].push({ usuarioEmail: row.usuarioEmail, usuarioNome: row.usuarioNome });
         }
         return grouped;
       }),
 
-    // Buscar todos os check-ins (para exibir na tabela)
+    // Buscar todos os check-ins (para exibir na tabela — coluna "Regulando")
     getAll: protectedProcedure.query(async () => {
       const db = await getDb();
       if (!db) return [];
       return db
         .select({
           id: checkIns.id,
-          agendaId: checkIns.agendaId,
+          // Retorna o ID ATUAL de regulacao_data (não o agendaId salvo no check-in,
+          // que pode estar desatualizado após uma sync DELETE+INSERT).
+          // O frontend usa esse valor para indexar checkInsPorAgenda por row[17].
+          agendaId: regulacaoData.id,
           agendaNome: checkIns.agendaNome,
           municipio: checkIns.municipio,
           especialidade: checkIns.especialidade,
