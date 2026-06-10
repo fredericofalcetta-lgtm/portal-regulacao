@@ -94,7 +94,7 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     { href: '/regulacao', page: 'regulacao', icon: Table2, label: 'Lista de agendas', visible: true },
     { href: '/minhas-agendas', page: 'minhas-agendas', icon: ClipboardList, label: 'Minhas Agendas', visible: true },
     { href: '/monitor-checkins', page: 'monitor-checkins', icon: Activity, label: 'Monitor de Check-ins', visible: isAdminOrMonitor },
-    { href: '/reguladores', page: 'reguladores', icon: Users, label: 'Reguladores', visible: isAdminOrMonitorOnly },
+    { href: '/reguladores', page: 'reguladores', icon: Users, label: 'Reguladores', visible: true },
     { href: '/agendas-relacionadas', page: 'agendas-relacionadas', icon: Link2, label: 'Agendas Relacionadas', visible: isAdminOrMonitorOnly },
     { href: '/novas-agendas', page: 'novas-agendas', icon: Sparkles, label: 'Novas Agendas', visible: isAdminOrMonitorOnly },
     { href: '/monitor-logins', page: 'monitor-logins', icon: LogIn, label: 'Monitor de Logins', visible: isAdminOrMonitorOnly },
