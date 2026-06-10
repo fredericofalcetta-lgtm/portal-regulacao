@@ -70,14 +70,27 @@ export const appRouter = router({
 
       const reg = result[0];
 
-      // Registrar login no log (apenas quando autorizado)
+      // Registrar login no log com debounce de 30 minutos
+      // (evita múltiplos registros por navegação entre abas)
       if (reg.ativo === "sim") {
         try {
-          await db.insert(loginLog).values({
-            reguladorEmail: userEmail,
-            reguladorNome: reg.nome,
-            loginAt: new Date(),
-          });
+          const recentLogin = await db
+            .select({ id: loginLog.id })
+            .from(loginLog)
+            .where(and(
+              eq(loginLog.reguladorEmail, userEmail),
+              sql`${loginLog.loginAt} > DATE_SUB(NOW(), INTERVAL 30 MINUTE)`,
+              sql`${loginLog.logoutAt} IS NULL`
+            ))
+            .limit(1);
+
+          if (recentLogin.length === 0) {
+            await db.insert(loginLog).values({
+              reguladorEmail: userEmail,
+              reguladorNome: reg.nome,
+              loginAt: new Date(),
+            });
+          }
         } catch { /* ignora erros no log */ }
       }
 
@@ -743,7 +756,10 @@ export const appRouter = router({
             eq(checkIns.central, regulacaoData.central)
           )
         )
-        .where(eq(checkIns.usuarioEmail, email))
+        .where(and(
+          eq(checkIns.usuarioEmail, email),
+          sql`DATE(CONVERT_TZ(${checkIns.createdAt}, '+00:00', '-03:00')) = DATE(CONVERT_TZ(NOW(), '+00:00', '-03:00'))`
+        ))
         .orderBy(desc(checkIns.createdAt));
     }),
 
@@ -809,6 +825,7 @@ export const appRouter = router({
             eq(checkIns.central, regulacaoData.central)
           )
         )
+        .where(sql`DATE(CONVERT_TZ(${checkIns.createdAt}, '+00:00', '-03:00')) = DATE(CONVERT_TZ(NOW(), '+00:00', '-03:00'))`)
         .orderBy(desc(checkIns.createdAt));
     }),
 
@@ -1244,9 +1261,19 @@ export const appRouter = router({
         central: z.string().optional(),
         especialidade: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const db = await getDb();
         if (!db) throw new Error("Banco de dados não disponível");
+
+        // Reguladores só podem adicionar favoritas para si mesmos
+        const userEmail = ctx.user?.email?.toLowerCase() ?? '';
+        const meReg = await db.select({ perfil: reguladores.perfil })
+          .from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+        const meuPerfil = (meReg[0]?.perfil ?? '').toLowerCase();
+        const isAdmin = meuPerfil.includes('administrador') || meuPerfil.includes('monitoramento');
+        if (!isAdmin && userEmail !== input.reguladorEmail.toLowerCase()) {
+          throw new Error('Reguladores só podem editar suas próprias agendas favoritas');
+        }
 
         // Verificar se já existe
         const existing = await db
@@ -1277,9 +1304,25 @@ export const appRouter = router({
      */
     removerFavorita: protectedProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const db = await getDb();
         if (!db) throw new Error("Banco de dados não disponível");
+
+        // Reguladores só podem remover suas próprias favoritas
+        const userEmail = ctx.user?.email?.toLowerCase() ?? '';
+        const meReg = await db.select({ perfil: reguladores.perfil })
+          .from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+        const meuPerfil = (meReg[0]?.perfil ?? '').toLowerCase();
+        const isAdmin = meuPerfil.includes('administrador') || meuPerfil.includes('monitoramento');
+        if (!isAdmin) {
+          // Verificar se a favorita pertence ao próprio usuário
+          const fav = await db.select({ reguladorEmail: agendasFavoritas.reguladorEmail })
+            .from(agendasFavoritas).where(eq(agendasFavoritas.id, input.id)).limit(1);
+          if (fav.length > 0 && fav[0].reguladorEmail.toLowerCase() !== userEmail) {
+            throw new Error('Reguladores só podem remover suas próprias agendas favoritas');
+          }
+        }
+
         await db.delete(agendasFavoritas).where(eq(agendasFavoritas.id, input.id));
         return { success: true };
       }),
