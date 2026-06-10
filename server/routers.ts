@@ -752,8 +752,8 @@ export const appRouter = router({
           regulacaoData,
           and(
             eq(checkIns.agendaNome, regulacaoData.agenda),
-            eq(checkIns.municipio, regulacaoData.municipio),
-            eq(checkIns.central, regulacaoData.central)
+            sql`${checkIns.municipio} <=> ${regulacaoData.municipio}`,
+            sql`${checkIns.central} <=> ${regulacaoData.central}`
           )
         )
         .where(and(
@@ -821,8 +821,8 @@ export const appRouter = router({
           regulacaoData,
           and(
             eq(checkIns.agendaNome, regulacaoData.agenda),
-            eq(checkIns.municipio, regulacaoData.municipio),
-            eq(checkIns.central, regulacaoData.central)
+            sql`${checkIns.municipio} <=> ${regulacaoData.municipio}`,
+            sql`${checkIns.central} <=> ${regulacaoData.central}`
           )
         )
         .where(sql`DATE(CONVERT_TZ(${checkIns.createdAt}, '+00:00', '-03:00')) = DATE(CONVERT_TZ(NOW(), '+00:00', '-03:00'))`)
