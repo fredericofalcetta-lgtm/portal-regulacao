@@ -166,6 +166,25 @@ export const appRouter = router({
       return { rows, concluidasIds };
     }),
 
+
+    // Retornar TODAS as agendas (sem filtro de perfil) — usado no dropdown de favoritas
+    // para que reguladores possam escolher agendas de qualquer especialidade.
+    getAllAgendas: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const data = await db
+        .select({
+          id: regulacaoData.id,
+          agenda: regulacaoData.agenda,
+          municipio: regulacaoData.municipio,
+          central: regulacaoData.central,
+          especialidade: regulacaoData.especialidade,
+        })
+        .from(regulacaoData)
+        .orderBy(regulacaoData.agenda);
+      return data;
+    }),
+
     // Retornar cores únicas disponíveis na coluna corIndex (para filtro dinâmico)
     getCoresDisponiveis: protectedProcedure.query(async () => {
       const db = await getDb();
