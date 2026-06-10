@@ -410,6 +410,7 @@ function FavoritaDropdown({ todasAgendas, favoritas, reguladorEmail, onAdicionad
 interface ReguladorLinhaProps {
   reg: ReguladorRow;
   todasAgendas: { label: string; agendaId: number; agendaNome: string; municipio: string; central: string; especialidade: string }[];
+  todasAgendasPerfil: { agendaNome: string; label: string }[];
   todasEspecialidades: string[];
   onSaved: () => void;
   onExcluir: (id: number, nome: string) => void;
@@ -428,7 +429,7 @@ function parsePerfis(perfil: string | null): string[] {
   return perfil.split(/[,;]/).map(p => p.trim().toLowerCase()).filter(Boolean);
 }
 
-function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved, onExcluir, somenteFavoritas = false }: ReguladorLinhaProps) {
+function ReguladorLinha({ reg, todasAgendas, todasAgendasPerfil, todasEspecialidades, onSaved, onExcluir, somenteFavoritas = false }: ReguladorLinhaProps) {
   const [expanded, setExpanded] = useState(false);
   const [editando, setEditando] = useState(false);
   const [nomeEdit, setNomeEdit] = useState(reg.nome ?? '');
@@ -664,7 +665,7 @@ function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved, onExc
           {/* Agendas Filtro — dropdown multi-select */}
           {!somenteFavoritas && (
             <AgendaFiltroDropdown
-              todasAgendas={todasAgendas}
+              todasAgendas={todasAgendasPerfil}
               selected={agendasFiltro}
               onChange={setAgendasFiltro}
               disabled={!editando}
@@ -860,15 +861,28 @@ export default function Reguladores() {
     enabled: temAcesso,
   });
 
-  // Montar lista de agendas no formato "Agenda — Município — Central"
+  // Todas as agendas sem filtro de perfil — para o dropdown de favoritas
+  const { data: todasAgendasRaw = [] } = trpc.sheets.getAllAgendas.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+    enabled: temAcesso,
+  });
+
   const todasAgendas = useMemo(() => {
+    return todasAgendasRaw.map(row => ({
+      agendaId: row.id,
+      agendaNome: row.agenda ?? '',
+      municipio: row.municipio ?? '',
+      central: row.central ?? '',
+      especialidade: row.especialidade ?? '',
+      label: [row.agenda, row.municipio, row.central].filter(Boolean).join(' — '),
+    }));
+  }, [todasAgendasRaw]);
+
+  // Agendas filtradas pelo perfil — para AgendaFiltroDropdown (especialidades/agendas filtro)
+  const todasAgendasPerfil = useMemo(() => {
     if (!sheetsData?.rows) return [];
     return sheetsData.rows.map(row => ({
-      agendaId: row[17] as number,
       agendaNome: row[0] as string,
-      municipio: row[1] as string,
-      central: row[11] as string,
-      especialidade: row[12] as string,
       label: [row[0], row[1], row[11]].filter(Boolean).join(' — '),
     }));
   }, [sheetsData]);
@@ -997,6 +1011,7 @@ export default function Reguladores() {
               key={reg.id}
               reg={reg}
               todasAgendas={todasAgendas}
+              todasAgendasPerfil={todasAgendasPerfil}
               todasEspecialidades={todasEspecialidades}
               onSaved={() => refetch()}
               onExcluir={handleExcluir}
