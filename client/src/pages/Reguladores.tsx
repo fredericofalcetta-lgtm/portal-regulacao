@@ -413,6 +413,7 @@ interface ReguladorLinhaProps {
   todasEspecialidades: string[];
   onSaved: () => void;
   onExcluir: (id: number, nome: string) => void;
+  somenteFavoritas?: boolean;
 }
 
 const PERFIS = [
@@ -427,7 +428,7 @@ function parsePerfis(perfil: string | null): string[] {
   return perfil.split(/[,;]/).map(p => p.trim().toLowerCase()).filter(Boolean);
 }
 
-function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved, onExcluir }: ReguladorLinhaProps) {
+function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved, onExcluir, somenteFavoritas = false }: ReguladorLinhaProps) {
   const [expanded, setExpanded] = useState(false);
   const [editando, setEditando] = useState(false);
   const [nomeEdit, setNomeEdit] = useState(reg.nome ?? '');
@@ -645,22 +646,26 @@ function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved, onExc
           </div>
 
           {/* Especialidades — dropdown multi-select */}
-          <MultiSelectDropdown
-            label="Especialidades"
-            options={todasEspecialidades}
-            selected={especialidades}
-            onChange={setEspecialidades}
-            placeholder="Selecionar especialidades..."
-            disabled={!editando}
-          />
+          {!somenteFavoritas && (
+            <MultiSelectDropdown
+              label="Especialidades"
+              options={todasEspecialidades}
+              selected={especialidades}
+              onChange={setEspecialidades}
+              placeholder="Selecionar especialidades..."
+              disabled={!editando}
+            />
+          )}
 
           {/* Agendas Filtro — dropdown multi-select */}
-          <AgendaFiltroDropdown
-            todasAgendas={todasAgendas}
-            selected={agendasFiltro}
-            onChange={setAgendasFiltro}
-            disabled={!editando}
-          />
+          {!somenteFavoritas && (
+            <AgendaFiltroDropdown
+              todasAgendas={todasAgendas}
+              selected={agendasFiltro}
+              onChange={setAgendasFiltro}
+              disabled={!editando}
+            />
+          )}
 
           {/* Agendas Favoritas — sempre editável */}
           <FavoritaDropdown
@@ -671,16 +676,18 @@ function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved, onExc
             onRemovida={onSaved}
           />
 
-          {/* Zona de perigo */}
-          <div className="pt-3 border-t border-border">
-            <button
-              onClick={() => onExcluir(reg.id, reg.nome)}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-            >
-              <Trash2 size={12} />
-              Excluir regulador
-            </button>
-          </div>
+          {/* Zona de perigo — apenas para admins */}
+          {!somenteFavoritas && (
+            <div className="pt-3 border-t border-border">
+              <button
+                onClick={() => onExcluir(reg.id, reg.nome)}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              >
+                <Trash2 size={12} />
+                Excluir regulador
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -828,11 +835,10 @@ export default function Reguladores() {
   const [busca, setBusca] = useState('');
   const [modalAberto, setModalAberto] = useState(false);
 
-  // Verificar acesso: apenas admin ou monitoramento
   const perfilNorm = (perfilAtivo ?? regulador?.perfil ?? '').toLowerCase();
-  const temAcesso =
-    perfilNorm.includes('administrador') ||
-    perfilNorm.includes('monitoramento');
+  const isAdmin = perfilNorm.includes('administrador') || perfilNorm.includes('monitoramento');
+  const isRegulador = perfilNorm.includes('regulador') && !isAdmin;
+  const temAcesso = isAdmin || isRegulador;
 
   const { data: reguladoresList, isLoading, refetch } = trpc.reguladorConfig.listarTodos.useQuery(undefined, {
     enabled: temAcesso,
@@ -889,15 +895,19 @@ export default function Reguladores() {
   // Filtrar reguladores pela busca
   const reguladoresFiltrados = useMemo(() => {
     if (!reguladoresList) return [];
-    if (!busca.trim()) return reguladoresList;
+    // Reguladores veem apenas a própria linha
+    const lista = isRegulador
+      ? reguladoresList.filter(r => r.email.toLowerCase() === (regulador?.email ?? '').toLowerCase())
+      : reguladoresList;
+    if (!busca.trim()) return lista;
     const termo = busca.toLowerCase();
-    return reguladoresList.filter(r =>
+    return lista.filter(r =>
       r.nome.toLowerCase().includes(termo) ||
       r.email.toLowerCase().includes(termo) ||
       (r.perfil ?? '').toLowerCase().includes(termo) ||
       (r.especialidades ?? '').toLowerCase().includes(termo)
     );
-  }, [reguladoresList, busca]);
+  }, [reguladoresList, busca, isRegulador, regulador]);
 
   if (!temAcesso) {
     return (
@@ -930,20 +940,24 @@ export default function Reguladores() {
         <div>
           <h1 className="text-xl font-bold text-foreground">Reguladores</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Gerencie as especialidades, agendas filtro e agendas favoritas de cada regulador.
+            {isRegulador
+              ? 'Gerencie suas agendas favoritas.'
+              : 'Gerencie as especialidades, agendas filtro e agendas favoritas de cada regulador.'}
           </p>
         </div>
-        <button
-          onClick={() => setModalAberto(true)}
-          className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          <Plus size={15} />
-          Novo Regulador
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setModalAberto(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            <Plus size={15} />
+            Novo Regulador
+          </button>
+        )}
       </div>
 
-      {/* Barra de busca */}
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background focus-within:ring-2 focus-within:ring-primary/30 transition-all">
+      {/* Barra de busca — apenas para admins */}
+      {isAdmin && (
         <Search size={16} className="text-muted-foreground shrink-0" />
         <input
           type="text"
@@ -958,6 +972,7 @@ export default function Reguladores() {
           </button>
         )}
       </div>
+      )}
 
       {/* Lista de reguladores */}
       {isLoading ? (
@@ -980,6 +995,7 @@ export default function Reguladores() {
               todasEspecialidades={todasEspecialidades}
               onSaved={() => refetch()}
               onExcluir={handleExcluir}
+              somenteFavoritas={isRegulador}
             />
           ))}
         </div>
