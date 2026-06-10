@@ -958,20 +958,21 @@ export default function Reguladores() {
 
       {/* Barra de busca — apenas para admins */}
       {isAdmin && (
-        <Search size={16} className="text-muted-foreground shrink-0" />
-        <input
-          type="text"
-          value={busca}
-          onChange={e => setBusca(e.target.value)}
-          placeholder="Buscar por nome, e-mail ou especialidade..."
-          className="flex-1 text-sm bg-transparent text-foreground focus:outline-none placeholder:text-muted-foreground"
-        />
-        {busca && (
-          <button onClick={() => setBusca('')} className="text-muted-foreground hover:text-foreground transition-colors">
-            <X size={14} />
-          </button>
-        )}
-      </div>
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background focus-within:ring-2 focus-within:ring-primary/30 transition-all">
+          <Search size={16} className="text-muted-foreground shrink-0" />
+          <input
+            type="text"
+            value={busca}
+            onChange={e => setBusca(e.target.value)}
+            placeholder="Buscar por nome, e-mail ou especialidade..."
+            className="flex-1 text-sm bg-transparent text-foreground focus:outline-none placeholder:text-muted-foreground"
+          />
+          {busca && (
+            <button onClick={() => setBusca('')} className="text-muted-foreground hover:text-foreground transition-colors">
+              <X size={14} />
+            </button>
+          )}
+        </div>
       )}
 
       {/* Lista de reguladores */}
