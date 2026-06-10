@@ -539,40 +539,42 @@ function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved, onExc
       {expanded && (
         <div className="border-t border-border px-4 py-4 space-y-5 bg-muted/20 rounded-b-lg">
 
-          {/* Cabeçalho do painel */}
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-foreground">Configuração do regulador</h3>
-            {!editando ? (
-              <button
-                onClick={() => setEditando(true)}
-                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                <Pencil size={12} />
-                Editar
-              </button>
-            ) : (
-              <div className="flex items-center gap-2">
+          {/* Cabeçalho do painel — botão Editar só aparece para admins/monitores */}
+          {!somenteFavoritas && (
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground">Configuração do regulador</h3>
+              {!editando ? (
                 <button
-                  onClick={handleCancelar}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors"
+                  onClick={() => setEditando(true)}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
-                  <X size={12} />
-                  Cancelar
+                  <Pencil size={12} />
+                  Editar
                 </button>
-                <button
-                  onClick={handleSalvar}
-                  disabled={atualizarConfig.isPending}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
-                >
-                  <Check size={12} />
-                  {atualizarConfig.isPending ? 'Salvando...' : 'Salvar'}
-                </button>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleCancelar}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    <X size={12} />
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSalvar}
+                    disabled={atualizarConfig.isPending}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    <Check size={12} />
+                    {atualizarConfig.isPending ? 'Salvando...' : 'Salvar'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Dados básicos — nome, email, vínculo */}
-          {editando && (
+          {/* Dados básicos (nome, e-mail, vínculo) e Perfil — apenas para admins/monitores */}
+          {!somenteFavoritas && editando && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-lg bg-muted/40 border border-border">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Nome</label>
@@ -607,43 +609,45 @@ function ReguladorLinha({ reg, todasAgendas, todasEspecialidades, onSaved, onExc
             </div>
           )}
 
-          {/* Perfil — seletor de múltiplos perfis */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Perfil</label>
-            {editando ? (
-              <div className="flex gap-3 flex-wrap">
-                {PERFIS.map(p => {
-                  const checked = perfisSelecionados.includes(p.value);
-                  return (
-                    <button
-                      key={p.value}
-                      type="button"
-                      onClick={e => {
-                        e.stopPropagation();
-                        setPerfisSelecionados(prev =>
+          {/* Perfil — apenas para admins/monitores */}
+          {!somenteFavoritas && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Perfil</label>
+              {editando ? (
+                <div className="flex gap-3 flex-wrap">
+                  {PERFIS.map(p => {
+                    const checked = perfisSelecionados.includes(p.value);
+                    return (
+                      <button
+                        key={p.value}
+                        type="button"
+                        onClick={e => {
+                          e.stopPropagation();
+                          setPerfisSelecionados(prev =>
+                            checked
+                              ? prev.filter(v => v !== p.value)
+                              : [...prev, p.value]
+                          );
+                        }}
+                        className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border cursor-pointer transition-colors select-none ${
                           checked
-                            ? prev.filter(v => v !== p.value)
-                            : [...prev, p.value]
-                        );
-                      }}
-                      className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border cursor-pointer transition-colors select-none ${
-                        checked
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'border-border text-muted-foreground hover:bg-muted'
-                      }`}
-                    >
-                      {checked && <Check size={10} />}
-                      {p.label}
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-sm text-foreground">
-                {perfilLabel(reg.perfil)}
-              </div>
-            )}
-          </div>
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'border-border text-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        {checked && <Check size={10} />}
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-sm text-foreground">
+                  {perfilLabel(reg.perfil)}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Especialidades — dropdown multi-select */}
           {!somenteFavoritas && (
