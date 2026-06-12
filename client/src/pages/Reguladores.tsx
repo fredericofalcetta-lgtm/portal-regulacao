@@ -317,7 +317,7 @@ function FavoritaDropdown({ todasAgendas, favoritas, reguladorEmail, onAdicionad
   const filtradas = useMemo(() => {
     if (!busca.trim()) return [];
     const t = busca.toLowerCase();
-    return todasAgendas.filter(a => !favIds.has(a.agendaId) && a.label.toLowerCase().includes(t)).slice(0, 15);
+    return todasAgendas.filter(a => !favIds.has(a.agendaId) && a.label.toLowerCase().includes(t));
   }, [busca, todasAgendas, favIds]);
 
   return (
