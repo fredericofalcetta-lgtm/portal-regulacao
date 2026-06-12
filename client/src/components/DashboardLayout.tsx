@@ -121,6 +121,35 @@ function DashboardLayoutContent({
     }
   }, [isCollapsed]);
 
+  // Registrar logout quando o usuário fecha a aba ou o navegador.
+  // navigator.sendBeacon é a única API confiável nesse contexto —
+  // chamadas fetch/XHR normais são canceladas antes de completar.
+  // Usamos dois eventos complementares para maior cobertura:
+  //   • visibilitychange (hidden): disparado em mobile e na maioria dos desktops
+  //     quando a aba é ocultada/fechada; mais confiável que beforeunload.
+  //   • beforeunload: fallback para fechar aba/janela no desktop.
+  useEffect(() => {
+    if (!user) return;
+
+    const sendBeaconLogout = () => {
+      navigator.sendBeacon("/api/auth/beacon-logout");
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        sendBeaconLogout();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", sendBeaconLogout);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", sendBeaconLogout);
+    };
+  }, [user]);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing) return;
