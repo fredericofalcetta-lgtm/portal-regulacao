@@ -60,6 +60,26 @@ async function startServer() {
     }
   });
 
+  // Endpoint para registrar logout via sendBeacon (fechamento de aba/navegador).
+  // navigator.sendBeacon só suporta POST com body text/plain ou form-encoded;
+  // não passa pelo middleware tRPC, por isso é um endpoint REST dedicado.
+  app.post("/api/auth/beacon-logout", async (req, res) => {
+    try {
+      const user = await sdk.authenticateRequest(req);
+      if (!user?.email) { res.status(204).end(); return; }
+      const email = user.email.toLowerCase();
+      const { getDb } = await import("../db");
+      const { sql } = await import("drizzle-orm");
+      const db = await getDb();
+      if (db) {
+        await db.execute(
+          sql`UPDATE login_log SET logout_at = NOW() WHERE regulador_email = ${email} AND logout_at IS NULL ORDER BY login_at DESC LIMIT 1`
+        );
+      }
+    } catch { /* beacon não processa resposta */ }
+    res.status(204).end();
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",
