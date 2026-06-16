@@ -149,7 +149,7 @@ function AgendaRow({
       <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{aguardando ?? '—'}</td>
       {/* Autorizadas */}
       <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{autorizadas ?? '—'}</td>
-      {/* Aut/Cotas */}
+      {/* Fila/Cotas */}
       <td className="px-2 py-1.5 text-center">
         <span
           title={flagAutCotas || undefined}
@@ -253,7 +253,7 @@ function AgendaRow({
 }
 
 // ─── Cabeçalho da tabela ─────────────────────────────────────────────────────
-// Colunas fixas: Agenda | Central | Cotas | Aut/Cotas | Saldo | Aguardando | >7d | >28d | >90d | Index
+// Colunas fixas: Agenda | Central | Cotas | Fila/Cotas | Saldo | Aguardando | >7d | >28d | >90d | Index
 // Colunas extras (contextuais): Encaminhado por? | Data | Check-in? | Ação? | Status?
 
 function TableHeader({
@@ -280,7 +280,7 @@ function TableHeader({
         <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Saldo</th>
         <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aguardando</th>
         <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Autorizadas</th>
-        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aut/Cotas</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Fila/Cotas</th>
         <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Index</th>
         <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;7d</th>
         <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;28d</th>
@@ -454,7 +454,7 @@ export default function MinhasAgendas() {
 
   // Número de colunas fixas (Agenda…Index = 10) + Data = 11
   // Usado para colSpan no rodapé e nas linhas de detalhe
-  const FIXED_COLS = 13; // Agenda, Central, Cotas, Saldo, Aguardando, Autorizadas, Aut/Cotas, Index, >7d, >28d, >90d, Data
+  const FIXED_COLS = 13; // Agenda, Central, Cotas, Saldo, Aguardando, Autorizadas, Fila/Cotas, Index, >7d, >28d, >90d, Data
 
   // Agrupar encaminhadas por nome+central para check-in em grupo (item 8)
   const gruposEncaminhadas = React.useMemo(() => {
@@ -824,7 +824,7 @@ export default function MinhasAgendas() {
                   ))}
                 </tbody>
                 {/* Rodapé com soma total de Aguardando */}
-                {/* Colunas: Agenda, Central, Cotas, Aut/Cotas, Saldo, Aguardando, >7d, >28d, >90d, Index, Data, Status = 12 */}
+                {/* Colunas: Agenda, Central, Cotas, Fila/Cotas, Saldo, Aguardando, >7d, >28d, >90d, Index, Data, Status = 12 */}
                 <tfoot className="bg-emerald-50 dark:bg-emerald-950/20 border-t-2 border-emerald-200 dark:border-emerald-800">
                   <tr>
                     <td colSpan={5} className="px-4 py-3 text-right text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
