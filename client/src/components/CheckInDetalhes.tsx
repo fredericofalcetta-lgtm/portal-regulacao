@@ -172,7 +172,7 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                             { label: 'Saldo', col: 'saldo' as SortCol },
                             { label: 'Aguardando', col: 'aguardando' as SortCol },
                             { label: 'Autorizadas', col: 'autorizadas' as SortCol },
-                            { label: 'Aut/Cotas', col: 'autCotas' as SortCol },
+                            { label: 'Fila/Cotas', col: 'autCotas' as SortCol },
                             { label: 'Índice', col: 'indexRegula' as SortCol },
                           ]).map(({ label, col }) => (
                             <th
