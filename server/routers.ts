@@ -158,8 +158,8 @@ export const appRouter = router({
         row.especialidade ?? "",   // 12
         row.flagIndex ?? "",       // 13: flag/tooltip do IndexRegula
         row.corIndex ?? "",        // 14: cor para colorir a linha
-        row.flagAutCotas ?? "",    // 15: flag/tooltip do Aut/Cotas
-        row.corAutCotas ?? "",     // 16: cor para colorir o valor Aut/Cotas
+        row.flagAutCotas ?? "",    // 15: flag/tooltip do Fila/Cotas
+        row.corAutCotas ?? "",     // 16: cor para colorir o valor Fila/Cotas
         row.id,                    // 17: id para encaminhamentos e check-ins
       ]);
 
