@@ -209,7 +209,7 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
     'Saldo',
     'Aguardando',
     'Autorizadas',
-    'Aut/Cotas',
+    'Fila/Cotas',
     'IndexRegula',
     'Central',
     'Especialidade',
