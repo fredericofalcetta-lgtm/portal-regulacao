@@ -894,12 +894,17 @@ export const appRouter = router({
         const usuarioEmail = ctx.user?.email ?? "";
         const usuarioNome = ctx.user?.name ?? "";
 
-        // Verificar se já existe check-in desta agenda para este usuário
+        // Verificar se já existe check-in desta agenda para este usuário.
+        // Usamos agendaNome+municipio+central (chaves estáveis) em vez de agendaId,
+        // pois o agendaId salvo no check-in pode estar desatualizado após uma sync
+        // DELETE+INSERT que recria os autoincrement IDs da regulacao_data.
         const existing = await db
           .select()
           .from(checkIns)
           .where(and(
-            eq(checkIns.agendaId, input.agendaId),
+            eq(checkIns.agendaNome, input.agendaNome),
+            sql`${checkIns.municipio} <=> ${input.municipio ?? null}`,
+            sql`${checkIns.central} <=> ${input.central ?? null}`,
             eq(checkIns.usuarioEmail, usuarioEmail)
           ))
           .limit(1);
@@ -909,20 +914,27 @@ export const appRouter = router({
           await db
             .delete(checkIns)
             .where(and(
-              eq(checkIns.agendaId, input.agendaId),
+              eq(checkIns.agendaNome, input.agendaNome),
+              sql`${checkIns.municipio} <=> ${input.municipio ?? null}`,
+              sql`${checkIns.central} <=> ${input.central ?? null}`,
               eq(checkIns.usuarioEmail, usuarioEmail)
             ));
           return { action: "checkout" as const, bloqueado: false, reguladores: [] };
         }
 
         // Verificar quantos check-ins existem para esta agenda (de outros usuários)
+        // Também por chaves estáveis para consistência pós-sync.
         const checkInsAgenda = await db
           .select({
             usuarioNome: checkIns.usuarioNome,
             usuarioEmail: checkIns.usuarioEmail,
           })
           .from(checkIns)
-          .where(eq(checkIns.agendaId, input.agendaId));
+          .where(and(
+            eq(checkIns.agendaNome, input.agendaNome),
+            sql`${checkIns.municipio} <=> ${input.municipio ?? null}`,
+            sql`${checkIns.central} <=> ${input.central ?? null}`
+          ));
 
         const LIMITE_CHECKINS = 2;
         if (checkInsAgenda.length >= LIMITE_CHECKINS) {
@@ -1157,19 +1169,26 @@ export const appRouter = router({
         const usuarioEmail = ctx.user?.email ?? "";
         const usuarioNome = ctx.user?.name ?? "";
 
-        // 1. Fazer check-out (remover check-in ativo)
+        // 1. Fazer check-out (remover check-in ativo).
+        // Deletamos por agendaNome+municipio+central (chaves estáveis) em vez de agendaId,
+        // pois o ID salvo no check-in pode estar desatualizado após uma sync.
         await db
           .delete(checkIns)
           .where(and(
-            eq(checkIns.agendaId, input.agendaId),
+            eq(checkIns.agendaNome, input.agendaNome),
+            sql`${checkIns.municipio} <=> ${input.municipio ?? null}`,
+            sql`${checkIns.central} <=> ${input.central ?? null}`,
             eq(checkIns.usuarioEmail, usuarioEmail)
           ));
 
-        // 2. Remover o encaminhamento associado (sai de "Encaminhadas para mim")
+        // 2. Remover o encaminhamento associado (sai de "Encaminhadas para mim").
+        // Idem: por chaves estáveis.
         await db
           .delete(encaminhamentos)
           .where(and(
-            eq(encaminhamentos.agendaId, input.agendaId),
+            eq(encaminhamentos.agendaNome, input.agendaNome),
+            sql`${encaminhamentos.municipio} <=> ${input.municipio ?? null}`,
+            sql`${encaminhamentos.central} <=> ${input.central ?? null}`,
             eq(encaminhamentos.reguladorEmail, usuarioEmail)
           ));
 
