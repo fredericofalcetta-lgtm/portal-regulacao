@@ -354,6 +354,20 @@ export async function syncAndSeedIfEmpty(forceSync = false): Promise<void> {
     await syncDicionarioToDb();
     await syncSemCotasToDb();
   } catch (err) {
-    console.error("[Sync] Erro durante sincronização:", err);
+    // Extrai apenas a informação útil do erro, evitando despejar o objeto
+    // completo do Axios (que inclui sockets, headers TLS, etc. e poluía os logs).
+    if (axios.isAxiosError(err)) {
+      console.error(
+        "[Sync] Erro durante sincronização (HTTP):",
+        `status=${err.response?.status ?? "sem resposta"}`,
+        `url=${err.config?.url ?? "desconhecida"}`,
+        `mensagem=${err.message}`,
+        err.response?.data ? `dados=${JSON.stringify(err.response.data)}` : ""
+      );
+    } else if (err instanceof Error) {
+      console.error("[Sync] Erro durante sincronização:", err.message);
+    } else {
+      console.error("[Sync] Erro durante sincronização:", String(err));
+    }
   }
 }
