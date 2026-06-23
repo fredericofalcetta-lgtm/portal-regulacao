@@ -42,8 +42,10 @@ export const appRouter = router({
           }
         } catch { /* ignora erros no log */ }
       }
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      // clearCookie já expira o cookie imediatamente — passar maxAge é depreciado
+      // a partir do Express 5 (seria ignorado). getSessionCookieOptions já não inclui
+      // maxAge; passamos as opções diretamente para identificar o cookie correto.
+      ctx.res.clearCookie(COOKIE_NAME, getSessionCookieOptions(ctx.req));
       return { success: true } as const;
     }),
 
