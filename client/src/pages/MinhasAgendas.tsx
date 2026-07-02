@@ -31,8 +31,8 @@ interface AgendaRowProps {
   autCotas?: string | null;
   saldo?: number | null;
   aguardando?: number | null;
+  aguardando7d?: number | null;
   aguardando28d?: number | null;
-  aguardando60d?: number | null;
   aguardando90d?: number | null;
   indexRegula?: number | null;
   flagIndex?: string | null;
@@ -69,8 +69,8 @@ function AgendaRow({
   autCotas,
   saldo,
   aguardando,
+  aguardando7d,
   aguardando28d,
-  aguardando60d,
   aguardando90d,
   indexRegula,
   flagIndex,
@@ -179,9 +179,9 @@ function AgendaRow({
         </span>
       </td>
       {/* >7d */}
-      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{aguardando28d ?? '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{aguardando7d ?? '—'}</td>
       {/* >28d */}
-      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{aguardando60d ?? '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{aguardando28d ?? '—'}</td>
       {/* >90d */}
       <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{aguardando90d ?? '—'}</td>
 
@@ -543,8 +543,8 @@ export default function MinhasAgendas() {
                         autCotas={(ci as any).autCotas}
                         saldo={ci.saldo}
                         aguardando={ci.aguardando}
+                        aguardando7d={ci.aguardando7d}
                         aguardando28d={ci.aguardando28d}
-                        aguardando60d={ci.aguardando60d}
                         aguardando90d={ci.aguardando90d}
                         indexRegula={ci.indexRegula}
                         flagIndex={(ci as any).flagIndex}
@@ -694,8 +694,8 @@ export default function MinhasAgendas() {
                             cotas={enc.cotas}
                             saldo={enc.saldo}
                             aguardando={enc.aguardando}
+                            aguardando7d={enc.aguardando7d}
                             aguardando28d={enc.aguardando28d}
-                            aguardando60d={enc.aguardando60d}
                             aguardando90d={enc.aguardando90d}
                             autorizadas={enc.autorizadas}
                             autCotas={enc.autCotas}
@@ -803,8 +803,8 @@ export default function MinhasAgendas() {
                       cotas={c.cotas}
                       saldo={c.saldo}
                       aguardando={c.aguardando}
+                      aguardando7d={(c as any).aguardando7d}
                       aguardando28d={(c as any).aguardando28d}
-                      aguardando60d={(c as any).aguardando60d}
                       aguardando90d={(c as any).aguardando90d}
                       indexRegula={c.indexRegula}
                       flagIndex={(c as any).flagIndex}
