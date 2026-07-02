@@ -287,6 +287,51 @@ export const appRouter = router({
         .limit(10);
     }),
 
+    // Diagnóstico de conectividade com o PostgreSQL externo (apenas administradores)
+    testePgConexao: protectedProcedure.query(async ({ ctx }) => {
+      const { Client } = await import("pg");
+      const net = await import("net");
+      const userEmail = ctx.user?.email?.toLowerCase() ?? "";
+      const db = await getDb();
+      if (!db) throw new Error("Banco não disponível");
+      const reg = await db.select({ perfil: reguladores.perfil }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+      const perfil = (reg[0]?.perfil ?? "").toLowerCase();
+      if (!perfil.includes("administrador")) throw new Error("Acesso restrito a administradores");
+
+      const host = process.env.PG_HOST ?? "200.169.24.32";
+      const port = parseInt(process.env.PG_PORT ?? "5000", 10);
+
+      // Teste 1: TCP — consegue abrir socket na porta?
+      const tcpOk = await new Promise<boolean>((resolve) => {
+        const socket = net.createConnection({ host, port });
+        socket.setTimeout(5000);
+        socket.on("connect", () => { socket.destroy(); resolve(true); });
+        socket.on("error", () => resolve(false));
+        socket.on("timeout", () => { socket.destroy(); resolve(false); });
+      });
+
+      if (!tcpOk) {
+        return { tcpOk: false, pgOk: false, mensagem: `Não foi possível abrir conexão TCP com ${host}:${port}. O firewall do servidor pode estar bloqueando o Railway.` };
+      }
+
+      // Teste 2: autenticação PostgreSQL
+      const client = new Client({
+        host, port,
+        database: process.env.PG_DATABASE ?? "sesdw",
+        user: process.env.PG_USER ?? "telessaude_read",
+        password: process.env.PG_PASSWORD ?? "tQ#f7qBZ$9pu",
+        ssl: false,
+        connectionTimeoutMillis: 8000,
+      });
+      try {
+        await client.connect();
+        await client.end();
+        return { tcpOk: true, pgOk: true, mensagem: "Conexão com PostgreSQL bem-sucedida!" };
+      } catch (e) {
+        return { tcpOk: true, pgOk: false, mensagem: `TCP OK mas autenticação falhou: ${e instanceof Error ? e.message : String(e)}` };
+      }
+    }),
+
     // Sincronizar prévia PostgreSQL (apenas administradores)
     syncPg: protectedProcedure.mutation(async ({ ctx }) => {
       const userEmail = ctx.user?.email?.toLowerCase() ?? "";
