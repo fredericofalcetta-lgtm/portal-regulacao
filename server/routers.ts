@@ -5,6 +5,7 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import {
   regulacaoData,
+  regulacaoDataPg,
   syncLog,
   prioridades,
   agendaProtocolos,
@@ -23,6 +24,7 @@ import {
 } from "../drizzle/schema";
 import { asc, desc, eq, and, inArray, sql } from "drizzle-orm";
 import { syncSheetsToDb, syncPrioridadesToDb, syncDicionarioToDb, syncSemCotasToDb } from "./syncSheets";
+import { syncFromPostgres } from "./syncPostgres";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -141,7 +143,7 @@ export const appRouter = router({
       // Layout de índices (novo cabeçalho a partir de 2026-04):
       // [0] agenda, [1] municipio, [2] cotas, [3] saldo, [4] aguardando,
       // [5] autorizadas, [6] autCotas, [7] indexRegula,
-      // [8] aguardando28d, [9] aguardando60d, [10] aguardando90d,
+      // [8] aguardando7d, [9] aguardando28d, [10] aguardando90d,
       // [11] central, [12] especialidade,
       // [13] flagIndex, [14] corIndex, [15] flagAutCotas, [16] corAutCotas, [17] id
       const rows = data.map(row => [
@@ -153,8 +155,8 @@ export const appRouter = router({
         row.autorizadas ?? 0,      // 5
         row.autCotas ?? "",        // 6
         row.indexRegula ?? 0,      // 7
-        row.aguardando28d ?? 0,    // 8
-        row.aguardando60d ?? 0,    // 9
+        row.aguardando7d ?? 0,    // 8
+        row.aguardando28d ?? 0,    // 9
         row.aguardando90d ?? 0,    // 10
         row.central ?? "",         // 11
         row.especialidade ?? "",   // 12
@@ -283,6 +285,50 @@ export const appRouter = router({
         .from(syncLog)
         .orderBy(desc(syncLog.syncedAt))
         .limit(10);
+    }),
+
+    // Sincronizar prévia PostgreSQL (apenas administradores)
+    syncPg: protectedProcedure.mutation(async ({ ctx }) => {
+      const userEmail = ctx.user?.email?.toLowerCase() ?? "";
+      const db = await getDb();
+      if (!db) throw new Error("Banco não disponível");
+      const reg = await db.select({ perfil: reguladores.perfil }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+      const perfil = (reg[0]?.perfil ?? "").toLowerCase();
+      if (!perfil.includes("administrador")) throw new Error("Acesso restrito a administradores");
+      const count = await syncFromPostgres();
+      return { success: true, count };
+    }),
+
+    // Buscar dados da prévia PostgreSQL (apenas administradores)
+    getDataPg: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return { rows: [], concluidasIds: [] };
+      const userEmail = ctx.user?.email?.toLowerCase() ?? "";
+      const reg = await db.select({ perfil: reguladores.perfil }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+      const perfil = (reg[0]?.perfil ?? "").toLowerCase();
+      if (!perfil.includes("administrador")) return { rows: [], concluidasIds: [] };
+      const data = await db.select().from(regulacaoDataPg).orderBy(regulacaoDataPg.agenda);
+      const rows = data.map(row => [
+        row.agenda,        // 0  agenda
+        row.municipio,     // 1  municipio
+        row.cotas,         // 2  cotas
+        row.saldo,         // 3  saldo
+        row.aguardando,    // 4  aguardando
+        row.autorizadas,   // 5  autorizadas
+        row.autCotas,      // 6  aut_cotas / fila_cotas
+        row.indexRegula,   // 7  index_regula
+        row.aguardando7d,  // 8  > 7 dias
+        row.aguardando28d, // 9  > 28 dias
+        row.aguardando90d, // 10 > 90 dias
+        row.central,       // 11 central
+        row.especialidade, // 12 especialidade
+        row.flagIndex,     // 13 flag_index
+        row.corIndex,      // 14 cor_index
+        row.flagAutCotas,  // 15 flag_aut_cotas
+        row.corAutCotas,   // 16 cor_aut_cotas
+        row.id,            // 17 id
+      ]);
+      return { rows, concluidasIds: [] as number[] };
     }),
   }),
 
@@ -514,8 +560,8 @@ export const appRouter = router({
           cotas: regulacaoData.cotas,
           saldo: regulacaoData.saldo,
           aguardando: regulacaoData.aguardando,
+          aguardando7d: regulacaoData.aguardando7d,
           aguardando28d: regulacaoData.aguardando28d,
-          aguardando60d: regulacaoData.aguardando60d,
           aguardando90d: regulacaoData.aguardando90d,
           autorizadas: regulacaoData.autorizadas,
           autCotas: regulacaoData.autCotas,
@@ -550,8 +596,8 @@ export const appRouter = router({
           cotas: regulacaoData.cotas,
           saldo: regulacaoData.saldo,
           aguardando: regulacaoData.aguardando,
+          aguardando7d: regulacaoData.aguardando7d,
           aguardando28d: regulacaoData.aguardando28d,
-          aguardando60d: regulacaoData.aguardando60d,
           aguardando90d: regulacaoData.aguardando90d,
           autorizadas: regulacaoData.autorizadas,
           autCotas: regulacaoData.autCotas,
@@ -592,8 +638,8 @@ export const appRouter = router({
           cotas: f.cotas,
           saldo: f.saldo,
           aguardando: f.aguardando,
+          aguardando7d: f.aguardando7d,
           aguardando28d: f.aguardando28d,
-          aguardando60d: f.aguardando60d,
           aguardando90d: f.aguardando90d,
           autorizadas: f.autorizadas,
           autCotas: f.autCotas,
@@ -767,8 +813,8 @@ export const appRouter = router({
           autCotas: regulacaoData.autCotas,
           saldo: regulacaoData.saldo,
           aguardando: regulacaoData.aguardando,
+          aguardando7d: regulacaoData.aguardando7d,
           aguardando28d: regulacaoData.aguardando28d,
-          aguardando60d: regulacaoData.aguardando60d,
           aguardando90d: regulacaoData.aguardando90d,
           indexRegula: regulacaoData.indexRegula,
           flagIndex: regulacaoData.flagIndex,
@@ -851,8 +897,8 @@ export const appRouter = router({
           autCotas: regulacaoData.autCotas,
           saldo: regulacaoData.saldo,
           aguardando: regulacaoData.aguardando,
+          aguardando7d: regulacaoData.aguardando7d,
           aguardando28d: regulacaoData.aguardando28d,
-          aguardando60d: regulacaoData.aguardando60d,
           aguardando90d: regulacaoData.aguardando90d,
           indexRegula: regulacaoData.indexRegula,
           flagIndex: regulacaoData.flagIndex,
