@@ -18,6 +18,9 @@ export default function PreviaPostgres() {
   const isAdmin = perfilNorm.includes('administrador');
 
   const [syncMsg, setSyncMsg] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
+  const [diagMsg, setDiagMsg] = useState<string | null>(null);
+
+  const testePgMutation = trpc.sheets.testePgConexao.useQuery(undefined, { enabled: false });
 
   const { data: pgData, isLoading, refetch } = trpc.sheets.getDataPg.useQuery(undefined, {
     enabled: isAdmin,
@@ -62,6 +65,12 @@ export default function PreviaPostgres() {
         </div>
 
         <div className="flex items-center gap-3">
+          {diagMsg && (
+            <div className="text-xs px-3 py-1 rounded-full bg-muted text-muted-foreground">
+              {diagMsg}
+            </div>
+          )}
+
           {syncMsg && (
             <div className={`flex items-center gap-1.5 text-xs px-3 py-1 rounded-full ${
               syncMsg.tipo === 'ok'
@@ -76,7 +85,19 @@ export default function PreviaPostgres() {
           )}
 
           <button
-            onClick={() => { setSyncMsg(null); syncPgMutation.mutate(); }}
+            onClick={async () => {
+              setDiagMsg("Testando conexão...");
+              const res = await testePgMutation.refetch();
+              const d = res.data;
+              setDiagMsg(d ? `TCP: ${d.tcpOk ? '✓' : '✗'} | PG: ${d.pgOk ? '✓' : '✗'} — ${d.mensagem}` : 'Erro no diagnóstico');
+            }}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:bg-muted transition-colors"
+          >
+            Testar conexão
+          </button>
+
+          <button
+            onClick={() => { setSyncMsg(null); setDiagMsg(null); syncPgMutation.mutate(); }}
             disabled={syncPgMutation.isPending}
             className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
