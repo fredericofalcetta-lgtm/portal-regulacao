@@ -107,6 +107,14 @@ function Router() {
         )}
       </Route>
 
+      <Route path="/previa-pg">
+        {() => (
+          <AuthGuard>
+            <Home />
+          </AuthGuard>
+        )}
+      </Route>
+
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
