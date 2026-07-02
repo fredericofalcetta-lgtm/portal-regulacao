@@ -58,8 +58,8 @@ export default function MonitorCheckIns() {
       cotas?: number | null;
       saldo?: number | null;
       aguardando?: number | null;
+      aguardando7d?: number | null;
       aguardando28d?: number | null;
-      aguardando60d?: number | null;
       aguardando90d?: number | null;
       indexRegula?: number | null;
       cor?: string | null;
@@ -76,8 +76,8 @@ export default function MonitorCheckIns() {
           cotas: ci.cotas,
           saldo: ci.saldo,
           aguardando: ci.aguardando,
+          aguardando7d: ci.aguardando7d,
           aguardando28d: ci.aguardando28d,
-          aguardando60d: ci.aguardando60d,
           aguardando90d: ci.aguardando90d,
           indexRegula: ci.indexRegula,
           cor: (ci as any).cor,
@@ -210,8 +210,8 @@ export default function MonitorCheckIns() {
                     <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{agenda.cotas ?? '—'}</td>
                     <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{agenda.saldo ?? '—'}</td>
                     <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{agenda.aguardando ?? '—'}</td>
+                    <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{agenda.aguardando7d ?? '—'}</td>
                     <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{agenda.aguardando28d ?? '—'}</td>
-                    <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{agenda.aguardando60d ?? '—'}</td>
                     <td className="px-4 py-3 text-center text-sm font-medium text-foreground">{agenda.aguardando90d ?? '—'}</td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-block px-2 py-0.5 rounded text-sm ${getBadgeColor(agenda.indexRegula)}`}>
