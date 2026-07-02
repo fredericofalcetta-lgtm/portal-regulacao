@@ -32,8 +32,8 @@ export const regulacaoData = mysqlTable("regulacao_data", {
   autorizadas: int("autorizadas"),
   autCotas: varchar("aut_cotas", { length: 50 }),
   indexRegula: double("index_regula"),
+  aguardando7d: int("aguardando_7d"),
   aguardando28d: int("aguardando_28d"),
-  aguardando60d: int("aguardando_60d"),
   aguardando90d: int("aguardando_90d"),
   central: varchar("central", { length: 100 }),
   especialidade: varchar("especialidade", { length: 255 }),
@@ -46,6 +46,36 @@ export const regulacaoData = mysqlTable("regulacao_data", {
 
 export type RegulacaoData = typeof regulacaoData.$inferSelect;
 export type InsertRegulacaoData = typeof regulacaoData.$inferInsert;
+
+/**
+ * Tabela espelho para prévia da migração PostgreSQL.
+ * Mesma estrutura que regulacao_data, mas populada via syncFromPostgres().
+ * Visível apenas para administradores enquanto a migração está sendo validada.
+ */
+export const regulacaoDataPg = mysqlTable("regulacao_data_pg", {
+  id: int("id").autoincrement().primaryKey(),
+  agenda: varchar("agenda", { length: 255 }),
+  municipio: varchar("municipio", { length: 255 }),
+  cotas: int("cotas"),
+  saldo: int("saldo"),
+  aguardando: int("aguardando"),
+  autorizadas: int("autorizadas"),
+  autCotas: varchar("aut_cotas", { length: 50 }),
+  indexRegula: double("index_regula"),
+  aguardando7d: int("aguardando_7d"),
+  aguardando28d: int("aguardando_28d"),
+  aguardando90d: int("aguardando_90d"),
+  central: varchar("central", { length: 100 }),
+  especialidade: varchar("especialidade", { length: 255 }),
+  flagIndex: text("flag_index"),
+  corIndex: text("cor_index"),
+  flagAutCotas: text("flag_aut_cotas"),
+  corAutCotas: text("cor_aut_cotas"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type RegulacaoDataPg = typeof regulacaoDataPg.$inferSelect;
+export type InsertRegulacaoDataPg = typeof regulacaoDataPg.$inferInsert;
 
 /**
  * Tabela para registrar o histórico de sincronizações.
