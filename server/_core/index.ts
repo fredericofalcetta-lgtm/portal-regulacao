@@ -197,6 +197,78 @@ async function runPendingMigrations() {
       console.log('[Migration] agenda_observacoes OK!');
     } catch(e) { console.warn('[Migration] agenda_observacoes:', e); }
 
+    // Migration: ampliar cor_index e cor_aut_cotas de varchar(100) para text
+    // A planilha passou a usar textos longos nessas colunas (orientações de regulação)
+    try {
+      const colsRegulacao = await db.execute(
+        "SELECT COLUMN_NAME, COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'regulacao_data' AND TABLE_SCHEMA = DATABASE() AND COLUMN_NAME IN ('cor_index', 'cor_aut_cotas')"
+      ) as unknown as [{ COLUMN_NAME: string; COLUMN_TYPE: string }[], unknown];
+      const tipos = Object.fromEntries(colsRegulacao[0].map((r: { COLUMN_NAME: string; COLUMN_TYPE: string }) => [r.COLUMN_NAME, r.COLUMN_TYPE]));
+      if (tipos['cor_index'] && !tipos['cor_index'].toLowerCase().includes('text')) {
+        console.log('[Migration] Ampliando cor_index para text...');
+        await db.execute("ALTER TABLE `regulacao_data` MODIFY COLUMN `cor_index` text NULL");
+        console.log('[Migration] cor_index OK!');
+      }
+      if (tipos['cor_aut_cotas'] && !tipos['cor_aut_cotas'].toLowerCase().includes('text')) {
+        console.log('[Migration] Ampliando cor_aut_cotas para text...');
+        await db.execute("ALTER TABLE `regulacao_data` MODIFY COLUMN `cor_aut_cotas` text NULL");
+        console.log('[Migration] cor_aut_cotas OK!');
+      }
+    } catch(e) { console.warn('[Migration] Ampliação cor_index/cor_aut_cotas:', e); }
+
+    // Migration: renomear aguardando_28d→aguardando_7d e aguardando_60d→aguardando_28d
+    try {
+      const cols = await db.execute(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'regulacao_data' AND TABLE_SCHEMA = DATABASE() AND COLUMN_NAME IN ('aguardando_28d', 'aguardando_60d', 'aguardando_7d')"
+      ) as unknown as [{ COLUMN_NAME: string }[], unknown];
+      const colNames = cols[0].map((r: { COLUMN_NAME: string }) => r.COLUMN_NAME);
+      // Ordem importa: renomear 60d→28d antes de 28d→7d para evitar conflito
+      if (colNames.includes('aguardando_60d')) {
+        await db.execute("ALTER TABLE `regulacao_data` RENAME COLUMN `aguardando_60d` TO `aguardando_28d_new`");
+        console.log('[Migration] aguardando_60d → aguardando_28d_new OK');
+      }
+      if (colNames.includes('aguardando_28d') && !colNames.includes('aguardando_7d')) {
+        await db.execute("ALTER TABLE `regulacao_data` RENAME COLUMN `aguardando_28d` TO `aguardando_7d`");
+        console.log('[Migration] aguardando_28d → aguardando_7d OK');
+      }
+      // Finalizar renomeação intermediária
+      const cols2 = await db.execute(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'regulacao_data' AND TABLE_SCHEMA = DATABASE() AND COLUMN_NAME = 'aguardando_28d_new'"
+      ) as unknown as [{ COLUMN_NAME: string }[], unknown];
+      if (cols2[0].length > 0) {
+        await db.execute("ALTER TABLE `regulacao_data` RENAME COLUMN `aguardando_28d_new` TO `aguardando_28d`");
+        console.log('[Migration] aguardando_28d_new → aguardando_28d OK');
+      }
+    } catch(e) { console.warn('[Migration] Renomeação colunas aguardando:', e); }
+
+    // Migration: criar tabela regulacao_data_pg (prévia PostgreSQL) se não existir
+    try {
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS \`regulacao_data_pg\` (
+          \`id\`             int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          \`agenda\`         varchar(255)  NULL,
+          \`municipio\`      varchar(255)  NULL,
+          \`cotas\`          int           NULL,
+          \`saldo\`          int           NULL,
+          \`aguardando\`     int           NULL,
+          \`autorizadas\`    int           NULL,
+          \`aut_cotas\`      varchar(50)   NULL,
+          \`index_regula\`   double        NULL,
+          \`aguardando_7d\`  int           NULL,
+          \`aguardando_28d\` int           NULL,
+          \`aguardando_90d\` int           NULL,
+          \`central\`        varchar(100)  NULL,
+          \`especialidade\`  varchar(255)  NULL,
+          \`flag_index\`     text          NULL,
+          \`cor_index\`      text          NULL,
+          \`flag_aut_cotas\` text          NULL,
+          \`cor_aut_cotas\`  text          NULL,
+          \`updatedAt\`      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+      `);
+      console.log('[Migration] regulacao_data_pg OK!');
+    } catch(e) { console.warn('[Migration] regulacao_data_pg:', e); }
+
     // Limpeza diária: remover check-ins com mais de 24h
     try {
       await db.execute("DELETE FROM check_ins WHERE createdAt < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
