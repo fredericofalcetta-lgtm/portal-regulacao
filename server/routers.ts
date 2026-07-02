@@ -314,22 +314,37 @@ export const appRouter = router({
         return { tcpOk: false, pgOk: false, mensagem: `Não foi possível abrir conexão TCP com ${host}:${port}. O firewall do servidor pode estar bloqueando o Railway.` };
       }
 
-      // Teste 2: autenticação PostgreSQL
-      const client = new Client({
-        host, port,
-        database: process.env.PG_DATABASE ?? "sesdw",
-        user: process.env.PG_USER ?? "telessaude_read",
-        password: process.env.PG_PASSWORD ?? "tQ#f7qBZ$9pu",
-        ssl: { rejectUnauthorized: false },
-        connectionTimeoutMillis: 8000,
-      });
-      try {
-        await client.connect();
-        await client.end();
-        return { tcpOk: true, pgOk: true, mensagem: "Conexão com PostgreSQL bem-sucedida!" };
-      } catch (e) {
-        return { tcpOk: true, pgOk: false, mensagem: `TCP OK mas autenticação falhou: ${e instanceof Error ? e.message : String(e)}` };
+      // Teste 2: autenticação PostgreSQL — tenta sem SSL, depois com SSL
+      const tentativas = [
+        { ssl: false,                          label: "sem SSL" },
+        { ssl: { rejectUnauthorized: false },  label: "com SSL (rejectUnauthorized: false)" },
+        { ssl: { rejectUnauthorized: true },   label: "com SSL estrito" },
+      ];
+      for (const t of tentativas) {
+        const client = new Client({
+          host, port,
+          database: process.env.PG_DATABASE ?? "sesdw",
+          user: process.env.PG_USER ?? "telessaude_read",
+          password: process.env.PG_PASSWORD ?? "tQ#f7qBZ$9pu",
+          ssl: t.ssl as never,
+          connectionTimeoutMillis: 8000,
+        });
+        try {
+          await client.connect();
+          await client.end();
+          return { tcpOk: true, pgOk: true, mensagem: `Conexão bem-sucedida (${t.label})!` };
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          // Se não for timeout, pode ser erro de SSL/auth — reporta e continua tentando
+          if (!msg.includes("timeout")) {
+            return { tcpOk: true, pgOk: false, mensagem: `Falhou (${t.label}): ${msg}` };
+          }
+          // timeout — tenta próxima configuração
+        } finally {
+          await client.end().catch(() => {});
+        }
       }
+      return { tcpOk: true, pgOk: false, mensagem: "Todas as tentativas de autenticação expiraram. O servidor pode estar rejeitando silenciosamente via pg_hba.conf." };
     }),
 
     // Sincronizar prévia PostgreSQL (apenas administradores)
