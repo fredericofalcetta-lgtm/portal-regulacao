@@ -199,7 +199,7 @@ export async function syncFromPostgres(): Promise<number> {
     database: process.env.PG_DATABASE ?? "sesdw",
     user:     process.env.PG_USER     ?? "telessaude_read",
     password: process.env.PG_PASSWORD ?? "tQ#f7qBZ$9pu",
-    ssl:      false,
+    ssl:      { rejectUnauthorized: false },
     connectionTimeoutMillis: 30000,
     query_timeout:           120000,
   });
