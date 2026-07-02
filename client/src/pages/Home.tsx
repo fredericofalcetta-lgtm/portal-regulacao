@@ -11,6 +11,7 @@ import AgendasRelacionadas from './AgendasRelacionadas';
 import SemCotas from './SemCotas';
 import NovasAgendas from './NovasAgendas';
 import MonitorLogins from './MonitorLogins';
+import PreviaPostgres from './PreviaPostgres';
 import { trpc } from '@/lib/trpc';
 import { useRegulador } from '@/contexts/ReguladorContext';
 
@@ -106,6 +107,7 @@ export default function Home() {
           <Route path="/agendas-relacionadas" component={AgendasRelacionadas} />
           <Route path="/novas-agendas" component={NovasAgendas} />
           <Route path="/monitor-logins" component={MonitorLogins} />
+          <Route path="/previa-pg" component={PreviaPostgres} />
           <Route path="/sem-cotas" component={SemCotas} />
         </Switch>
       </main>
