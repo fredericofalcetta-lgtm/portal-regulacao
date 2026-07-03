@@ -272,12 +272,18 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
               <UserCircle2 size={20} className="text-white" />
             </div>
 
-            {/* Botão compacto de troca de perfil */}
-            {temMultiplosPerfis && proximoPerfil && (
+            {/* Botão compacto de troca de perfil (sidebar colapsado) */}
+            {temMultiplosPerfis && perfisAlternativos.length > 0 && (
               <button
-                onClick={handleTrocarPerfil}
+                onClick={() => {
+                  if (perfisAlternativos.length === 1) {
+                    trocarPerfil(perfisAlternativos[0]);
+                  } else {
+                    setPerfilDropdownAberto(v => !v);
+                  }
+                }}
                 className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-                title={`Trocar para ${perfilLabel(proximoPerfil)}`}
+                title={perfisAlternativos.length === 1 ? `Trocar para ${perfilLabel(perfisAlternativos[0])}` : 'Trocar perfil'}
               >
                 <RefreshCw size={16} />
               </button>
