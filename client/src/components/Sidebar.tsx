@@ -103,14 +103,11 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     { href: '/documentos', page: 'documentos', icon: FolderOpen, label: 'Documentos', visible: true },
   ].filter(item => item.visible);
 
-  // Próximo perfil para troca rápida (alterna entre os disponíveis)
-  const proximoPerfil = temMultiplosPerfis
-    ? perfisDisponiveis.find(p => p !== perfilAtivo) ?? null
-    : null;
-
-  const handleTrocarPerfil = () => {
-    if (proximoPerfil) trocarPerfil(proximoPerfil);
-  };
+  // Dropdown de perfis (suporta 2 ou mais perfis)
+  const [perfilDropdownAberto, setPerfilDropdownAberto] = useState(false);
+  const perfisAlternativos = temMultiplosPerfis
+    ? perfisDisponiveis.filter(p => p !== perfilAtivo)
+    : [];
 
   return (
     <div
@@ -177,16 +174,46 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
                         {perfilLabel(perfilAtivo)}
                       </span>
                     )}
-                    {/* Botão de troca de perfil — visível apenas para usuários com múltiplos perfis */}
-                    {temMultiplosPerfis && proximoPerfil && (
-                      <button
-                        onClick={handleTrocarPerfil}
-                        className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 hover:text-white transition-colors"
-                        title={`Trocar para perfil ${perfilLabel(proximoPerfil)}`}
-                      >
-                        <RefreshCw size={10} className="shrink-0" />
-                        {perfilLabel(proximoPerfil)}
-                      </button>
+                    {/* Seletor de perfil — visível para usuários com múltiplos perfis */}
+                    {temMultiplosPerfis && perfisAlternativos.length > 0 && (
+                      <div className="relative">
+                        {perfisAlternativos.length === 1 ? (
+                          // Apenas 2 perfis: botão simples de alternância
+                          <button
+                            onClick={() => trocarPerfil(perfisAlternativos[0])}
+                            className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 hover:text-white transition-colors"
+                            title={`Trocar para ${perfilLabel(perfisAlternativos[0])}`}
+                          >
+                            <RefreshCw size={10} className="shrink-0" />
+                            {perfilLabel(perfisAlternativos[0])}
+                          </button>
+                        ) : (
+                          // 3+ perfis: dropdown
+                          <>
+                            <button
+                              onClick={() => setPerfilDropdownAberto(v => !v)}
+                              className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 border border-slate-600 hover:bg-slate-600 hover:text-white transition-colors"
+                              title="Trocar perfil"
+                            >
+                              <RefreshCw size={10} className="shrink-0" />
+                              Trocar perfil
+                            </button>
+                            {perfilDropdownAberto && (
+                              <div className="absolute bottom-7 left-0 z-50 bg-slate-800 border border-slate-600 rounded-lg shadow-lg py-1 min-w-[140px]">
+                                {perfisAlternativos.map(p => (
+                                  <button
+                                    key={p}
+                                    onClick={() => { trocarPerfil(p); setPerfilDropdownAberto(false); }}
+                                    className="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+                                  >
+                                    {perfilLabel(p)}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
