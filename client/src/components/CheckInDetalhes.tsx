@@ -22,10 +22,22 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
     else { setSortCol(col); setSortDir('desc'); }
   };
 
-  // Filtro de central para split view (demanda 3)
+  // Filtro de central para split view
   const [centralSplit, setCentralSplit] = useState<string | null>(null);
 
-  // Query secundária para a central selecionada no split view
+  // Query sem filtro de central — busca todas as centrais disponíveis para o seletor
+  const { data: dataTodasCentrais } = trpc.checkIns.getRelacionadas.useQuery(
+    {
+      especialidade,
+      // sem central — retorna agendas de todas as centrais
+      municipio: undefined,
+      agendaIdExcluir: agendaId,
+      agendaNomeExcluir: agendaNome,
+    },
+    { enabled: expandido }
+  );
+
+  // Query da central selecionada no split view
   const { data: dataSplit, isLoading: isLoadingSplit } = trpc.checkIns.getRelacionadas.useQuery(
     {
       especialidade,
@@ -60,9 +72,9 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
 
   const agendasRaw = data?.agendas ?? [];
 
-  // Centrais únicas nas agendas relacionadas (excluindo a central do check-in)
+  // Centrais únicas disponíveis para o seletor (excluindo a central do check-in atual)
   const centraisDisponiveis = [...new Set(
-    agendasRaw
+    (dataTodasCentrais?.agendas ?? [])
       .map(a => a.central)
       .filter((c): c is string => !!c && c !== central)
   )].sort();
