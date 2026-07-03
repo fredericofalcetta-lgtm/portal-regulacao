@@ -326,7 +326,7 @@ export default function DataTable({
     setExpandidos(prev => { const next = new Set(prev); if (next.has(chave)) next.delete(chave); else next.add(chave); return next; });
   }, []);
 
-  const [mostrarBloqueadas, setMostrarBloqueadas] = useState(false);
+  const [filtrarBloqueadas, setFiltrarBloqueadas] = useState<"todas" | "bloqueadas" | "livres">("livres");
 
   const { data: reguladoresList = [] } = trpc.reguladores.listarReguladores.useQuery(undefined, { staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000 });
   const { data: encaminhamentosData = [], refetch: refetchEncaminhamentos } = trpc.encaminhamentos.getAll.useQuery(undefined, { staleTime: 30 * 1000 });
@@ -360,9 +360,10 @@ export default function DataTable({
     const matchesCor = selectedCores.size === 0 || selectedCores.has(cor) || (selectedCores.has('Sem cor') && !cor);
     const agendaId = typeof row[17] === 'number' ? row[17] : 0;
     const isBloqueada = agendaId > 0 && concluidasSet.has(agendaId);
-    if (!mostrarBloqueadas && isBloqueada) return false;
+    if (filtrarBloqueadas === 'livres' && isBloqueada) return false;
+    if (filtrarBloqueadas === 'bloqueadas' && !isBloqueada) return false;
     return matchesAgenda && matchesCentral && matchesMunicipio && matchesEsp && matchesCor;
-  }), [rows, selectedAgendas, selectedCentrais, selectedMunicipios, selectedEspecialidades, selectedCores, mostrarBloqueadas, concluidasSet]);
+  }), [rows, selectedAgendas, selectedCentrais, selectedMunicipios, selectedEspecialidades, selectedCores, filtrarBloqueadas, concluidasSet]);
 
   const grupos = useMemo((): Grupo[] => {
     const mapa = new Map<string, Grupo>();
@@ -411,16 +412,26 @@ export default function DataTable({
             {grupos.length !== filteredRows.length && <span className="ml-1 text-muted-foreground/70">· {filteredRows.length} linha{filteredRows.length !== 1 ? 's' : ''} no total</span>}
           </p>
           <button
-            onClick={() => setMostrarBloqueadas(v => !v)}
+            onClick={() => setFiltrarBloqueadas(v =>
+              v === 'livres' ? 'bloqueadas' : v === 'bloqueadas' ? 'todas' : 'livres'
+            )}
             className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors ${
-              mostrarBloqueadas
+              filtrarBloqueadas === 'bloqueadas'
                 ? 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-300 dark:border-red-700'
-                : 'border-border text-muted-foreground hover:bg-muted'
+                : filtrarBloqueadas === 'todas'
+                  ? 'bg-muted text-foreground border-border'
+                  : 'border-border text-muted-foreground hover:bg-muted'
             }`}
-            title={mostrarBloqueadas ? 'Ocultar agendas bloqueadas' : 'Mostrar agendas bloqueadas'}
+            title={
+              filtrarBloqueadas === 'livres' ? 'Clique para ver só as bloqueadas' :
+              filtrarBloqueadas === 'bloqueadas' ? 'Clique para ver todas' :
+              'Clique para ocultar bloqueadas'
+            }
           >
             <Lock size={11} />
-            {mostrarBloqueadas ? 'Ocultar bloqueadas' : 'Mostrar bloqueadas'}
+            {filtrarBloqueadas === 'livres' ? 'Ocultar bloqueadas' :
+             filtrarBloqueadas === 'bloqueadas' ? 'Só bloqueadas' :
+             'Todas'}
           </button>
           <UltimaAtualizacao compact />
         </div>
