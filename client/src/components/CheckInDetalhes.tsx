@@ -72,12 +72,20 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
 
   const agendasRaw = data?.agendas ?? [];
 
-  // Centrais únicas disponíveis para o seletor (excluindo a central do check-in atual)
+  // Centrais únicas disponíveis para o seletor — na mesma ordem da Lista de Agendas
+  const ORDEM_CENTRAL = ['CRA','1CRS','2CRS','3CRS','4CRS','5CRS','6CRS','7CRS','8CRS',
+    '9CRS','10CRS','11CRS','12CRS','13CRS','14CRS','15CRS','16CRS','17CRS','18CRS'];
   const centraisDisponiveis = [...new Set(
     (dataTodasCentrais?.agendas ?? [])
       .map(a => a.central)
       .filter((c): c is string => !!c && c !== central)
-  )].sort();
+  )].sort((a, b) => {
+    const ia = ORDEM_CENTRAL.indexOf(a);
+    const ib = ORDEM_CENTRAL.indexOf(b);
+    const posA = ia === -1 ? 999 : ia;
+    const posB = ib === -1 ? 999 : ib;
+    return posA - posB;
+  });
   const prioridadesList = data?.prioridades ?? [];
   const protocolosList = data?.protocolos ?? [];
 
@@ -191,31 +199,29 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                     <TrendingDown size={12} />
                     Agendas da mesma especialidade{central ? ` · ${central}` : ''} — ordenadas por índice
                   </h4>
-                  {/* Seletor de central para split view */}
+                  {/* Seletor de central para split view — dropdown */}
                   {centraisDisponiveis.length > 0 && (
                     <div className="flex items-center gap-1.5">
-                      {centralSplit ? (
+                      <Columns2 size={11} className="text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Comparar:</span>
+                      <select
+                        value={centralSplit ?? ''}
+                        onChange={e => setCentralSplit(e.target.value || null)}
+                        className="text-xs px-2 py-0.5 rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      >
+                        <option value="">— central —</option>
+                        {centraisDisponiveis.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                      {centralSplit && (
                         <button
                           onClick={() => setCentralSplit(null)}
-                          className="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 hover:bg-blue-200 transition-colors"
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                          title="Remover comparação"
                         >
-                          <X size={10} />
-                          {centralSplit}
+                          <X size={11} />
                         </button>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <Columns2 size={11} className="text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">Comparar central:</span>
-                          {centraisDisponiveis.map(c => (
-                            <button
-                              key={c}
-                              onClick={() => setCentralSplit(c)}
-                              className="text-xs px-2 py-0.5 rounded-full border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                            >
-                              {c}
-                            </button>
-                          ))}
-                        </div>
                       )}
                     </div>
                   )}
