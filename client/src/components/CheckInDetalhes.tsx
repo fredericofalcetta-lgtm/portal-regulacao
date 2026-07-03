@@ -237,7 +237,7 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                   </p>
                 ) : (
                   <div className="overflow-x-auto rounded-md border border-border">
-                    <table className="w-full text-xs border-collapse">
+                    <table className="w-full text-[10px] border-collapse">
                       <thead className="bg-secondary">
                         <tr>
                           {([
@@ -253,7 +253,7 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                             <th
                               key={col}
                               onClick={() => handleSortCol(col)}
-                              className={`px-3 py-2 font-semibold text-foreground cursor-pointer hover:bg-muted transition-colors select-none ${col === 'agenda' || col === 'municipio' ? 'text-left' : 'text-center'}`}
+                              className={`px-2 py-1 font-semibold text-foreground cursor-pointer hover:bg-muted transition-colors select-none text-[10px] ${col === 'agenda' || col === 'municipio' ? 'text-left' : 'text-center'}`}
                             >
                               <div className={`flex items-center gap-1 ${col === 'agenda' || col === 'municipio' ? '' : 'justify-center'}`}>
                                 {label}
@@ -276,18 +276,18 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                             className={`border-t border-border/50 ${getBgIndex(a.indexRegula)} hover:opacity-90 transition-opacity`}
                             style={corRowStyle}
                           >
-                            <td className="px-3 py-1.5 font-medium text-foreground">
+                            <td className="px-2 py-0.5 font-medium text-foreground">
                               <div className="flex items-center gap-1.5">
                                 {a.corIndex && <span style={corBadgeStyle} title={a.corIndex} />}
                                 {a.agenda ?? '—'}
                               </div>
                             </td>
-                            <td className="px-3 py-1.5 text-center text-muted-foreground">{a.municipio ?? '—'}</td>
-                            <td className="px-3 py-1.5 text-center text-foreground">{a.cotas ?? '—'}</td>
-                            <td className="px-3 py-1.5 text-center text-foreground">{a.saldo ?? '—'}</td>
-                            <td className="px-3 py-1.5 text-center text-foreground">{a.aguardando ?? '—'}</td>
-                            <td className="px-3 py-1.5 text-center text-foreground">{a.autorizadas ?? '—'}</td>
-                            <td className="px-3 py-1.5 text-center text-foreground">
+                            <td className="px-2 py-0.5 text-center text-muted-foreground">{a.municipio ?? '—'}</td>
+                            <td className="px-2 py-0.5 text-center text-foreground">{a.cotas ?? '—'}</td>
+                            <td className="px-2 py-0.5 text-center text-foreground">{a.saldo ?? '—'}</td>
+                            <td className="px-2 py-0.5 text-center text-foreground">{a.aguardando ?? '—'}</td>
+                            <td className="px-2 py-0.5 text-center text-foreground">{a.autorizadas ?? '—'}</td>
+                            <td className="px-2 py-0.5 text-center text-foreground">
                               {a.autCotas != null
                                 ? (() => {
                                     // autCotas vem como string pt-BR (ex: "21,2") — converter antes de formatar
@@ -296,7 +296,7 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                                   })()
                                 : '—'}
                             </td>
-                            <td className={`px-3 py-1.5 text-center ${getIndexColor(a.indexRegula)}`}>
+                            <td className={`px-2 py-0.5 text-center ${getIndexColor(a.indexRegula)}`}>
                               {a.indexRegula != null ? a.indexRegula.toFixed(2) : '—'}
                             </td>
                           </tr>
@@ -320,11 +320,11 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                       <p className="text-xs text-muted-foreground italic">Nenhuma agenda encontrada para {centralSplit}.</p>
                     ) : (
                       <div className="overflow-x-auto rounded-md border border-border">
-                        <table className="w-full text-xs border-collapse">
+                        <table className="w-full text-[10px] border-collapse">
                           <thead className="bg-secondary">
                             <tr>
                               {(['Agenda','Município','Cotas','Saldo','Aguardando','Autorizadas','Fila/Cotas','Índice']).map(label => (
-                                <th key={label} className={`px-3 py-2 font-semibold text-foreground ${label === 'Agenda' || label === 'Município' ? 'text-left' : 'text-center'}`}>{label}</th>
+                                <th key={label} className={`px-2 py-1 font-semibold text-foreground text-[10px] ${label === 'Agenda' || label === 'Município' ? 'text-left' : 'text-center'}`}>{label}</th>
                               ))}
                             </tr>
                           </thead>
@@ -334,21 +334,21 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                               const corBadgeStyle = getCorBadgeStyle(a.corIndex);
                               return (
                                 <tr key={a.id} className={`border-t border-border/50 ${getBgIndex(a.indexRegula)} hover:opacity-90`} style={corRowStyle}>
-                                  <td className="px-3 py-1.5 font-medium text-foreground">
+                                  <td className="px-2 py-0.5 font-medium text-foreground">
                                     <div className="flex items-center gap-1.5">
                                       {a.corIndex && <span style={corBadgeStyle} title={a.corIndex} />}
                                       {a.agenda ?? '—'}
                                     </div>
                                   </td>
-                                  <td className="px-3 py-1.5 text-muted-foreground">{a.municipio ?? '—'}</td>
-                                  <td className="px-3 py-1.5 text-center">{a.cotas ?? '—'}</td>
-                                  <td className="px-3 py-1.5 text-center">{a.saldo ?? '—'}</td>
-                                  <td className="px-3 py-1.5 text-center">{a.aguardando ?? '—'}</td>
-                                  <td className="px-3 py-1.5 text-center">{a.autorizadas ?? '—'}</td>
-                                  <td className="px-3 py-1.5 text-center">
+                                  <td className="px-2 py-0.5 text-muted-foreground">{a.municipio ?? '—'}</td>
+                                  <td className="px-2 py-0.5 text-center">{a.cotas ?? '—'}</td>
+                                  <td className="px-2 py-0.5 text-center">{a.saldo ?? '—'}</td>
+                                  <td className="px-2 py-0.5 text-center">{a.aguardando ?? '—'}</td>
+                                  <td className="px-2 py-0.5 text-center">{a.autorizadas ?? '—'}</td>
+                                  <td className="px-2 py-0.5 text-center">
                                     {a.autCotas != null ? (() => { const v = parseFloat(String(a.autCotas).replace(/\./g,'').replace(',','.')); return isNaN(v) ? String(a.autCotas) : v.toFixed(2); })() : '—'}
                                   </td>
-                                  <td className={`px-3 py-1.5 text-center ${getIndexColor(a.indexRegula)}`}>
+                                  <td className={`px-2 py-0.5 text-center ${getIndexColor(a.indexRegula)}`}>
                                     {a.indexRegula != null ? a.indexRegula.toFixed(2) : '—'}
                                   </td>
                                 </tr>
