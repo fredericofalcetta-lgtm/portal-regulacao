@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Loader2, FileText, ListOrdered, ExternalLink, TrendingDown, ChevronsUpDown } from 'lucide-react';
+import { ChevronDown, ChevronUp, Loader2, FileText, ListOrdered, ExternalLink, TrendingDown, ChevronsUpDown, Columns2, X } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
 
@@ -22,6 +22,22 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
     else { setSortCol(col); setSortDir('desc'); }
   };
 
+  // Filtro de central para split view (demanda 3)
+  const [centralSplit, setCentralSplit] = useState<string | null>(null);
+
+  // Query secundária para a central selecionada no split view
+  const { data: dataSplit, isLoading: isLoadingSplit } = trpc.checkIns.getRelacionadas.useQuery(
+    {
+      especialidade,
+      central: centralSplit ?? undefined,
+      municipio: municipio ?? undefined,
+      agendaIdExcluir: agendaId,
+      agendaNomeExcluir: agendaNome,
+    },
+    { enabled: expandido && !!centralSplit }
+  );
+  const agendasSplitRaw = dataSplit?.agendas ?? [];
+
   const { data: obsData } = trpc.agendaConfig.getObservacao.useQuery(
     { agendaNome: agendaNome ?? '', central: central ?? '' },
     { enabled: expandido && !!agendaNome && !!central }
@@ -43,6 +59,13 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
   );
 
   const agendasRaw = data?.agendas ?? [];
+
+  // Centrais únicas nas agendas relacionadas (excluindo a central do check-in)
+  const centraisDisponiveis = [...new Set(
+    agendasRaw
+      .map(a => a.central)
+      .filter((c): c is string => !!c && c !== central)
+  )].sort();
   const prioridadesList = data?.prioridades ?? [];
   const protocolosList = data?.protocolos ?? [];
 
@@ -151,11 +174,45 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
 
               {/* ── Agendas relacionadas ── */}
               <div>
-                <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <TrendingDown size={12} />
-                  Agendas da mesma especialidade{central ? ` · ${central}` : ''} — ordenadas por índice
-                </h4>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <TrendingDown size={12} />
+                    Agendas da mesma especialidade{central ? ` · ${central}` : ''} — ordenadas por índice
+                  </h4>
+                  {/* Seletor de central para split view */}
+                  {centraisDisponiveis.length > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      {centralSplit ? (
+                        <button
+                          onClick={() => setCentralSplit(null)}
+                          className="flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 hover:bg-blue-200 transition-colors"
+                        >
+                          <X size={10} />
+                          {centralSplit}
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <Columns2 size={11} className="text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Comparar central:</span>
+                          {centraisDisponiveis.map(c => (
+                            <button
+                              key={c}
+                              onClick={() => setCentralSplit(c)}
+                              className="text-xs px-2 py-0.5 rounded-full border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                            >
+                              {c}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
+                <div className={centralSplit ? "grid grid-cols-2 gap-3" : ""}>
+                {/* Tabela principal */}
+                <div>
+                {centralSplit && <p className="text-xs font-medium text-muted-foreground mb-1">{central ?? 'Central atual'}</p>}
                 {agendas.length === 0 ? (
                   <p className="text-xs text-muted-foreground italic">
                     Nenhuma outra agenda encontrada com os mesmos critérios.
@@ -231,6 +288,61 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                     </table>
                   </div>
                 )}
+                </div>
+
+                {/* Tabela split — central selecionada */}
+                {centralSplit && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">{centralSplit}</p>
+                    {isLoadingSplit ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 size={16} className="animate-spin text-muted-foreground" />
+                      </div>
+                    ) : agendasSplitRaw.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">Nenhuma agenda encontrada para {centralSplit}.</p>
+                    ) : (
+                      <div className="overflow-x-auto rounded-md border border-border">
+                        <table className="w-full text-xs border-collapse">
+                          <thead className="bg-secondary">
+                            <tr>
+                              {(['Agenda','Município','Cotas','Saldo','Aguardando','Autorizadas','Fila/Cotas','Índice']).map(label => (
+                                <th key={label} className={`px-3 py-2 font-semibold text-foreground ${label === 'Agenda' || label === 'Município' ? 'text-left' : 'text-center'}`}>{label}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {agendasSplitRaw.map((a) => {
+                              const corRowStyle = getCorRowStyle(a.corIndex);
+                              const corBadgeStyle = getCorBadgeStyle(a.corIndex);
+                              return (
+                                <tr key={a.id} className={`border-t border-border/50 ${getBgIndex(a.indexRegula)} hover:opacity-90`} style={corRowStyle}>
+                                  <td className="px-3 py-1.5 font-medium text-foreground">
+                                    <div className="flex items-center gap-1.5">
+                                      {a.corIndex && <span style={corBadgeStyle} title={a.corIndex} />}
+                                      {a.agenda ?? '—'}
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-1.5 text-muted-foreground">{a.municipio ?? '—'}</td>
+                                  <td className="px-3 py-1.5 text-center">{a.cotas ?? '—'}</td>
+                                  <td className="px-3 py-1.5 text-center">{a.saldo ?? '—'}</td>
+                                  <td className="px-3 py-1.5 text-center">{a.aguardando ?? '—'}</td>
+                                  <td className="px-3 py-1.5 text-center">{a.autorizadas ?? '—'}</td>
+                                  <td className="px-3 py-1.5 text-center">
+                                    {a.autCotas != null ? (() => { const v = parseFloat(String(a.autCotas).replace(/\./g,'').replace(',','.')); return isNaN(v) ? String(a.autCotas) : v.toFixed(2); })() : '—'}
+                                  </td>
+                                  <td className={`px-3 py-1.5 text-center ${getIndexColor(a.indexRegula)}`}>
+                                    {a.indexRegula != null ? a.indexRegula.toFixed(2) : '—'}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+                </div>
               </div>
             </>
           )}
