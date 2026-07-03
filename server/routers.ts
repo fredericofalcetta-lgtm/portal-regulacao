@@ -301,6 +301,14 @@ export const appRouter = router({
       const host = process.env.PG_HOST ?? "200.169.24.32";
       const port = parseInt(process.env.PG_PORT ?? "5000", 10);
 
+      // Teste 0: descobrir IP de saída do Railway
+      let ipSaida = "desconhecido";
+      try {
+        const r = await fetch("https://api.ipify.org?format=json");
+        const j = await r.json() as { ip: string };
+        ipSaida = j.ip;
+      } catch { /* ignora */ }
+
       // Teste 1: TCP — consegue abrir socket na porta?
       const tcpOk = await new Promise<boolean>((resolve) => {
         const socket = net.createConnection({ host, port });
@@ -311,7 +319,7 @@ export const appRouter = router({
       });
 
       if (!tcpOk) {
-        return { tcpOk: false, pgOk: false, mensagem: `Não foi possível abrir conexão TCP com ${host}:${port}. O firewall do servidor pode estar bloqueando o Railway.` };
+        return { tcpOk: false, pgOk: false, mensagem: `IP de saída do Railway: ${ipSaida} — Não foi possível abrir conexão TCP com ${host}:${port}.` };
       }
 
       // Teste 2: autenticação PostgreSQL — tenta sem SSL, depois com SSL
@@ -337,14 +345,14 @@ export const appRouter = router({
           const msg = e instanceof Error ? e.message : String(e);
           // Se não for timeout, pode ser erro de SSL/auth — reporta e continua tentando
           if (!msg.includes("timeout")) {
-            return { tcpOk: true, pgOk: false, mensagem: `Falhou (${t.label}): ${msg}` };
+            return { tcpOk: true, pgOk: false, mensagem: `IP de saída: ${ipSaida} — Falhou (${t.label}): ${msg}` };
           }
           // timeout — tenta próxima configuração
         } finally {
           await client.end().catch(() => {});
         }
       }
-      return { tcpOk: true, pgOk: false, mensagem: "Todas as tentativas de autenticação expiraram. O servidor pode estar rejeitando silenciosamente via pg_hba.conf." };
+      return { tcpOk: true, pgOk: false, mensagem: `IP de saída do Railway: ${ipSaida} — Todas as tentativas expiraram. Passe este IP para o time de infra liberar no pg_hba.conf do servidor ${host}:${port}.` };
     }),
 
     // Sincronizar prévia PostgreSQL (apenas administradores)
@@ -1126,15 +1134,21 @@ export const appRouter = router({
         let agendasRelacionadas;
 
         if (configPersonalizada.length > 0) {
-          // Usar nomes configurados, filtrados pela central do check-in
+          // Usar nomes configurados + agendas com o mesmo nome da agenda em regulação,
+          // filtrados pela central do check-in
           let nomesConfigurados: string[] = [];
           try { nomesConfigurados = JSON.parse(configPersonalizada[0].relacionadasNomes); } catch { nomesConfigurados = []; }
 
+          // Sempre incluir agendas com o mesmo nome (outras centrais/municípios da mesma agenda)
+          const nomesValidos = new Set([...nomesConfigurados, nomeAgendaEmRegulacao].filter(Boolean));
+
           agendasRelacionadas = todasAgendas
             .filter(a => {
-              if (!nomesConfigurados.includes(a.agenda ?? '')) return false;
+              if (!nomesValidos.has(a.agenda ?? '')) return false;
               // Filtrar por central (mostrar apenas agendas da mesma central)
               if (input.central && a.central !== input.central) return false;
+              // Excluir a própria agenda em regulação
+              if (a.id === input.agendaIdExcluir) return false;
               return true;
             })
             .map(a => ({
@@ -1163,6 +1177,9 @@ export const appRouter = router({
               if (input.central && a.central !== input.central) return false;
               // Filtrar por município se informado (e sem central)
               if (!input.central && input.municipio && a.municipio !== input.municipio) return false;
+              // Incluir agendas com o mesmo nome (mesma agenda em outros municípios da central)
+              if (a.agenda === nomeAgendaEmRegulacao) return true;
+              // Ou agendas da mesma especialidade
               const espAgenda = (a.especialidade ?? "").split(/[,;/]+/).map(e => e.trim().toLowerCase());
               return especialidades.some(e => espAgenda.includes(e));
             })
