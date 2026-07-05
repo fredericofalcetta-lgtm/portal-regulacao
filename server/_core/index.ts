@@ -269,6 +269,31 @@ async function runPendingMigrations() {
       console.log('[Migration] regulacao_data_pg OK!');
     } catch(e) { console.warn('[Migration] regulacao_data_pg:', e); }
 
+    // Migration: criar tabelas de recados
+    try {
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS \`recados\` (
+          \`id\`          int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          \`titulo\`      varchar(255) NOT NULL,
+          \`mensagem\`    text NOT NULL,
+          \`autor_email\` varchar(320) NOT NULL,
+          \`autor_nome\`  varchar(255) NULL,
+          \`criado_em\`   timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          \`ativo\`       tinyint NOT NULL DEFAULT 1
+        )
+      `);
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS \`recados_lidos\` (
+          \`id\`             int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          \`recado_id\`      int NOT NULL,
+          \`usuario_email\`  varchar(320) NOT NULL,
+          \`lido_em\`        timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE KEY \`recado_usuario\` (\`recado_id\`, \`usuario_email\`)
+        )
+      `);
+      console.log('[Migration] recados e recados_lidos OK!');
+    } catch(e) { console.warn('[Migration] recados:', e); }
+
     // Limpeza diária: remover check-ins com mais de 24h
     try {
       await db.execute("DELETE FROM check_ins WHERE createdAt < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
