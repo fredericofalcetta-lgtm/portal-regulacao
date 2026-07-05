@@ -107,6 +107,14 @@ function Router() {
         )}
       </Route>
 
+      <Route path="/recados">
+        {() => (
+          <AuthGuard>
+            <Home />
+          </AuthGuard>
+        )}
+      </Route>
+
       <Route path="/previa-pg">
         {() => (
           <AuthGuard>
