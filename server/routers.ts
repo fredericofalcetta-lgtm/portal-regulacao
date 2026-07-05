@@ -21,6 +21,8 @@ import {
   agendasRelacionadasConfig,
   semCotas,
   loginLog,
+  recados,
+  recadosLidos,
 } from "../drizzle/schema";
 import { asc, desc, eq, and, inArray, sql } from "drizzle-orm";
 import { syncSheetsToDb, syncPrioridadesToDb, syncDicionarioToDb, syncSemCotasToDb } from "./syncSheets";
@@ -2036,6 +2038,91 @@ export const appRouter = router({
             eq(agendaObservacoes.agendaNome, input.agendaNome),
             eq(agendaObservacoes.central, input.central)
           ));
+        return { success: true };
+      }),
+  }),
+
+  recados: router({
+    // Listar todos os recados (histórico) — apenas admins
+    listar: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const userEmail = ctx.user?.email?.toLowerCase() ?? "";
+      const reg = await db.select({ perfil: reguladores.perfil }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+      const perfil = (reg[0]?.perfil ?? "").toLowerCase();
+      if (!perfil.includes("administrador")) return [];
+      return db.select().from(recados).orderBy(desc(recados.criadoEm));
+    }),
+
+    // Criar novo recado — apenas admins
+    criar: protectedProcedure
+      .input(z.object({ titulo: z.string().min(1), mensagem: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco não disponível");
+        const userEmail = ctx.user?.email?.toLowerCase() ?? "";
+        const reg = await db.select({ perfil: reguladores.perfil, nome: reguladores.nome }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+        const perfil = (reg[0]?.perfil ?? "").toLowerCase();
+        if (!perfil.includes("administrador")) throw new Error("Acesso restrito a administradores");
+        await db.insert(recados).values({
+          titulo: input.titulo,
+          mensagem: input.mensagem,
+          autorEmail: userEmail,
+          autorNome: reg[0]?.nome ?? ctx.user?.name ?? "",
+          ativo: 1,
+        });
+        return { success: true };
+      }),
+
+    // Buscar recado ativo não lido pelo usuário atual
+    getPendente: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return null;
+      const userEmail = ctx.user?.email?.toLowerCase() ?? "";
+      // Buscar recado ativo mais recente que o usuário ainda não leu
+      const jaLidos = await db
+        .select({ recadoId: recadosLidos.recadoId })
+        .from(recadosLidos)
+        .where(eq(recadosLidos.usuarioEmail, userEmail));
+      const idsLidos = jaLidos.map(l => l.recadoId);
+      const query = db
+        .select()
+        .from(recados)
+        .where(eq(recados.ativo, 1))
+        .orderBy(desc(recados.criadoEm))
+        .limit(1);
+      const todos = await query;
+      if (todos.length === 0) return null;
+      const ultimo = todos[0];
+      if (idsLidos.includes(ultimo.id)) return null;
+      return ultimo;
+    }),
+
+    // Marcar recado como lido
+    marcarLido: protectedProcedure
+      .input(z.object({ recadoId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco não disponível");
+        const userEmail = ctx.user?.email?.toLowerCase() ?? "";
+        await db.insert(recadosLidos).values({
+          recadoId: input.recadoId,
+          usuarioEmail: userEmail,
+        }).onDuplicateKeyUpdate({ set: { lidoEm: sql`NOW()` } });
+        return { success: true };
+      }),
+
+    // Desativar recado — apenas admins
+    desativar: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Banco não disponível");
+        const userEmail = ctx.user?.email?.toLowerCase() ?? "";
+        const reg = await db.select({ perfil: reguladores.perfil }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+        const perfil = (reg[0]?.perfil ?? "").toLowerCase();
+        if (!perfil.includes("administrador")) throw new Error("Acesso restrito a administradores");
+        await db.update(recados).set({ ativo: 0 }).where(eq(recados.id, input.id));
         return { success: true };
       }),
   }),
