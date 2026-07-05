@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Menu, X, BarChart3, Table2, FolderOpen, Home, LogOut, UserCircle2, Sun, Moon, ClipboardList, Activity, RefreshCw, Users, Link2, TrendingDown, Sparkles, LogIn, Database } from 'lucide-react';
+import { Menu, X, BarChart3, Table2, FolderOpen, Home, LogOut, UserCircle2, Sun, Moon, ClipboardList, Activity, RefreshCw, Users, Link2, TrendingDown, Sparkles, LogIn, Database, MessageSquare } from 'lucide-react';
 import { Link } from 'wouter';
 import { useRegulador } from '@/contexts/ReguladorContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -99,6 +99,7 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     { href: '/novas-agendas', page: 'novas-agendas', icon: Sparkles, label: 'Novas Agendas', visible: isAdminOrMonitorOnly },
     { href: '/monitor-logins', page: 'monitor-logins', icon: LogIn, label: 'Monitor de Logins', visible: isAdminOrMonitorOnly },
     { href: '/previa-pg', page: 'previa-pg', icon: Database, label: 'Prévia PG', visible: perfilAtivo === 'administrador' || (!perfilAtivo && (regulador?.perfil ?? '').toLowerCase().includes('administrador')) },
+    { href: '/recados', page: 'recados', icon: MessageSquare, label: 'Recados', visible: perfilAtivo === 'administrador' || (!perfilAtivo && (regulador?.perfil ?? '').toLowerCase().includes('administrador')) },
     { href: '/sem-cotas', page: 'sem-cotas', icon: TrendingDown, label: 'Sem Cotas', visible: isAdminOrMonitorOnly },
     { href: '/documentos', page: 'documentos', icon: FolderOpen, label: 'Documentos', visible: true },
   ].filter(item => item.visible);
@@ -272,18 +273,12 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
               <UserCircle2 size={20} className="text-white" />
             </div>
 
-            {/* Botão compacto de troca de perfil (sidebar colapsado) */}
-            {temMultiplosPerfis && perfisAlternativos.length > 0 && (
+            {/* Botão compacto de troca de perfil */}
+            {temMultiplosPerfis && proximoPerfil && (
               <button
-                onClick={() => {
-                  if (perfisAlternativos.length === 1) {
-                    trocarPerfil(perfisAlternativos[0]);
-                  } else {
-                    setPerfilDropdownAberto(v => !v);
-                  }
-                }}
+                onClick={handleTrocarPerfil}
                 className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-                title={perfisAlternativos.length === 1 ? `Trocar para ${perfilLabel(perfisAlternativos[0])}` : 'Trocar perfil'}
+                title={`Trocar para ${perfilLabel(proximoPerfil)}`}
               >
                 <RefreshCw size={16} />
               </button>
