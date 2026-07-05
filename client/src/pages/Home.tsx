@@ -12,6 +12,8 @@ import SemCotas from './SemCotas';
 import NovasAgendas from './NovasAgendas';
 import MonitorLogins from './MonitorLogins';
 import PreviaPostgres from './PreviaPostgres';
+import Recados from './Recados';
+import RecadoModal from '@/components/RecadoModal';
 import { trpc } from '@/lib/trpc';
 import { useRegulador } from '@/contexts/ReguladorContext';
 
@@ -87,6 +89,7 @@ export default function Home() {
   return (
     <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar fixo */}
+      <RecadoModal />
       <Sidebar currentPage={currentPage} />
 
       {/* Área de conteúdo — usa padding-left para não re-calcular layout inteiro */}
@@ -108,6 +111,7 @@ export default function Home() {
           <Route path="/novas-agendas" component={NovasAgendas} />
           <Route path="/monitor-logins" component={MonitorLogins} />
           <Route path="/previa-pg" component={PreviaPostgres} />
+          <Route path="/recados" component={Recados} />
           <Route path="/sem-cotas" component={SemCotas} />
         </Switch>
       </main>
