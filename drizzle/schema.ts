@@ -1,4 +1,4 @@
-import { double, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { double, int, mysqlEnum, mysqlTable, text, timestamp, varchar, tinyint } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -346,3 +346,32 @@ export const loginLog = mysqlTable("login_log", {
 
 export type LoginLog = typeof loginLog.$inferSelect;
 export type InsertLoginLog = typeof loginLog.$inferInsert;
+
+/**
+ * Recados enviados pelo administrador para toda a equipe.
+ */
+export const recados = mysqlTable("recados", {
+  id: int("id").autoincrement().primaryKey(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  mensagem: text("mensagem").notNull(),
+  autorEmail: varchar("autor_email", { length: 320 }).notNull(),
+  autorNome: varchar("autor_nome", { length: 255 }),
+  criadoEm: timestamp("criado_em").defaultNow().notNull(),
+  ativo: tinyint("ativo").default(1).notNull(),
+});
+
+export type Recado = typeof recados.$inferSelect;
+export type InsertRecado = typeof recados.$inferInsert;
+
+/**
+ * Registro de quais colaboradores já viram cada recado.
+ */
+export const recadosLidos = mysqlTable("recados_lidos", {
+  id: int("id").autoincrement().primaryKey(),
+  recadoId: int("recado_id").notNull(),
+  usuarioEmail: varchar("usuario_email", { length: 320 }).notNull(),
+  lidoEm: timestamp("lido_em").defaultNow().notNull(),
+});
+
+export type RecadoLido = typeof recadosLidos.$inferSelect;
+export type InsertRecadoLido = typeof recadosLidos.$inferInsert;
