@@ -72,9 +72,9 @@ export async function syncSheetsToDb(): Promise<number> {
         return n != null ? String(n).replace('.', ',') : s;
       })(),
       indexRegula: parseNum(row[7]),
-      aguardando28d: parseInt2(row[8]),
-      aguardando60d: parseInt2(row[9]),
-      aguardando90d: parseInt2(row[10]),
+      aguardando7d:  parseInt2(row[8]),   // coluna I — >7 dias
+      aguardando28d: parseInt2(row[9]),   // coluna J — >28 dias
+      aguardando90d: parseInt2(row[10]),  // coluna K — >90 dias
       central: row[11]?.trim() || null,
       especialidade: row[12]?.trim() || null,
       flagIndex: row[13]?.trim() || null,
