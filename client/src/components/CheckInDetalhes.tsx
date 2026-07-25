@@ -9,10 +9,11 @@ interface CheckInDetalhesProps {
   especialidade: string;
   central?: string | null;
   municipio?: string | null;
+  autoExpandir?: boolean;
 }
 
-export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, central, municipio }: CheckInDetalhesProps) {
-  const [expandido, setExpandido] = useState(false);
+export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, central, municipio, autoExpandir = false }: CheckInDetalhesProps) {
+  const [expandido, setExpandido] = useState(autoExpandir);
   type SortCol = 'agenda' | 'municipio' | 'cotas' | 'saldo' | 'aguardando' | 'autorizadas' | 'autCotas' | 'indexRegula';
   const [sortCol, setSortCol] = useState<SortCol>('indexRegula');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
