@@ -1,5 +1,5 @@
 import { memo, useMemo, useCallback, useState } from 'react';
-import { ChevronUp, ChevronDown, ChevronRight, Lock, LogIn } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronRight, Lock, LogIn, Download } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import EncaminharCell from './EncaminharCell';
 import EncaminharGrupoCell from './EncaminharGrupoCell';
@@ -77,7 +77,7 @@ const TableRow = memo(function TableRow({
   const corBadgeStyle = getCorBadgeStyle(cor);
 
   return (
-    <tr className={`border-b border-border transition-colors ${checkInAtivoId === agendaId ? 'bg-blue-900 text-white ring-2 ring-inset ring-blue-400' : isSubRow ? 'bg-muted/30 dark:bg-muted/10 hover:bg-secondary' : isConcluida ? 'opacity-60 bg-emerald-50 dark:bg-emerald-950/20 hover:bg-secondary' : 'hover:bg-secondary'}`}
+    <tr className={`border-b border-border transition-colors ${checkInAtivoId === agendaId ? 'bg-blue-900 ring-2 ring-inset ring-blue-400 [&_td]:text-white [&_td]:text-opacity-100 [&_span]:text-white' : isSubRow ? 'bg-muted/30 dark:bg-muted/10 hover:bg-secondary' : isConcluida ? 'opacity-60 bg-emerald-50 dark:bg-emerald-950/20 hover:bg-secondary' : 'hover:bg-secondary'}`}
       style={checkInAtivoId === agendaId || isConcluida || isSubRow ? undefined : corRowStyle}>
       <td className={`py-1.5 text-foreground ${isSubRow ? 'pl-8 pr-2' : 'px-3'}`}>
         {isSubRow ? (
@@ -279,13 +279,44 @@ const GrupoRow = memo(function GrupoRow({
             ) : isAdminOuMonitor ? (
               <EncaminharGrupoCell linhas={linhas} encaminhadosGrupo={encaminhadosGrupo} reguladoresList={reguladoresList} onUpdate={onUpdate} />
             ) : (
-              <AutoEncaminharGrupoCell
-                linhas={linhas}
-                emailUsuario={emailUsuario}
-                encaminhamentosPorAgenda={encaminhamentosPorAgenda}
-                onUpdate={onUpdate}
-                concluidasSet={concluidasSet}
-              />
+              <div className="flex flex-col items-center gap-1">
+                <AutoEncaminharGrupoCell
+                  linhas={linhas}
+                  emailUsuario={emailUsuario}
+                  encaminhamentosPorAgenda={encaminhamentosPorAgenda}
+                  onUpdate={onUpdate}
+                  concluidasSet={concluidasSet}
+                />
+                {onCheckInListaProp && isSingle && (() => {
+                  const r = linhas[0];
+                  const aId = typeof r[17] === 'number' ? r[17] : 0;
+                  if (aId === 0) return null;
+                  return (
+                    <button
+                      onClick={() => onCheckInListaProp({
+                        agendaId: aId,
+                        agendaNome: String(r[0]),
+                        especialidade: String(r[12]),
+                        central: r[11] != null && String(r[11]) !== '' ? String(r[11]) : undefined,
+                        municipio: r[1] != null && String(r[1]) !== '' ? String(r[1]) : undefined,
+                        cotas: typeof r[2] === 'number' ? r[2] : undefined,
+                        saldo: typeof r[3] === 'number' ? r[3] : undefined,
+                        aguardando: typeof r[4] === 'number' ? r[4] : undefined,
+                        indexRegula: typeof r[7] === 'number' ? r[7] : undefined,
+                      })}
+                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                        checkInAtivoIdProp === aId
+                          ? 'bg-blue-700 text-white'
+                          : 'bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-700 dark:hover:bg-blue-950/50 dark:hover:text-blue-300'
+                      }`}
+                      title={checkInAtivoIdProp === aId ? 'Fechar painel' : 'Iniciar regulação'}
+                    >
+                      <LogIn size={11} />
+                      {checkInAtivoIdProp === aId ? 'Regulando' : 'Check-in'}
+                    </button>
+                  );
+                })()}
+              </div>
             )}
           </td>
         )}
@@ -435,6 +466,36 @@ export default function DataTable({
 
   const numCols = (isAdminOuMonitor || isRegulador) ? 13 : 12;
 
+  // Exportar tabela filtrada
+  const handleExportar = (formato: 'csv' | 'xls') => {
+    const cabecalho = ['Agenda','Município','Cotas','Saldo','Aguardando','Autorizadas','Fila/Cotas','Index','Central','Especialidade','>7d','>28d','>90d'];
+    const linhasExport = filteredRows.map(r => [
+      String(r[0] ?? ''), String(r[1] ?? ''), String(r[2] ?? ''), String(r[3] ?? ''),
+      String(r[4] ?? ''), String(r[5] ?? ''), String(r[6] ?? ''), String(r[7] ?? ''),
+      String(r[11] ?? ''), String(r[12] ?? ''), String(r[8] ?? ''), String(r[9] ?? ''), String(r[10] ?? ''),
+    ]);
+    const dados = [cabecalho, ...linhasExport];
+
+    if (formato === 'csv') {
+      const sep = ';';
+      const csvContent = dados.map(row => row.map(c => `"${c.replace(/"/g, '""')}"`).join(sep)).join('
+');
+      const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'agendas.csv'; a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      // XLS simples via HTML table
+      const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"/></head><body><table>' +
+        dados.map(row => '<tr>' + row.map(c => `<td>${c}</td>`).join('') + '</tr>').join('') +
+        '</table></body></html>';
+      const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'agendas.xls'; a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-card">
       <div className="px-6 py-4 border-b border-border">
@@ -444,6 +505,20 @@ export default function DataTable({
             {grupos.length} agenda{grupos.length !== 1 ? 's' : ''}
             {grupos.length !== filteredRows.length && <span className="ml-1 text-muted-foreground/70">· {filteredRows.length} linha{filteredRows.length !== 1 ? 's' : ''} no total</span>}
           </p>
+          {/* Exportar */}
+          <div className="relative group">
+            <button
+              className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-border text-muted-foreground hover:bg-muted transition-colors"
+              title="Exportar tabela"
+            >
+              <Download size={11} />
+              Exportar
+            </button>
+            <div className="absolute right-0 top-full mt-1 z-50 hidden group-hover:flex flex-col bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[100px]">
+              <button onClick={() => handleExportar('csv')} className="px-4 py-2 text-xs text-left hover:bg-muted transition-colors">.CSV</button>
+              <button onClick={() => handleExportar('xls')} className="px-4 py-2 text-xs text-left hover:bg-muted transition-colors">.XLS</button>
+            </div>
+          </div>
           <button
             onClick={() => setFiltrarBloqueadas(v =>
               v === 'livres' ? 'bloqueadas' : v === 'bloqueadas' ? 'todas' : 'livres'
@@ -506,6 +581,40 @@ export default function DataTable({
               );
             })}
           </tbody>
+          {/* Linha de totais */}
+          {(() => {
+            const soma = (idx: number) => filteredRows.reduce((acc, r) => acc + (parseFloat(String(r[idx])) || 0), 0);
+            const totaisTabela = {
+              cotas: soma(2), saldo: soma(3), aguardando: soma(4),
+              autorizadas: soma(5), ag7d: soma(8), ag28d: soma(9), ag90d: soma(10),
+            };
+            const numCols = (isAdminOuMonitor || isRegulador) ? 13 : 12;
+            return (
+              <tfoot>
+                <tr className="border-t-2 border-primary/40 bg-muted/60 font-semibold">
+                  <td className="px-3 py-1.5 text-xs text-foreground" colSpan={3}>
+                    Totais ({grupos.length} agenda{grupos.length !== 1 ? 's' : ''})
+                  </td>
+                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{totaisTabela.cotas || '—'}</td>
+                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{totaisTabela.saldo || '—'}</td>
+                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{totaisTabela.aguardando || '—'}</td>
+                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{totaisTabela.autorizadas || '—'}</td>
+                  <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">—</td>
+                  <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">—</td>
+                  {(isAdminOuMonitor || isRegulador) && (
+                    <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">—</td>
+                  )}
+                  <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">—</td>
+                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{totaisTabela.ag7d || '—'}</td>
+                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{totaisTabela.ag28d || '—'}</td>
+                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{totaisTabela.ag90d || '—'}</td>
+                  {(isAdminOuMonitor || isRegulador) && (
+                    <td className="px-2 py-1.5" />
+                  )}
+                </tr>
+              </tfoot>
+            );
+          })()}
         </table>
       </div>
     </div>
