@@ -1,11 +1,12 @@
-import { useState,
- useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import FilterPanel from '@/components/FilterPanel';
 import DataTable from '@/components/DataTable';
+import CheckInDetalhes from '@/components/CheckInDetalhes';
 import { useRegulador } from '@/contexts/ReguladorContext';
 import { usePersistedFilters } from '@/hooks/usePersistedFilters';
 import { trpc } from '@/lib/trpc';
 import { UltimaAtualizacao } from '@/components/UltimaAtualizacao';
+import { LogOut, CheckCircle2, Loader2, X } from 'lucide-react';
 
 interface RegulationProps {
   data: (string | number)[][];
@@ -35,6 +36,99 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
 
   const [selectedCores, setSelectedCores] = useState<Set<string>>(new Set());
   const [selectedMunicipios, setSelectedMunicipios] = useState<Set<string>>(new Set());
+
+  // Check-in ativo na tela de Lista de Agendas
+  const [checkInAtivo, setCheckInAtivo] = useState<{
+    agendaId: number;
+    agendaNome: string;
+    especialidade: string;
+    central?: string;
+    municipio?: string;
+    cotas?: number;
+    saldo?: number;
+    aguardando?: number;
+    indexRegula?: number;
+  } | null>(null);
+  const [filtrosRecolhidos, setFiltrosRecolhidos] = useState(false);
+
+  const utils = trpc.useUtils();
+
+  const checkInMutation = trpc.checkIns.checkIn.useMutation({
+    onSuccess: (data, variables) => {
+      if (!data.bloqueado) {
+        utils.checkIns.getAll.invalidate();
+        utils.checkIns.getMeus.invalidate();
+      }
+    },
+  });
+
+  const checkOutMutation = trpc.checkIns.checkIn.useMutation({
+    onSuccess: () => {
+      utils.checkIns.getAll.invalidate();
+      utils.checkIns.getMeus.invalidate();
+      setCheckInAtivo(null);
+      setFiltrosRecolhidos(false);
+    },
+  });
+
+  const concluirMutation = trpc.agendasConcluidas.concluir.useMutation({
+    onSuccess: () => {
+      utils.checkIns.getAll.invalidate();
+      utils.checkIns.getMeus.invalidate();
+      utils.agendasConcluidas.getMeus.invalidate();
+      onConcluir?.();
+      setCheckInAtivo(null);
+      setFiltrosRecolhidos(false);
+    },
+  });
+
+  const handleCheckInLista = useCallback((agenda: {
+    agendaId: number; agendaNome: string; especialidade: string;
+    central?: string; municipio?: string; cotas?: number;
+    saldo?: number; aguardando?: number; indexRegula?: number;
+  }) => {
+    // Se clicou na mesma agenda — fecha o painel
+    if (checkInAtivo?.agendaId === agenda.agendaId) {
+      setCheckInAtivo(null);
+      setFiltrosRecolhidos(false);
+      return;
+    }
+    setCheckInAtivo(agenda);
+    setFiltrosRecolhidos(true);
+    checkInMutation.mutate({
+      agendaId: agenda.agendaId,
+      agendaNome: agenda.agendaNome,
+      municipio: agenda.municipio,
+      especialidade: agenda.especialidade,
+      central: agenda.central,
+      cotas: agenda.cotas,
+      saldo: agenda.saldo,
+      aguardando: agenda.aguardando,
+      indexRegula: agenda.indexRegula,
+    });
+  }, [checkInAtivo, checkInMutation]);
+
+  const handleCheckOutLista = useCallback(() => {
+    if (!checkInAtivo) return;
+    checkOutMutation.mutate({
+      agendaId: checkInAtivo.agendaId,
+      agendaNome: checkInAtivo.agendaNome,
+      municipio: checkInAtivo.municipio,
+      especialidade: checkInAtivo.especialidade,
+      central: checkInAtivo.central,
+    });
+  }, [checkInAtivo, checkOutMutation]);
+
+  const handleConcluirLista = useCallback(() => {
+    if (!checkInAtivo) return;
+    concluirMutation.mutate({
+      agendaId: checkInAtivo.agendaId,
+      agendaNome: checkInAtivo.agendaNome,
+      municipio: checkInAtivo.municipio ?? null,
+      central: checkInAtivo.central ?? null,
+      especialidade: checkInAtivo.especialidade,
+    });
+  }, [checkInAtivo, concluirMutation]);
 
   // Verifica se o perfil ATIVO tem acesso irrestrito
   const isIrrestrito = useMemo(() => {
@@ -224,58 +318,133 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
     }
   };
 
+  const perfilUsuario = perfilAtivo ?? regulador?.perfil ?? '';
+  const isRegulador = perfilUsuario.toLowerCase().includes('regulador');
+
   return (
-    <div className="flex h-screen bg-background">
-      {/* Aviso de restrição por perfil */}
-      {!isIrrestrito && regulador?.grandeGrupo && (
-        <div className="absolute top-2 right-4 z-10">
-          <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5">
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-            Exibindo especialidades de: <strong>{regulador.grandeGrupo}</strong>
+    <div className="flex flex-col h-screen bg-background overflow-hidden">
+      {/* Layout principal: filtros + tabela */}
+      <div className={`flex min-h-0 transition-all duration-300 ${checkInAtivo ? 'h-1/2' : 'flex-1'}`}>
+
+        {/* Aviso de restrição por perfil */}
+        {!isIrrestrito && regulador?.grandeGrupo && (
+          <div className="absolute top-2 right-4 z-10">
+            <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              Exibindo especialidades de: <strong>{regulador.grandeGrupo}</strong>
+            </div>
+          </div>
+        )}
+
+        {/* Sidebar com Filtros — recolhido automaticamente quando há check-in ativo */}
+        {!filtrosRecolhidos && (
+          <FilterPanel
+            agendas={agendas}
+            centrais={centrais}
+            especialidades={especialidades}
+            municipios={municipios}
+            selectedAgendas={selectedAgendas}
+            selectedCentrais={selectedCentrais}
+            selectedEspecialidades={selectedEspecialidades}
+            selectedMunicipios={selectedMunicipios}
+            selectedCores={selectedCores}
+            onCoresChange={setSelectedCores}
+            coresDisponiveis={coresDisponiveis}
+            onAgendasChange={setSelectedAgendas}
+            onCentraisChange={setSelectedCentrais}
+            onEspecialidadesChange={setSelectedEspecialidades}
+            onMunicipiosChange={setSelectedMunicipios}
+          />
+        )}
+
+        {/* Tabela de Dados */}
+        <DataTable
+          headers={headers}
+          rows={dadosFiltradosPorPerfil}
+          selectedAgendas={selectedAgendas}
+          selectedCentrais={selectedCentrais}
+          selectedEspecialidades={selectedEspecialidades}
+          selectedMunicipios={selectedMunicipios}
+          selectedCores={selectedCores}
+          sortColumn={sortColumn}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+          perfilUsuario={perfilUsuario}
+          emailUsuario={regulador?.email ?? ''}
+          concluidasIds={concluidasIds}
+          onConcluir={onConcluir}
+          onRefresh={onRefresh}
+          dataUpdatedAt={dataUpdatedAt}
+          checkInAtivoId={checkInAtivo?.agendaId ?? null}
+          onCheckInLista={isRegulador ? handleCheckInLista : undefined}
+        />
+      </div>
+
+      {/* Painel inferior — detalhes do check-in ativo */}
+      {checkInAtivo && (
+        <div className="flex flex-col h-1/2 border-t-2 border-primary/40 bg-background min-h-0">
+          {/* Barra de controle do painel */}
+          <div className="flex items-center justify-between px-4 py-2 bg-blue-950 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 text-sm font-semibold text-white">
+                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                Em regulação: {checkInAtivo.agendaNome}
+                {checkInAtivo.municipio && (
+                  <span className="text-blue-300 font-normal text-xs">— {checkInAtivo.municipio}</span>
+                )}
+                {checkInAtivo.central && (
+                  <span className="text-blue-300 font-normal text-xs">· {checkInAtivo.central}</span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Check-out */}
+              <button
+                onClick={handleCheckOutLista}
+                disabled={checkOutMutation.isPending || concluirMutation.isPending}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-700 text-white text-xs font-medium hover:bg-slate-600 disabled:opacity-50 transition-colors"
+              >
+                {checkOutMutation.isPending
+                  ? <Loader2 size={12} className="animate-spin" />
+                  : <LogOut size={12} />}
+                Check-out
+              </button>
+              {/* Concluído */}
+              <button
+                onClick={handleConcluirLista}
+                disabled={concluirMutation.isPending || checkOutMutation.isPending}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-green-600 text-white text-xs font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+              >
+                {concluirMutation.isPending
+                  ? <Loader2 size={12} className="animate-spin" />
+                  : <CheckCircle2 size={12} />}
+                Concluído
+              </button>
+              {/* Fechar painel sem check-out */}
+              <button
+                onClick={() => { setCheckInAtivo(null); setFiltrosRecolhidos(false); }}
+                className="flex items-center gap-1 px-2 py-1.5 rounded-md text-blue-300 hover:text-white hover:bg-slate-700 text-xs transition-colors"
+                title="Fechar painel (mantém check-in ativo)"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          </div>
+
+          {/* Conteúdo do painel — CheckInDetalhes */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <CheckInDetalhes
+              agendaId={checkInAtivo.agendaId}
+              agendaNome={checkInAtivo.agendaNome}
+              especialidade={checkInAtivo.especialidade}
+              central={checkInAtivo.central}
+              municipio={checkInAtivo.municipio}
+            />
           </div>
         </div>
       )}
-
-      {/* Sidebar com Filtros */}
-      <FilterPanel
-        agendas={agendas}
-        centrais={centrais}
-        especialidades={especialidades}
-        municipios={municipios}
-        selectedAgendas={selectedAgendas}
-        selectedCentrais={selectedCentrais}
-        selectedEspecialidades={selectedEspecialidades}
-        selectedMunicipios={selectedMunicipios}
-        selectedCores={selectedCores}
-        onCoresChange={setSelectedCores}
-        coresDisponiveis={coresDisponiveis}
-        onAgendasChange={setSelectedAgendas}
-        onCentraisChange={setSelectedCentrais}
-        onEspecialidadesChange={setSelectedEspecialidades}
-        onMunicipiosChange={setSelectedMunicipios}
-      />
-
-      {/* Tabela de Dados */}
-      <DataTable
-        headers={headers}
-        rows={dadosFiltradosPorPerfil}
-        selectedAgendas={selectedAgendas}
-        selectedCentrais={selectedCentrais}
-        selectedEspecialidades={selectedEspecialidades}
-        selectedMunicipios={selectedMunicipios}
-        selectedCores={selectedCores}
-        sortColumn={sortColumn}
-        sortOrder={sortOrder}
-        onSort={handleSort}
-        perfilUsuario={perfilAtivo ?? regulador?.perfil ?? ''}
-        emailUsuario={regulador?.email ?? ''}
-        concluidasIds={concluidasIds}
-        onConcluir={onConcluir}
-        onRefresh={onRefresh}
-        dataUpdatedAt={dataUpdatedAt}
-      />
     </div>
   );
 }
