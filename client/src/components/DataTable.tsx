@@ -1,5 +1,5 @@
 import { memo, useMemo, useCallback, useState } from 'react';
-import { ChevronUp, ChevronDown, ChevronRight, Lock } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronRight, Lock, LogIn } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import EncaminharCell from './EncaminharCell';
 import EncaminharGrupoCell from './EncaminharGrupoCell';
@@ -12,6 +12,8 @@ import { UltimaAtualizacao } from '@/components/UltimaAtualizacao';
 interface DataTableProps {
   headers: string[];
   rows: (string | number)[][];
+  checkInAtivoId?: number | null;
+  onCheckInLista?: (a: { agendaId: number; agendaNome: string; especialidade: string; central?: string; municipio?: string; cotas?: number; saldo?: number; aguardando?: number; indexRegula?: number; }) => void;
   selectedAgendas: Set<string>;
   selectedCentrais: Set<string>;
   selectedMunicipios?: Set<string>;
@@ -42,6 +44,7 @@ interface Grupo {
 const TableRow = memo(function TableRow({
   row, isAdminOuMonitor, isRegulador, encaminhadosAtuais = [], checkInsAtuais = [],
   reguladoresList = [], emailUsuario, onUpdate, isConcluida, isSubRow = false,
+  checkInAtivoId, onCheckInLista,
 }: {
   row: (string | number)[];
   isAdminOuMonitor: boolean;
@@ -53,6 +56,8 @@ const TableRow = memo(function TableRow({
   onUpdate: () => void;
   isConcluida: boolean;
   isSubRow?: boolean;
+  checkInAtivoId?: number | null;
+  onCheckInLista?: (a: { agendaId: number; agendaNome: string; especialidade: string; central?: string; municipio?: string; cotas?: number; saldo?: number; aguardando?: number; indexRegula?: number; }) => void;
 }) {
   const agendaId = typeof row[17] === 'number' ? row[17] : 0;
   const cor = String(row[14] ?? '');
@@ -72,8 +77,8 @@ const TableRow = memo(function TableRow({
   const corBadgeStyle = getCorBadgeStyle(cor);
 
   return (
-    <tr className={`border-b border-border hover:bg-secondary transition-colors ${isSubRow ? 'bg-muted/30 dark:bg-muted/10' : ''} ${isConcluida ? 'opacity-60 bg-emerald-50 dark:bg-emerald-950/20' : ''}`}
-      style={isConcluida || isSubRow ? undefined : corRowStyle}>
+    <tr className={`border-b border-border transition-colors ${checkInAtivoId === agendaId ? 'bg-blue-900 text-white ring-2 ring-inset ring-blue-400' : isSubRow ? 'bg-muted/30 dark:bg-muted/10 hover:bg-secondary' : isConcluida ? 'opacity-60 bg-emerald-50 dark:bg-emerald-950/20 hover:bg-secondary' : 'hover:bg-secondary'}`}
+      style={checkInAtivoId === agendaId || isConcluida || isSubRow ? undefined : corRowStyle}>
       <td className={`py-1.5 text-foreground ${isSubRow ? 'pl-8 pr-2' : 'px-3'}`}>
         {isSubRow ? (
           <div className="flex items-center gap-2">
@@ -106,11 +111,34 @@ const TableRow = memo(function TableRow({
                 especialidade={String(row[12])}
                 encaminhadosAtuais={encaminhadosAtuais} reguladoresList={reguladoresList} onUpdate={onUpdate} />
             ) : (
-              <AutoEncaminharCell agendaId={agendaId} agendaNome={String(row[0])}
-                municipio={row[1] != null && String(row[1]) !== '' ? String(row[1]) : undefined}
-                central={row[11] != null && String(row[11]) !== '' ? String(row[11]) : undefined}
-                especialidade={String(row[12])} emailUsuario={emailUsuario}
-                encaminhadosAtuais={encaminhadosAtuais} onUpdate={onUpdate} />
+              <div className="flex flex-col items-center gap-1">
+                <AutoEncaminharCell agendaId={agendaId} agendaNome={String(row[0])}
+                  municipio={row[1] != null && String(row[1]) !== '' ? String(row[1]) : undefined}
+                  central={row[11] != null && String(row[11]) !== '' ? String(row[11]) : undefined}
+                  especialidade={String(row[12])} emailUsuario={emailUsuario}
+                  encaminhadosAtuais={encaminhadosAtuais} onUpdate={onUpdate} />
+                {onCheckInLista && (
+                  <button
+                    onClick={() => onCheckInLista({ agendaId, agendaNome: String(row[0]), especialidade: String(row[12]),
+                      central: row[11] != null && String(row[11]) !== '' ? String(row[11]) : undefined,
+                      municipio: row[1] != null && String(row[1]) !== '' ? String(row[1]) : undefined,
+                      cotas: typeof row[2] === 'number' ? row[2] : undefined,
+                      saldo: typeof row[3] === 'number' ? row[3] : undefined,
+                      aguardando: typeof row[4] === 'number' ? row[4] : undefined,
+                      indexRegula: typeof row[7] === 'number' ? row[7] : undefined,
+                    })}
+                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                      checkInAtivoId === agendaId
+                        ? 'bg-blue-700 text-white'
+                        : 'bg-muted text-muted-foreground hover:bg-blue-100 hover:text-blue-700 dark:hover:bg-blue-950/50 dark:hover:text-blue-300'
+                    }`}
+                    title={checkInAtivoId === agendaId ? 'Fechar painel' : 'Iniciar regulação'}
+                  >
+                    <LogIn size={11} />
+                    {checkInAtivoId === agendaId ? 'Regulando' : 'Check-in'}
+                  </button>
+                )}
+              </div>
             )
           ) : <span className="text-xs text-muted-foreground">—</span>}
         </td>
@@ -153,6 +181,7 @@ const GrupoRow = memo(function GrupoRow({
   grupo, isExpanded, onToggle, isAdminOuMonitor, isRegulador,
   encaminhamentosPorAgenda = new Map(), checkInsPorAgenda = new Map(), reguladoresList = [],
   emailUsuario, onUpdate, concluidasSet,
+  checkInAtivoId: checkInAtivoIdProp, onCheckInLista: onCheckInListaProp,
 }: {
   grupo: Grupo;
   isExpanded: boolean;
@@ -165,6 +194,8 @@ const GrupoRow = memo(function GrupoRow({
   emailUsuario: string;
   onUpdate: () => void;
   concluidasSet: Set<number>;
+  checkInAtivoId?: number | null;
+  onCheckInLista?: (a: { agendaId: number; agendaNome: string; especialidade: string; central?: string; municipio?: string; cotas?: number; saldo?: number; aguardando?: number; indexRegula?: number; }) => void;
 }) {
   const { linhas, nome, central } = grupo;
   const isSingle = linhas.length === 1;
@@ -302,7 +333,8 @@ const GrupoRow = memo(function GrupoRow({
             encaminhadosAtuais={encaminhamentosPorAgenda.get(agendaId) ?? []}
             checkInsAtuais={checkInsPorAgenda.get(agendaId) ?? []}
             reguladoresList={reguladoresList ?? []} emailUsuario={emailUsuario}
-            onUpdate={onUpdate} isConcluida={isConcluida} isSubRow />
+            onUpdate={onUpdate} isConcluida={isConcluida} isSubRow
+            checkInAtivoId={checkInAtivoIdProp} onCheckInLista={onCheckInListaProp} />
         );
       })}
     </>
@@ -315,6 +347,7 @@ export default function DataTable({
   selectedMunicipios = new Set(),
   sortColumn, sortOrder, onSort, perfilUsuario, emailUsuario,
   concluidasIds = [], onConcluir, onRefresh, dataUpdatedAt,
+  checkInAtivoId, onCheckInLista,
 }: DataTableProps) {
   const concluidasSet = useMemo(() => new Set(concluidasIds), [concluidasIds]);
   const perfilLower = perfilUsuario.toLowerCase();
@@ -468,7 +501,8 @@ export default function DataTable({
                   isAdminOuMonitor={isAdminOuMonitor} isRegulador={isRegulador}
                   encaminhamentosPorAgenda={encaminhamentosPorAgenda} checkInsPorAgenda={checkInsPorAgenda}
                   reguladoresList={reguladoresList} emailUsuario={emailUsuario}
-                  onUpdate={handleUpdate} concluidasSet={concluidasSet} />
+                  onUpdate={handleUpdate} concluidasSet={concluidasSet}
+                  checkInAtivoId={checkInAtivoId} onCheckInLista={onCheckInLista} />
               );
             })}
           </tbody>
