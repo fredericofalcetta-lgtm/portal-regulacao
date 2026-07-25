@@ -441,6 +441,7 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
               especialidade={checkInAtivo.especialidade}
               central={checkInAtivo.central}
               municipio={checkInAtivo.municipio}
+              autoExpandir
             />
           </div>
         </div>
