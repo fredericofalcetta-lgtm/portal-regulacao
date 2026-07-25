@@ -391,6 +391,7 @@ export default function DataTable({
   }, []);
 
   const [filtrarBloqueadas, setFiltrarBloqueadas] = useState<"todas" | "bloqueadas" | "livres">("livres");
+  const [exportDropdownAberto, setExportDropdownAberto] = useState(false);
 
   const { data: reguladoresList = [] } = trpc.reguladores.listarReguladores.useQuery(undefined, { staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000 });
   const { data: encaminhamentosData = [], refetch: refetchEncaminhamentos } = trpc.encaminhamentos.getAll.useQuery(undefined, { staleTime: 30 * 1000 });
@@ -505,18 +506,34 @@ export default function DataTable({
             {grupos.length !== filteredRows.length && <span className="ml-1 text-muted-foreground/70">· {filteredRows.length} linha{filteredRows.length !== 1 ? 's' : ''} no total</span>}
           </p>
           {/* Exportar */}
-          <div className="relative group">
+          <div className="relative">
             <button
+              onClick={() => setExportDropdownAberto(v => !v)}
               className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border border-border text-muted-foreground hover:bg-muted transition-colors"
               title="Exportar tabela"
             >
               <Download size={11} />
               Exportar
             </button>
-            <div className="absolute right-0 top-full mt-1 z-50 hidden group-hover:flex flex-col bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[100px]">
-              <button onClick={() => handleExportar('csv')} className="px-4 py-2 text-xs text-left hover:bg-muted transition-colors">.CSV</button>
-              <button onClick={() => handleExportar('xls')} className="px-4 py-2 text-xs text-left hover:bg-muted transition-colors">.XLS</button>
-            </div>
+            {exportDropdownAberto && (
+              <>
+                {/* Overlay invisível para fechar ao clicar fora */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setExportDropdownAberto(false)}
+                />
+                <div className="absolute right-0 top-full mt-1 z-50 flex flex-col bg-card border border-border rounded-lg shadow-lg overflow-hidden min-w-[100px]">
+                  <button
+                    onClick={() => { handleExportar('csv'); setExportDropdownAberto(false); }}
+                    className="px-4 py-2 text-xs text-left hover:bg-muted transition-colors"
+                  >.CSV</button>
+                  <button
+                    onClick={() => { handleExportar('xls'); setExportDropdownAberto(false); }}
+                    className="px-4 py-2 text-xs text-left hover:bg-muted transition-colors"
+                  >.XLS</button>
+                </div>
+              </>
+            )}
           </div>
           <button
             onClick={() => setFiltrarBloqueadas(v =>
