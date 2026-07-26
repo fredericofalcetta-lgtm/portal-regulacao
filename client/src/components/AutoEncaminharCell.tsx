@@ -37,7 +37,7 @@ export default function AutoEncaminharCell({
   };
 
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-row flex-wrap items-center justify-center gap-1">
       {/* Botão de toggle "Minha lista" */}
       <button
         onClick={handleClick}
