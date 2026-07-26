@@ -1,3 +1,4 @@
+import React from 'react';
 import { Loader2, BookmarkPlus, BookmarkCheck, Users } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 
@@ -10,6 +11,7 @@ interface AutoEncaminharCellProps {
   emailUsuario: string;
   encaminhadosAtuais: { reguladorEmail: string; reguladorNome: string }[];
   onUpdate: () => void;
+  botaoExtra?: React.ReactNode;
 }
 
 export default function AutoEncaminharCell({
@@ -21,6 +23,7 @@ export default function AutoEncaminharCell({
   emailUsuario,
   encaminhadosAtuais,
   onUpdate,
+  botaoExtra,
 }: AutoEncaminharCellProps) {
   const jaEncaminhado = (encaminhadosAtuais ?? []).some(e => e.reguladorEmail === emailUsuario);
   // Outros reguladores (além do próprio usuário)
@@ -37,7 +40,7 @@ export default function AutoEncaminharCell({
   };
 
   return (
-    <div className="flex flex-row flex-wrap items-center justify-center gap-1">
+    <div className="flex flex-row items-center justify-center gap-1 whitespace-nowrap">
       {/* Botão de toggle "Minha lista" */}
       <button
         onClick={handleClick}
@@ -58,6 +61,9 @@ export default function AutoEncaminharCell({
         )}
         {jaEncaminhado ? 'Na lista' : 'Minha lista'}
       </button>
+
+      {/* Botão extra (ex: check-in) passado pelo pai */}
+      {botaoExtra}
 
       {/* Badges de outros reguladores que também estão regulando esta agenda */}
       {outrosReguladores.length > 0 && (
