@@ -323,8 +323,8 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
-      {/* Layout principal: filtros + tabela */}
-      <div className={`flex min-h-0 transition-all duration-300 ${checkInAtivo ? 'h-1/2' : 'flex-1'}`}>
+      {/* Layout principal: filtros + tabela — oculto quando check-in ativo */}
+      <div className={`flex min-h-0 transition-all duration-300 ${checkInAtivo ? 'hidden' : 'flex-1'}`}>
 
         {/* Aviso de restrição por perfil */}
         {!isIrrestrito && regulador?.grandeGrupo && (
@@ -384,7 +384,7 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
 
       {/* Painel inferior — detalhes do check-in ativo */}
       {checkInAtivo && (
-        <div className="flex flex-col h-1/2 border-t-2 border-primary/40 bg-background min-h-0">
+        <div className="flex flex-col flex-1 border-t-2 border-primary/40 bg-background min-h-0 overflow-hidden">
           {/* Barra de controle do painel */}
           <div className="flex items-center justify-between px-4 py-2 bg-blue-950 shrink-0">
             <div className="flex items-center gap-3">
