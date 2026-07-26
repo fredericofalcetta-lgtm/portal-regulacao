@@ -111,7 +111,7 @@ const TableRow = memo(function TableRow({
                 especialidade={String(row[12])}
                 encaminhadosAtuais={encaminhadosAtuais} reguladoresList={reguladoresList} onUpdate={onUpdate} />
             ) : (
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex flex-row items-center gap-1.5 justify-center flex-wrap">
                 <AutoEncaminharCell agendaId={agendaId} agendaNome={String(row[0])}
                   municipio={row[1] != null && String(row[1]) !== '' ? String(row[1]) : undefined}
                   central={row[11] != null && String(row[11]) !== '' ? String(row[11]) : undefined}
@@ -279,7 +279,7 @@ const GrupoRow = memo(function GrupoRow({
             ) : isAdminOuMonitor ? (
               <EncaminharGrupoCell linhas={linhas} encaminhadosGrupo={encaminhadosGrupo} reguladoresList={reguladoresList} onUpdate={onUpdate} />
             ) : (
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex flex-row items-center gap-1.5 justify-center flex-wrap">
                 <AutoEncaminharGrupoCell
                   linhas={linhas}
                   emailUsuario={emailUsuario}
