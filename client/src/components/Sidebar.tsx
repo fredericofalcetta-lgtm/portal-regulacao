@@ -275,19 +275,37 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
 
             {/* Botão compacto de troca de perfil (sidebar colapsado) */}
             {temMultiplosPerfis && perfisAlternativos.length > 0 && (
-              <button
-                onClick={() => {
-                  if (perfisAlternativos.length === 1) {
-                    trocarPerfil(perfisAlternativos[0]);
-                  } else {
-                    setPerfilDropdownAberto(v => !v);
-                  }
-                }}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
-                title={perfisAlternativos.length === 1 ? `Trocar para ${perfilLabel(perfisAlternativos[0])}` : 'Trocar perfil'}
-              >
-                <RefreshCw size={16} />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    if (perfisAlternativos.length === 1) {
+                      trocarPerfil(perfisAlternativos[0]);
+                    } else {
+                      setPerfilDropdownAberto(v => !v);
+                    }
+                  }}
+                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+                  title={perfisAlternativos.length === 1 ? `Trocar para ${perfilLabel(perfisAlternativos[0])}` : 'Trocar perfil'}
+                >
+                  <RefreshCw size={16} />
+                </button>
+                {perfilDropdownAberto && perfisAlternativos.length > 1 && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setPerfilDropdownAberto(false)} />
+                    <div className="absolute left-full top-0 ml-2 z-50 bg-slate-800 border border-slate-600 rounded-lg shadow-lg py-1 min-w-[140px]">
+                      {perfisAlternativos.map(p => (
+                        <button
+                          key={p}
+                          onClick={() => { trocarPerfil(p); setPerfilDropdownAberto(false); }}
+                          className="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+                        >
+                          {perfilLabel(p)}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             )}
 
             {/* Botão de tema compacto */}
