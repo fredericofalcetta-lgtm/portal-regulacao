@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import FilterPanel from '@/components/FilterPanel';
 import DataTable from '@/components/DataTable';
 import CheckInDetalhes from '@/components/CheckInDetalhes';
@@ -6,7 +7,7 @@ import { useRegulador } from '@/contexts/ReguladorContext';
 import { usePersistedFilters } from '@/hooks/usePersistedFilters';
 import { trpc } from '@/lib/trpc';
 import { UltimaAtualizacao } from '@/components/UltimaAtualizacao';
-import { LogOut, CheckCircle2, Loader2, X } from 'lucide-react';
+import { LogOut, CheckCircle2, Loader2, X, GripHorizontal } from 'lucide-react';
 
 interface RegulationProps {
   data: (string | number)[][];
@@ -323,23 +324,115 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
-      {/* Layout principal: filtros + tabela — oculto quando check-in ativo */}
-      <div className={`flex min-h-0 transition-all duration-300 ${checkInAtivo ? 'hidden' : 'flex-1'}`}>
-
-        {/* Aviso de restrição por perfil */}
-        {!isIrrestrito && regulador?.grandeGrupo && (
-          <div className="absolute top-2 right-4 z-10">
-            <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-              Exibindo especialidades de: <strong>{regulador.grandeGrupo}</strong>
-            </div>
+      {/* Aviso de restrição por perfil */}
+      {!isIrrestrito && regulador?.grandeGrupo && (
+        <div className="absolute top-2 right-4 z-10">
+          <div className="bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            Exibindo especialidades de: <strong>{regulador.grandeGrupo}</strong>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Sidebar com Filtros — recolhido automaticamente quando há check-in ativo */}
-        {!filtrosRecolhidos && (
+      {checkInAtivo ? (
+        /* Layout com painel de detalhes — PanelGroup redimensionável */
+        <PanelGroup direction="vertical" className="flex-1 min-h-0">
+
+          {/* Painel superior — tabela (sem filtros para dar espaço) */}
+          <Panel defaultSize={45} minSize={20} maxSize={75}>
+            <div className="flex h-full min-h-0">
+              <DataTable
+                headers={headers}
+                rows={dadosFiltradosPorPerfil}
+                selectedAgendas={selectedAgendas}
+                selectedCentrais={selectedCentrais}
+                selectedEspecialidades={selectedEspecialidades}
+                selectedMunicipios={selectedMunicipios}
+                selectedCores={selectedCores}
+                sortColumn={sortColumn}
+                sortOrder={sortOrder}
+                onSort={handleSort}
+                perfilUsuario={perfilUsuario}
+                emailUsuario={regulador?.email ?? ''}
+                concluidasIds={concluidasIds}
+                onConcluir={onConcluir}
+                onRefresh={onRefresh}
+                dataUpdatedAt={dataUpdatedAt}
+                checkInAtivoId={checkInAtivo.agendaId}
+                onCheckInLista={isRegulador ? handleCheckInLista : undefined}
+              />
+            </div>
+          </Panel>
+
+          {/* Handle arrastável */}
+          <PanelResizeHandle className="group relative h-2 bg-border hover:bg-primary/40 transition-colors cursor-row-resize flex items-center justify-center">
+            <div className="flex items-center gap-1 text-muted-foreground group-hover:text-primary transition-colors">
+              <GripHorizontal size={14} />
+            </div>
+          </PanelResizeHandle>
+
+          {/* Painel inferior — detalhes do check-in */}
+          <Panel defaultSize={55} minSize={25}>
+            <div className="flex flex-col h-full min-h-0 bg-background">
+              {/* Barra de controle */}
+              <div className="flex items-center justify-between px-4 py-2 bg-blue-950 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 text-sm font-semibold text-white">
+                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                    Em regulação: {checkInAtivo.agendaNome}
+                    {checkInAtivo.municipio && (
+                      <span className="text-blue-300 font-normal text-xs">— {checkInAtivo.municipio}</span>
+                    )}
+                    {checkInAtivo.central && (
+                      <span className="text-blue-300 font-normal text-xs">· {checkInAtivo.central}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleCheckOutLista}
+                    disabled={checkOutMutation.isPending || concluirMutation.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-700 text-white text-xs font-medium hover:bg-slate-600 disabled:opacity-50 transition-colors"
+                  >
+                    {checkOutMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <LogOut size={12} />}
+                    Check-out
+                  </button>
+                  <button
+                    onClick={handleConcluirLista}
+                    disabled={concluirMutation.isPending || checkOutMutation.isPending}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-green-600 text-white text-xs font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+                  >
+                    {concluirMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
+                    Concluído
+                  </button>
+                  <button
+                    onClick={() => { setCheckInAtivo(null); setFiltrosRecolhidos(false); }}
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-md text-blue-300 hover:text-white hover:bg-slate-700 text-xs transition-colors"
+                    title="Fechar painel (mantém check-in ativo)"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              </div>
+              {/* Conteúdo */}
+              <div className="flex-1 overflow-y-auto p-4">
+                <CheckInDetalhes
+                  agendaId={checkInAtivo.agendaId}
+                  agendaNome={checkInAtivo.agendaNome}
+                  especialidade={checkInAtivo.especialidade}
+                  central={checkInAtivo.central}
+                  municipio={checkInAtivo.municipio}
+                  autoExpandir
+                />
+              </div>
+            </div>
+          </Panel>
+        </PanelGroup>
+      ) : (
+        /* Layout normal — filtros + tabela */
+        <div className="flex flex-1 min-h-0">
           <FilterPanel
             agendas={agendas}
             centrais={centrais}
@@ -357,93 +450,26 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
             onEspecialidadesChange={setSelectedEspecialidades}
             onMunicipiosChange={setSelectedMunicipios}
           />
-        )}
-
-        {/* Tabela de Dados */}
-        <DataTable
-          headers={headers}
-          rows={dadosFiltradosPorPerfil}
-          selectedAgendas={selectedAgendas}
-          selectedCentrais={selectedCentrais}
-          selectedEspecialidades={selectedEspecialidades}
-          selectedMunicipios={selectedMunicipios}
-          selectedCores={selectedCores}
-          sortColumn={sortColumn}
-          sortOrder={sortOrder}
-          onSort={handleSort}
-          perfilUsuario={perfilUsuario}
-          emailUsuario={regulador?.email ?? ''}
-          concluidasIds={concluidasIds}
-          onConcluir={onConcluir}
-          onRefresh={onRefresh}
-          dataUpdatedAt={dataUpdatedAt}
-          checkInAtivoId={checkInAtivo?.agendaId ?? null}
-          onCheckInLista={isRegulador ? handleCheckInLista : undefined}
-        />
-      </div>
-
-      {/* Painel inferior — detalhes do check-in ativo */}
-      {checkInAtivo && (
-        <div className="flex flex-col flex-1 border-t-2 border-primary/40 bg-background min-h-0 overflow-hidden">
-          {/* Barra de controle do painel */}
-          <div className="flex items-center justify-between px-4 py-2 bg-blue-950 shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 text-sm font-semibold text-white">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                Em regulação: {checkInAtivo.agendaNome}
-                {checkInAtivo.municipio && (
-                  <span className="text-blue-300 font-normal text-xs">— {checkInAtivo.municipio}</span>
-                )}
-                {checkInAtivo.central && (
-                  <span className="text-blue-300 font-normal text-xs">· {checkInAtivo.central}</span>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Check-out */}
-              <button
-                onClick={handleCheckOutLista}
-                disabled={checkOutMutation.isPending || concluirMutation.isPending}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-slate-700 text-white text-xs font-medium hover:bg-slate-600 disabled:opacity-50 transition-colors"
-              >
-                {checkOutMutation.isPending
-                  ? <Loader2 size={12} className="animate-spin" />
-                  : <LogOut size={12} />}
-                Check-out
-              </button>
-              {/* Concluído */}
-              <button
-                onClick={handleConcluirLista}
-                disabled={concluirMutation.isPending || checkOutMutation.isPending}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-green-600 text-white text-xs font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
-              >
-                {concluirMutation.isPending
-                  ? <Loader2 size={12} className="animate-spin" />
-                  : <CheckCircle2 size={12} />}
-                Concluído
-              </button>
-              {/* Fechar painel sem check-out */}
-              <button
-                onClick={() => { setCheckInAtivo(null); setFiltrosRecolhidos(false); }}
-                className="flex items-center gap-1 px-2 py-1.5 rounded-md text-blue-300 hover:text-white hover:bg-slate-700 text-xs transition-colors"
-                title="Fechar painel (mantém check-in ativo)"
-              >
-                <X size={13} />
-              </button>
-            </div>
-          </div>
-
-          {/* Conteúdo do painel — CheckInDetalhes */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <CheckInDetalhes
-              agendaId={checkInAtivo.agendaId}
-              agendaNome={checkInAtivo.agendaNome}
-              especialidade={checkInAtivo.especialidade}
-              central={checkInAtivo.central}
-              municipio={checkInAtivo.municipio}
-              autoExpandir
-            />
-          </div>
+          <DataTable
+            headers={headers}
+            rows={dadosFiltradosPorPerfil}
+            selectedAgendas={selectedAgendas}
+            selectedCentrais={selectedCentrais}
+            selectedEspecialidades={selectedEspecialidades}
+            selectedMunicipios={selectedMunicipios}
+            selectedCores={selectedCores}
+            sortColumn={sortColumn}
+            sortOrder={sortOrder}
+            onSort={handleSort}
+            perfilUsuario={perfilUsuario}
+            emailUsuario={regulador?.email ?? ''}
+            concluidasIds={concluidasIds}
+            onConcluir={onConcluir}
+            onRefresh={onRefresh}
+            dataUpdatedAt={dataUpdatedAt}
+            checkInAtivoId={null}
+            onCheckInLista={isRegulador ? handleCheckInLista : undefined}
+          />
         </div>
       )}
     </div>
