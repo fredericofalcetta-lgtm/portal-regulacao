@@ -466,13 +466,20 @@ export default function DataTable({
 
   // Exportar tabela filtrada
   const handleExportar = (formato: 'csv' | 'xls') => {
-    const cabecalho = ['Agenda','Município','Cotas','Saldo','Aguardando','Autorizadas','Fila/Cotas','Index','Central','Especialidade','>7d','>28d','>90d'];
+    const cabecalho = ['Agenda','Município','Central','Cotas','Saldo','Aguardando','Autorizadas','Fila/Cotas','Index','>7d','>28d','>90d'];
     const linhasExport = filteredRows.map(r => [
-      String(r[0] ?? ''), String(r[1] ?? ''), String(r[2] ?? ''), String(r[3] ?? ''),
-      String(r[4] ?? ''), String(r[5] ?? ''), String(r[6] ?? ''), String(r[7] ?? ''),
-      String(r[11] ?? ''), String(r[12] ?? ''), String(r[8] ?? ''), String(r[9] ?? ''), String(r[10] ?? ''),
+      String(r[0] ?? ''), String(r[1] ?? ''), String(r[11] ?? ''),
+      String(r[2] ?? ''), String(r[3] ?? ''), String(r[4] ?? ''), String(r[5] ?? ''),
+      String(r[6] ?? ''), String(r[7] ?? ''), String(r[8] ?? ''), String(r[9] ?? ''), String(r[10] ?? ''),
     ]);
-    const dados = [cabecalho, ...linhasExport];
+    // Linha de totais
+    const somaExport = (idx: number) => filteredRows.reduce((acc, r) => acc + (parseFloat(String(r[idx])) || 0), 0);
+    const linhaTotais = [
+      `Totais (${filteredRows.length} linhas)`, '', '',
+      String(somaExport(2)), String(somaExport(3)), String(somaExport(4)), String(somaExport(5)),
+      '—', '—', String(somaExport(8)), String(somaExport(9)), String(somaExport(10)),
+    ];
+    const dados = [cabecalho, ...linhasExport, linhaTotais];
 
     if (formato === 'csv') {
       const sep = ';';
@@ -601,29 +608,26 @@ export default function DataTable({
               cotas: soma(2), saldo: soma(3), aguardando: soma(4),
               autorizadas: soma(5), ag7d: soma(8), ag28d: soma(9), ag90d: soma(10),
             };
-            const numCols = (isAdminOuMonitor || isRegulador) ? 13 : 12;
+            // Colunas da tabela (em ordem):
+            // Agenda | Município | Central | [Encaminhar] | Regulando | Cotas | Saldo | Aguardando | Autorizadas | Fila/Cotas | Index | >7d | >28d | >90d
+            // colSpan do label cobre: Agenda + Município + Central + [Encaminhar] + Regulando = 5 (sem Encaminhar: 4)
+            const colSpanLabel = (isAdminOuMonitor || isRegulador) ? 5 : 4;
+            const fmt = (v: number) => v > 0 ? v.toLocaleString('pt-BR') : '—';
             return (
               <tfoot>
                 <tr className="border-t-2 border-primary/40 bg-muted/60 font-semibold">
-                  <td className="px-3 py-1.5 text-xs text-foreground" colSpan={3}>
+                  <td className="px-3 py-1.5 text-xs text-foreground" colSpan={colSpanLabel}>
                     Totais ({grupos.length} agenda{grupos.length !== 1 ? 's' : ''})
                   </td>
-                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{totaisTabela.cotas || '—'}</td>
-                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{totaisTabela.saldo || '—'}</td>
-                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{totaisTabela.aguardando || '—'}</td>
-                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{totaisTabela.autorizadas || '—'}</td>
+                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.cotas)}</td>
+                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.saldo)}</td>
+                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.aguardando)}</td>
+                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.autorizadas)}</td>
                   <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">—</td>
                   <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">—</td>
-                  {(isAdminOuMonitor || isRegulador) && (
-                    <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">—</td>
-                  )}
-                  <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">—</td>
-                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{totaisTabela.ag7d || '—'}</td>
-                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{totaisTabela.ag28d || '—'}</td>
-                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{totaisTabela.ag90d || '—'}</td>
-                  {(isAdminOuMonitor || isRegulador) && (
-                    <td className="px-2 py-1.5" />
-                  )}
+                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.ag7d)}</td>
+                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.ag28d)}</td>
+                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.ag90d)}</td>
                 </tr>
               </tfoot>
             );
