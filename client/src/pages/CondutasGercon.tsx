@@ -51,6 +51,32 @@ async function copiarTexto(texto: string, mensagem: string) {
   }
 }
 
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Destaca (em <mark>) as ocorrências dos termos buscados dentro do texto. */
+function highlightText(text: string, query: string): React.ReactNode {
+  const tokens = normalize(query).split(/\s+/).filter(t => t.length >= 2);
+  if (tokens.length === 0) return text;
+
+  const pattern = new RegExp(`(${tokens.map(escapeRegex).join('|')})`, 'gi');
+  const parts = text.split(pattern);
+  if (parts.length === 1) return text;
+
+  return parts.map((part, i) =>
+    i % 2 === 1 ? (
+      <mark key={i} className="bg-amber-200 dark:bg-amber-500/40 text-inherit rounded-sm px-0.5">
+        {part}
+      </mark>
+    ) : (
+      <span key={i}>{part}</span>
+    )
+  );
+}
+
+const TRUNCATE_LENGTH = 320;
+
 function formatarDataHora(iso: string | Date): string {
   const d = new Date(iso);
   return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
@@ -63,6 +89,7 @@ export default function CondutasGercon() {
   const [somenteFavoritos, setSomenteFavoritos] = useState(false);
   const [favoritos, setFavoritos] = useState<Set<number>>(() => loadFavoritos());
   const [abertos, setAbertos] = useState<Set<number>>(new Set());
+  const [expandidos, setExpandidos] = useState<Set<number>>(new Set());
 
   const { data: condutas, isLoading } = trpc.condutas.listar.useQuery(undefined, { enabled: isAdmin });
   const { data: ultimaSync } = trpc.condutas.ultimaSincronizacao.useQuery(undefined, { enabled: isAdmin });
@@ -137,6 +164,14 @@ export default function CondutasGercon() {
 
   const toggleAberto = (id: number) => {
     setAbertos(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleExpandido = (id: number) => {
+    setExpandidos(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
@@ -267,6 +302,10 @@ export default function CondutasGercon() {
         {filtradas.map(c => {
           const fav = favoritos.has(c.id);
           const aberto = abertos.has(c.id);
+          const expandido = expandidos.has(c.id);
+          const condutaLonga = c.conduta.length > TRUNCATE_LENGTH;
+          const textoConduta =
+            condutaLonga && !expandido ? c.conduta.slice(0, TRUNCATE_LENGTH).trimEnd() + '…' : c.conduta;
           return (
             <div
               key={c.id}
@@ -274,7 +313,9 @@ export default function CondutasGercon() {
             >
               <div className="flex items-start justify-between gap-3 mb-1">
                 <div>
-                  <h3 className="font-semibold text-primary text-base leading-tight">{c.situacao}</h3>
+                  <h3 className="font-semibold text-primary text-base leading-tight">
+                    {highlightText(c.situacao, busca)}
+                  </h3>
                   {c.ciapCid && (
                     <p className="text-xs italic text-muted-foreground mt-0.5">{c.ciapCid}</p>
                   )}
@@ -282,7 +323,17 @@ export default function CondutasGercon() {
                 <Badge variant="secondary" className="whitespace-nowrap">{c.especialidade}</Badge>
               </div>
 
-              <p className="text-sm text-card-foreground whitespace-pre-wrap mt-2">{c.conduta}</p>
+              <p className="text-sm text-card-foreground whitespace-pre-wrap mt-2">
+                {highlightText(textoConduta, busca)}
+              </p>
+              {condutaLonga && (
+                <button
+                  onClick={() => toggleExpandido(c.id)}
+                  className="text-xs text-primary hover:underline mt-1"
+                >
+                  {expandido ? 'Ver menos' : 'Ver conduta completa'}
+                </button>
+              )}
 
               <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border">
                 <Button
