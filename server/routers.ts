@@ -30,6 +30,7 @@ import { asc, desc, eq, and, inArray, sql } from "drizzle-orm";
 import { syncSheetsToDb, syncPrioridadesToDb, syncDicionarioToDb, syncSemCotasToDb } from "./syncSheets";
 import { syncFromPostgres } from "./syncPostgres";
 import { syncCondutasGerconComLog } from "./syncMetabase";
+import { importCondutasGerconFromCsvComLog } from "./importCondutasCsv";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -2178,6 +2179,15 @@ export const appRouter = router({
       const count = await syncCondutasGerconComLog();
       return { success: true, count };
     }),
+
+    // Importar manualmente a partir de um CSV exportado do banco (alternativa
+    // temporária enquanto o acesso ao Metabase não é liberado)
+    importarCsv: protectedProcedure
+      .input(z.object({ csv: z.string().min(1) }))
+      .mutation(async ({ input }) => {
+        const count = await importCondutasGerconFromCsvComLog(input.csv);
+        return { success: true, count };
+      }),
 
     // Data/hora da última sincronização bem-sucedida
     ultimaSincronizacao: publicProcedure.query(async () => {
