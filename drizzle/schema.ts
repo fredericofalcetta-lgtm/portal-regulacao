@@ -91,6 +91,39 @@ export const syncLog = mysqlTable("sync_log", {
 export type SyncLog = typeof syncLog.$inferSelect;
 
 /**
+ * Tabela para armazenar as condutas/referências do GERCON (respostas-padrão
+ * usadas pelos reguladores para consultorias, por especialidade e situação clínica).
+ * Sincronizada a partir de uma consulta SQL no Metabase (ver server/syncMetabase.ts).
+ */
+export const condutasGercon = mysqlTable("condutas_gercon", {
+  id: int("id").autoincrement().primaryKey(),
+  especialidade: varchar("especialidade", { length: 255 }).notNull(),
+  situacao: text("situacao").notNull(),
+  ciapCid: text("ciap_cid"),
+  conduta: text("conduta").notNull(),
+  referencias: text("referencias"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CondutaGercon = typeof condutasGercon.$inferSelect;
+export type InsertCondutaGercon = typeof condutasGercon.$inferInsert;
+
+/**
+ * Log de sincronização específico das condutas do GERCON (fonte: Metabase).
+ * Mantido separado do sync_log geral para não misturar com as sincronizações
+ * da planilha Google Sheets.
+ */
+export const condutasGerconSyncLog = mysqlTable("condutas_gercon_sync_log", {
+  id: int("id").autoincrement().primaryKey(),
+  syncedAt: timestamp("synced_at").defaultNow().notNull(),
+  rowCount: int("row_count"),
+  status: varchar("status", { length: 50 }).default("success"),
+  message: text("message"),
+});
+
+export type CondutasGerconSyncLog = typeof condutasGerconSyncLog.$inferSelect;
+
+/**
  * Tabela para armazenar as listas de prioridades por especialidade (aba Apoio, colunas F e G).
  */
 export const prioridades = mysqlTable("prioridades", {
