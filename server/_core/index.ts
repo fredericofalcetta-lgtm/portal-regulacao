@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { syncAndSeedIfEmpty } from "../syncSheets";
+import { syncCondutasGerconIfEmpty, syncCondutasGerconComLog } from "../syncMetabase";
 import { sdk } from "./sdk";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -294,6 +295,31 @@ async function runPendingMigrations() {
       console.log('[Migration] recados e recados_lidos OK!');
     } catch(e) { console.warn('[Migration] recados:', e); }
 
+    // Migration: criar tabelas de condutas GERCON (sincronizadas via Metabase)
+    try {
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS \`condutas_gercon\` (
+          \`id\`             int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          \`especialidade\`  varchar(255)  NOT NULL,
+          \`situacao\`       text          NOT NULL,
+          \`ciap_cid\`       text          NULL,
+          \`conduta\`        text          NOT NULL,
+          \`referencias\`    text          NULL,
+          \`updatedAt\`      timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+      `);
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS \`condutas_gercon_sync_log\` (
+          \`id\`          int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          \`synced_at\`   timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          \`row_count\`   int NULL,
+          \`status\`      varchar(50) NULL DEFAULT 'success',
+          \`message\`     text NULL
+        )
+      `);
+      console.log('[Migration] condutas_gercon e condutas_gercon_sync_log OK!');
+    } catch(e) { console.warn('[Migration] condutas_gercon:', e); }
+
     // Limpeza diária: remover check-ins com mais de 24h
     try {
       await db.execute("DELETE FROM check_ins WHERE createdAt < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
@@ -322,6 +348,7 @@ startServer()
   .then(() => runDrizzleMigrations())
   .then(() => runPendingMigrations())
   .then(() => syncAndSeedIfEmpty(false))
+  .then(() => syncCondutasGerconIfEmpty())
   .catch(console.error);
 
 // Sincronização automática diária às 08:30 (horário de Brasília, UTC-3)
@@ -358,3 +385,24 @@ async function checkAndRunDailySync() {
 // Verificar a cada 5 minutos
 setInterval(checkAndRunDailySync, 5 * 60 * 1000);
 console.log('[Sync] Verificação periódica de sincronização ativada (a cada 5 min, executa às 08:30 Brasília)');
+
+// Sincronização automática diária das condutas GERCON (Metabase) às 08:40 Brasília —
+// horário separado do sync do Sheets (08:30) para não concorrer pelo banco ao mesmo tempo.
+let lastCondutasSyncDate: string | null = null;
+
+async function checkAndRunDailyCondutasSync() {
+  const { hour, minute, dateStr } = getBrasiliaHourMinute();
+  if (hour === 8 && minute >= 40 && minute < 45 && lastCondutasSyncDate !== dateStr) {
+    lastCondutasSyncDate = dateStr;
+    console.log(`[Sync Metabase] Iniciando sincronização automática diária de condutas GERCON (${dateStr} 08:40 Brasília)...`);
+    try {
+      await syncCondutasGerconComLog();
+      console.log('[Sync Metabase] Sincronização automática de condutas GERCON concluída com sucesso!');
+    } catch (err) {
+      console.error('[Sync Metabase] Erro na sincronização automática de condutas GERCON:', err);
+    }
+  }
+}
+
+setInterval(checkAndRunDailyCondutasSync, 5 * 60 * 1000);
+console.log('[Sync Metabase] Verificação periódica de sincronização de condutas GERCON ativada (a cada 5 min, executa às 08:40 Brasília)');
