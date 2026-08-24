@@ -115,6 +115,14 @@ function Router() {
         )}
       </Route>
 
+      <Route path="/condutas-gercon">
+        {() => (
+          <AuthGuard>
+            <Home />
+          </AuthGuard>
+        )}
+      </Route>
+
       <Route path="/previa-pg">
         {() => (
           <AuthGuard>
