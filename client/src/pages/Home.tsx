@@ -13,6 +13,7 @@ import NovasAgendas from './NovasAgendas';
 import MonitorLogins from './MonitorLogins';
 import PreviaPostgres from './PreviaPostgres';
 import Recados from './Recados';
+import CondutasGercon from './CondutasGercon';
 import RecadoModal from '@/components/RecadoModal';
 import { trpc } from '@/lib/trpc';
 import { useRegulador } from '@/contexts/ReguladorContext';
@@ -113,6 +114,7 @@ export default function Home() {
           <Route path="/previa-pg" component={PreviaPostgres} />
           <Route path="/recados" component={Recados} />
           <Route path="/sem-cotas" component={SemCotas} />
+          <Route path="/condutas-gercon" component={CondutasGercon} />
         </Switch>
       </main>
     </div>
