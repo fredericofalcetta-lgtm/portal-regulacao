@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { useRegulador } from '@/contexts/ReguladorContext';
 import { toast } from 'sonner';
-import { Search, X, Copy, Star, RefreshCw, BookOpen } from 'lucide-react';
+import { Search, X, Copy, Star, RefreshCw, BookOpen, Upload } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -79,6 +79,32 @@ export default function CondutasGercon() {
     },
   });
 
+  const importarCsvMutation = trpc.condutas.importarCsv.useMutation({
+    onSuccess: (res) => {
+      toast.success(`Importação concluída: ${res.count} condutas atualizadas.`);
+      utils.condutas.listar.invalidate();
+      utils.condutas.ultimaSincronizacao.invalidate();
+    },
+    onError: (err) => {
+      toast.error(`Falha na importação do CSV: ${err.message}`);
+    },
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCsvFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const csv = reader.result as string;
+      importarCsvMutation.mutate({ csv });
+    };
+    reader.onerror = () => toast.error('Não foi possível ler o arquivo.');
+    reader.readAsText(file, 'utf-8');
+    // Permite selecionar o mesmo arquivo de novo em uma próxima tentativa
+    e.target.value = '';
+  };
+
   useEffect(() => {
     saveFavoritos(favoritos);
   }, [favoritos]);
@@ -139,15 +165,33 @@ export default function CondutasGercon() {
         </div>
         {isAdmin && (
           <div className="text-right">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => sincronizarMutation.mutate()}
-              disabled={sincronizarMutation.isPending}
-            >
-              <RefreshCw size={14} className={sincronizarMutation.isPending ? 'animate-spin' : ''} />
-              {sincronizarMutation.isPending ? 'Sincronizando...' : 'Sincronizar com Metabase'}
-            </Button>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => sincronizarMutation.mutate()}
+                disabled={sincronizarMutation.isPending}
+              >
+                <RefreshCw size={14} className={sincronizarMutation.isPending ? 'animate-spin' : ''} />
+                {sincronizarMutation.isPending ? 'Sincronizando...' : 'Sincronizar com Metabase'}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                onChange={handleCsvFileChange}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importarCsvMutation.isPending}
+              >
+                <Upload size={14} className={importarCsvMutation.isPending ? 'animate-spin' : ''} />
+                {importarCsvMutation.isPending ? 'Importando...' : 'Importar CSV'}
+              </Button>
+            </div>
             {ultimaSync && (
               <p className="text-xs text-muted-foreground mt-1">
                 Última sincronização: {formatarDataHora(ultimaSync.syncedAt)} ({ultimaSync.rowCount} registros)
