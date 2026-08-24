@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Menu, X, BarChart3, Table2, FolderOpen, Home, LogOut, UserCircle2, Sun, Moon, ClipboardList, Activity, RefreshCw, Users, Link2, TrendingDown, Sparkles, LogIn, Database, MessageSquare } from 'lucide-react';
+import { Menu, X, BarChart3, Table2, FolderOpen, Home, LogOut, UserCircle2, Sun, Moon, ClipboardList, Activity, RefreshCw, Users, Link2, TrendingDown, Sparkles, LogIn, Database, MessageSquare, BookOpen } from 'lucide-react';
 import { Link } from 'wouter';
 import { useRegulador } from '@/contexts/ReguladorContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -95,6 +95,7 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     { href: '/minhas-agendas', page: 'minhas-agendas', icon: ClipboardList, label: 'Minhas Agendas', visible: true },
     { href: '/monitor-checkins', page: 'monitor-checkins', icon: Activity, label: 'Monitor de Check-ins', visible: isAdminOrMonitor },
     { href: '/reguladores', page: 'reguladores', icon: Users, label: 'Reguladores', visible: true },
+    { href: '/condutas-gercon', page: 'condutas-gercon', icon: BookOpen, label: 'Condutas GERCON', visible: true },
     { href: '/agendas-relacionadas', page: 'agendas-relacionadas', icon: Link2, label: 'Agendas Relacionadas', visible: isAdminOrMonitorOnly },
     { href: '/novas-agendas', page: 'novas-agendas', icon: Sparkles, label: 'Novas Agendas', visible: isAdminOrMonitorOnly },
     { href: '/monitor-logins', page: 'monitor-logins', icon: LogIn, label: 'Monitor de Logins', visible: isAdminOrMonitorOnly },
