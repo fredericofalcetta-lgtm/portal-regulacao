@@ -16,10 +16,10 @@ import { Badge } from '@/components/ui/badge';
 
 const FAVORITOS_KEY = 'condutas-gercon-favoritos';
 
-function useIsAdminOuMonitor() {
-  const { perfilAtivo } = useRegulador();
-  const perfil = perfilAtivo?.toLowerCase() ?? '';
-  return perfil.includes('administrador') || perfil.includes('monitoramento');
+function useIsAdmin() {
+  const { regulador, perfilAtivo } = useRegulador();
+  const perfilNorm = (perfilAtivo ?? regulador?.perfil ?? '').toLowerCase();
+  return perfilNorm.includes('administrador');
 }
 
 function normalize(s: string | null | undefined): string {
@@ -57,15 +57,15 @@ function formatarDataHora(iso: string | Date): string {
 }
 
 export default function CondutasGercon() {
-  const isAdminOuMonitor = useIsAdminOuMonitor();
+  const isAdmin = useIsAdmin();
   const [busca, setBusca] = useState('');
   const [especialidade, setEspecialidade] = useState<string>('');
   const [somenteFavoritos, setSomenteFavoritos] = useState(false);
   const [favoritos, setFavoritos] = useState<Set<number>>(() => loadFavoritos());
   const [abertos, setAbertos] = useState<Set<number>>(new Set());
 
-  const { data: condutas, isLoading } = trpc.condutas.listar.useQuery();
-  const { data: ultimaSync } = trpc.condutas.ultimaSincronizacao.useQuery();
+  const { data: condutas, isLoading } = trpc.condutas.listar.useQuery(undefined, { enabled: isAdmin });
+  const { data: ultimaSync } = trpc.condutas.ultimaSincronizacao.useQuery(undefined, { enabled: isAdmin });
   const utils = trpc.useUtils();
 
   const sincronizarMutation = trpc.condutas.sincronizar.useMutation({
@@ -117,6 +117,14 @@ export default function CondutasGercon() {
     });
   };
 
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center h-64 text-muted-foreground">
+        Acesso restrito a administradores.
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -129,7 +137,7 @@ export default function CondutasGercon() {
             Busque por situação clínica, CIAP/CID, especialidade ou texto da conduta para instruir consultorias.
           </p>
         </div>
-        {isAdminOuMonitor && (
+        {isAdmin && (
           <div className="text-right">
             <Button
               variant="outline"
