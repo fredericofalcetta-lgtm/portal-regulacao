@@ -23,10 +23,13 @@ import {
   loginLog,
   recados,
   recadosLidos,
+  condutasGercon,
+  condutasGerconSyncLog,
 } from "../drizzle/schema";
 import { asc, desc, eq, and, inArray, sql } from "drizzle-orm";
 import { syncSheetsToDb, syncPrioridadesToDb, syncDicionarioToDb, syncSemCotasToDb } from "./syncSheets";
 import { syncFromPostgres } from "./syncPostgres";
+import { syncCondutasGerconComLog } from "./syncMetabase";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -2145,6 +2148,60 @@ export const appRouter = router({
           .orderBy(desc(loginLog.loginAt))
           .limit(input.limite ?? 500);
       }),
+  }),
+
+  /**
+   * Condutas do GERCON — respostas/referências padronizadas por situação clínica,
+   * usadas pelos reguladores para instruir consultorias. Dados sincronizados a
+   * partir de uma consulta SQL no Metabase (ver server/syncMetabase.ts).
+   */
+  condutas: router({
+    // Lista completa — o filtro/busca é feito no cliente (dataset pequeno, ~algumas centenas de linhas)
+    listar: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db
+        .select({
+          id: condutasGercon.id,
+          especialidade: condutasGercon.especialidade,
+          situacao: condutasGercon.situacao,
+          ciapCid: condutasGercon.ciapCid,
+          conduta: condutasGercon.conduta,
+          referencias: condutasGercon.referencias,
+        })
+        .from(condutasGercon)
+        .orderBy(asc(condutasGercon.situacao));
+    }),
+
+    // Sincronizar manualmente com o Metabase
+    sincronizar: protectedProcedure.mutation(async () => {
+      const count = await syncCondutasGerconComLog();
+      return { success: true, count };
+    }),
+
+    // Data/hora da última sincronização bem-sucedida
+    ultimaSincronizacao: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return null;
+      const rows = await db
+        .select({ syncedAt: condutasGerconSyncLog.syncedAt, rowCount: condutasGerconSyncLog.rowCount })
+        .from(condutasGerconSyncLog)
+        .where(eq(condutasGerconSyncLog.status, "success"))
+        .orderBy(desc(condutasGerconSyncLog.syncedAt))
+        .limit(1);
+      return rows[0] ?? null;
+    }),
+
+    // Histórico de sincronizações (para diagnóstico de falhas)
+    historicoSincronizacao: protectedProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db
+        .select()
+        .from(condutasGerconSyncLog)
+        .orderBy(desc(condutasGerconSyncLog.syncedAt))
+        .limit(10);
+    }),
   }),
 
 });
