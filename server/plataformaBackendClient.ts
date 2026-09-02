@@ -55,16 +55,25 @@ function assertQueryIsReadOnly(sql: string): void {
 export async function testarQueryPlataformaBackend(sql: string): Promise<QueryResult> {
   assertQueryIsReadOnly(sql);
 
-  const client = new Client(getConfig());
+  const config = getConfig();
+  console.log(`[Teste Plataforma Backend] Conectando em ${config.host}:${config.port}/${config.database}...`);
+
+  const client = new Client(config);
   try {
     await client.connect();
+    console.log(`[Teste Plataforma Backend] Conexão OK. Executando consulta...`);
     const result = await client.query(sql);
+    console.log(`[Teste Plataforma Backend] Consulta OK — ${result.rowCount ?? result.rows.length} linha(s)`);
     const fields = result.fields.map(f => f.name);
     return {
       fields,
       rows: result.rows as Record<string, unknown>[],
       rowCount: result.rowCount ?? result.rows.length,
     };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[Teste Plataforma Backend] Erro ao conectar/consultar ${config.host}:${config.port}:`, message);
+    throw err;
   } finally {
     await client.end().catch(() => {});
   }
