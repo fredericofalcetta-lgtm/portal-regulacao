@@ -131,6 +131,14 @@ function Router() {
         )}
       </Route>
 
+      <Route path="/teste-plataforma-backend">
+        {() => (
+          <AuthGuard>
+            <Home />
+          </AuthGuard>
+        )}
+      </Route>
+
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
