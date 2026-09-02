@@ -31,6 +31,7 @@ import { syncSheetsToDb, syncPrioridadesToDb, syncDicionarioToDb, syncSemCotasTo
 import { syncFromPostgres } from "./syncPostgres";
 import { syncCondutasGerconComLog } from "./syncMetabase";
 import { importCondutasGerconFromCsvComLog } from "./importCondutasCsv";
+import { testarQueryPlataformaBackend } from "./plataformaBackendClient";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -2212,6 +2213,20 @@ export const appRouter = router({
         .orderBy(desc(condutasGerconSyncLog.syncedAt))
         .limit(10);
     }),
+  }),
+
+  /**
+   * Aba de TESTE/EXPLORAÇÃO do banco "plataforma-backend" (Postgres, host
+   * 143.54.31.135) — usada para descobrir a estrutura real das tabelas e
+   * comparar com o que já está em condutas_gercon, antes de decidir se vale
+   * a pena integrar esse banco ao fluxo de sincronização automática.
+   */
+  plataformaBackend: router({
+    testarQuery: protectedProcedure
+      .input(z.object({ sql: z.string().min(1) }))
+      .mutation(async ({ input }) => {
+        return testarQueryPlataformaBackend(input.sql);
+      }),
   }),
 
 });
