@@ -100,6 +100,7 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     { href: '/novas-agendas', page: 'novas-agendas', icon: Sparkles, label: 'Novas Agendas', visible: isAdminOrMonitorOnly },
     { href: '/monitor-logins', page: 'monitor-logins', icon: LogIn, label: 'Monitor de Logins', visible: isAdminOrMonitorOnly },
     { href: '/previa-pg', page: 'previa-pg', icon: Database, label: 'Prévia PG', visible: perfilAtivo === 'administrador' || (!perfilAtivo && (regulador?.perfil ?? '').toLowerCase().includes('administrador')) },
+    { href: '/teste-plataforma-backend', page: 'teste-plataforma-backend', icon: Database, label: 'Teste Plataforma Backend', visible: perfilAtivo === 'administrador' || (!perfilAtivo && (regulador?.perfil ?? '').toLowerCase().includes('administrador')) },
     { href: '/recados', page: 'recados', icon: MessageSquare, label: 'Recados', visible: perfilAtivo === 'administrador' || (!perfilAtivo && (regulador?.perfil ?? '').toLowerCase().includes('administrador')) },
     { href: '/sem-cotas', page: 'sem-cotas', icon: TrendingDown, label: 'Sem Cotas', visible: isAdminOrMonitorOnly },
     { href: '/documentos', page: 'documentos', icon: FolderOpen, label: 'Documentos', visible: true },
