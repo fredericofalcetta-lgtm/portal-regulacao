@@ -12,6 +12,7 @@ import SemCotas from './SemCotas';
 import NovasAgendas from './NovasAgendas';
 import MonitorLogins from './MonitorLogins';
 import PreviaPostgres from './PreviaPostgres';
+import TestePlataformaBackend from './TestePlataformaBackend';
 import Recados from './Recados';
 import CondutasGercon from './CondutasGercon';
 import RecadoModal from '@/components/RecadoModal';
@@ -112,6 +113,7 @@ export default function Home() {
           <Route path="/novas-agendas" component={NovasAgendas} />
           <Route path="/monitor-logins" component={MonitorLogins} />
           <Route path="/previa-pg" component={PreviaPostgres} />
+          <Route path="/teste-plataforma-backend" component={TestePlataformaBackend} />
           <Route path="/recados" component={Recados} />
           <Route path="/sem-cotas" component={SemCotas} />
           <Route path="/condutas-gercon" component={CondutasGercon} />
