@@ -53,7 +53,7 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
 
   const { data: obsData } = trpc.agendaConfig.getObservacao.useQuery(
     { agendaNome: agendaNome ?? '', central: central ?? '' },
-    { enabled: expandido && !!agendaNome && !!central }
+    { enabled: !!agendaNome && !!central }
   );
 
   const observacao = obsData?.observacao ?? '';
@@ -122,17 +122,26 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
 
   return (
     <div className="border-t border-border/50">
-      {/* Botão de expandir */}
-      <button
-        onClick={() => setExpandido(v => !v)}
-        className="w-full flex items-center justify-between px-4 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-      >
-        <span className="flex items-center gap-1.5">
+      {/* Botão de expandir + observação em destaque (sempre visível, mesmo com o painel fechado) */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2 bg-secondary/10">
+        <button
+          onClick={() => setExpandido(v => !v)}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors shrink-0 rounded px-1 py-0.5 -ml-1"
+        >
           <TrendingDown size={12} />
           Ver agendas relacionadas · protocolo · lista de prioridades
-        </span>
-        {expandido ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-      </button>
+          {expandido ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        </button>
+
+        {observacao && (
+          <div className="flex items-start gap-1.5 px-2.5 py-1 rounded-md bg-amber-100 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 flex-1 min-w-[200px]">
+            <svg className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-xs font-medium whitespace-pre-wrap">{observacao}</p>
+          </div>
+        )}
+      </div>
 
       {/* Painel expandido */}
       {expandido && (
@@ -181,16 +190,6 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                 <p className="text-xs text-muted-foreground italic">
                   Nenhum protocolo ou lista de prioridades cadastrado para esta especialidade.
                 </p>
-              )}
-
-              {/* Observação específica da central */}
-              {observacao && (
-                <div className="flex items-start gap-2 px-3 py-2.5 rounded-md bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                  <svg className="w-3.5 h-3.5 mt-0.5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <p className="text-xs text-amber-800 dark:text-amber-300">{observacao}</p>
-                </div>
               )}
 
               {/* ── Agendas relacionadas ── */}
