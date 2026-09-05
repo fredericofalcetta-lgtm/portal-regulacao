@@ -389,6 +389,28 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
                       <span className="text-blue-300 font-normal text-xs">· {checkInAtivo.central}</span>
                     )}
                   </div>
+                  <div className="flex items-center gap-1.5 text-xs">
+                    {checkInAtivo.cotas !== undefined && (
+                      <span className="px-2 py-0.5 rounded bg-blue-900/60 text-blue-100 font-medium">
+                        Cotas: <strong className="text-white">{checkInAtivo.cotas}</strong>
+                      </span>
+                    )}
+                    {checkInAtivo.saldo !== undefined && (
+                      <span className="px-2 py-0.5 rounded bg-blue-900/60 text-blue-100 font-medium">
+                        Saldo: <strong className="text-white">{checkInAtivo.saldo}</strong>
+                      </span>
+                    )}
+                    {checkInAtivo.aguardando !== undefined && (
+                      <span className="px-2 py-0.5 rounded bg-blue-900/60 text-blue-100 font-medium">
+                        Aguardando: <strong className="text-white">{checkInAtivo.aguardando}</strong>
+                      </span>
+                    )}
+                    {checkInAtivo.indexRegula !== undefined && (
+                      <span className="px-2 py-0.5 rounded bg-blue-900/60 text-blue-100 font-medium">
+                        Índice: <strong className="text-white">{checkInAtivo.indexRegula}</strong>
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
