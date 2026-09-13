@@ -148,9 +148,7 @@ export default function CondutasGercon() {
       .filter(c => (somenteFavoritos ? favoritos.has(c.id) : true))
       .filter(c => {
         if (!termo) return true;
-        return normalize(
-          [c.situacao, c.ciapCid, c.especialidade, c.conduta, c.referencias].join(' ')
-        ).includes(termo);
+        return normalize(c.situacao).includes(termo);
       });
   }, [condutas, busca, especialidade, somenteFavoritos, favoritos]);
 
@@ -192,7 +190,7 @@ export default function CondutasGercon() {
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <BookOpen size={24} className="text-primary" />
-            Condutas GERCON
+            Consultorias GERCON
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Busque por situação clínica, CIAP/CID, especialidade ou texto da conduta para instruir consultorias.
@@ -242,7 +240,7 @@ export default function CondutasGercon() {
           <Input
             value={busca}
             onChange={e => setBusca(e.target.value)}
-            placeholder="Buscar em todas as condutas..."
+            placeholder="Buscar por nome da hipótese/situação..."
             className="pl-9 pr-9"
           />
           {busca && (
