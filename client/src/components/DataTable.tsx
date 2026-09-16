@@ -1,5 +1,5 @@
 import { memo, useMemo, useCallback, useState } from 'react';
-import { ChevronUp, ChevronDown, ChevronRight, Lock, LogIn, Download } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronRight, Lock, LogIn, Download, Eye, EyeOff } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import EncaminharCell from './EncaminharCell';
 import EncaminharGrupoCell from './EncaminharGrupoCell';
@@ -44,7 +44,7 @@ interface Grupo {
 const TableRow = memo(function TableRow({
   row, isAdminOuMonitor, isRegulador, encaminhadosAtuais = [], checkInsAtuais = [],
   reguladoresList = [], emailUsuario, onUpdate, isConcluida, isSubRow = false,
-  checkInAtivoId, onCheckInLista,
+  checkInAtivoId, onCheckInLista, ocultarExtras = false,
 }: {
   row: (string | number)[];
   isAdminOuMonitor: boolean;
@@ -58,6 +58,7 @@ const TableRow = memo(function TableRow({
   isSubRow?: boolean;
   checkInAtivoId?: number | null;
   onCheckInLista?: (a: { agendaId: number; agendaNome: string; especialidade: string; central?: string; municipio?: string; cotas?: number; saldo?: number; aguardando?: number; indexRegula?: number; }) => void;
+  ocultarExtras?: boolean;
 }) {
   const agendaId = typeof row[17] === 'number' ? row[17] : 0;
   const cor = String(row[14] ?? '');
@@ -98,8 +99,21 @@ const TableRow = memo(function TableRow({
           </div>
         )}
       </td>
-      <td className="px-2 py-1.5 text-xs text-muted-foreground">{isSubRow ? String(row[1]) : '—'}</td>
       <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[11])}</td>
+      <td className="px-2 py-1.5 text-xs text-muted-foreground">{isSubRow ? String(row[1]) : '—'}</td>
+      <td className="px-2 py-1.5 text-center">
+        <span title={flagAutCotas || undefined} className={`inline-block px-1.5 py-0.5 rounded text-xs font-semibold cursor-default ${corAutCotas === 'Vermelho' ? 'bg-red-100 dark:bg-red-950/50 text-red-900 dark:text-red-300' : corAutCotas === 'Laranja' ? 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300' : corAutCotas === 'Amarelo' ? 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-900 dark:text-yellow-300' : corAutCotas === 'Verde' ? 'bg-green-100 dark:bg-green-950/50 text-green-900 dark:text-green-300' : 'text-foreground'}`}>
+          {(() => { const raw = String(row[6] ?? ''); const v = parseFloat(raw.replace(/\./g, '').replace(',', '.')); return isNaN(v) ? (raw || '—') : v.toFixed(2); })()}
+        </span>
+      </td>
+      <td className="px-2 py-1.5 text-center">
+        <span title={flagIndex || undefined} className={`inline-block px-1.5 py-0.5 rounded text-xs font-semibold cursor-default ${getIndexColor(indexValue) || 'text-foreground'}`}>
+          {indexValue.toFixed(2)}
+        </span>
+      </td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{row[8] ? String(row[8]) : '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{row[9] ? String(row[9]) : '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{row[10] ? String(row[10]) : '—'}</td>
       {(isAdminOuMonitor || isRegulador) && (
         <td className="px-2 py-1.5 text-center">
           {isConcluida ? <span className="text-xs text-muted-foreground italic">bloqueado</span>
@@ -154,23 +168,14 @@ const TableRow = memo(function TableRow({
           </div>
         ) : <span className="text-xs text-muted-foreground">—</span>}
       </td>
-      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[2])}</td>
-      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[3])}</td>
-      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[4])}</td>
-      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[5])}</td>
-      <td className="px-2 py-1.5 text-center">
-        <span title={flagAutCotas || undefined} className={`inline-block px-1.5 py-0.5 rounded text-xs font-semibold cursor-default ${corAutCotas === 'Vermelho' ? 'bg-red-100 dark:bg-red-950/50 text-red-900 dark:text-red-300' : corAutCotas === 'Laranja' ? 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300' : corAutCotas === 'Amarelo' ? 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-900 dark:text-yellow-300' : corAutCotas === 'Verde' ? 'bg-green-100 dark:bg-green-950/50 text-green-900 dark:text-green-300' : 'text-foreground'}`}>
-          {(() => { const raw = String(row[6] ?? ''); const v = parseFloat(raw.replace(/\./g, '').replace(',', '.')); return isNaN(v) ? (raw || '—') : v.toFixed(2); })()}
-        </span>
-      </td>
-      <td className="px-2 py-1.5 text-center">
-        <span title={flagIndex || undefined} className={`inline-block px-1.5 py-0.5 rounded text-xs font-semibold cursor-default ${getIndexColor(indexValue) || 'text-foreground'}`}>
-          {indexValue.toFixed(2)}
-        </span>
-      </td>
-      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{row[8] ? String(row[8]) : '—'}</td>
-      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{row[9] ? String(row[9]) : '—'}</td>
-      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{row[10] ? String(row[10]) : '—'}</td>
+      {!ocultarExtras && (
+        <>
+          <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[2])}</td>
+          <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[3])}</td>
+          <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[4])}</td>
+          <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[5])}</td>
+        </>
+      )}
     </tr>
   );
 });
@@ -181,6 +186,7 @@ const GrupoRow = memo(function GrupoRow({
   encaminhamentosPorAgenda = new Map(), checkInsPorAgenda = new Map(), reguladoresList = [],
   emailUsuario, onUpdate, concluidasSet,
   checkInAtivoId: checkInAtivoIdProp, onCheckInLista: onCheckInListaProp,
+  ocultarExtras = false,
 }: {
   grupo: Grupo;
   isExpanded: boolean;
@@ -195,6 +201,7 @@ const GrupoRow = memo(function GrupoRow({
   concluidasSet: Set<number>;
   checkInAtivoId?: number | null;
   onCheckInLista?: (a: { agendaId: number; agendaNome: string; especialidade: string; central?: string; municipio?: string; cotas?: number; saldo?: number; aguardando?: number; indexRegula?: number; }) => void;
+  ocultarExtras?: boolean;
 }) {
   const { linhas, nome, central } = grupo;
   const isSingle = linhas.length === 1;
@@ -265,12 +272,29 @@ const GrupoRow = memo(function GrupoRow({
             </div>
           </div>
         </td>
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{central}</td>
         <td className="px-2 py-1.5 text-xs text-muted-foreground">
           {isSingle ? municipioLabel : (
             <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-xs font-medium">{linhas.length} municípios</span>
           )}
         </td>
-        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{central}</td>
+        <td className="px-2 py-1.5 text-center">
+          {isSingle ? (
+            <span className="text-sm font-semibold text-foreground">
+              {(() => { const raw = String(linhas[0][6] ?? ''); const v = parseFloat(raw.replace(/\./g, '').replace(',', '.')); return isNaN(v) ? (raw || '—') : v.toFixed(2); })()}
+            </span>
+          ) : <span className="text-sm text-muted-foreground">—</span>}
+        </td>
+        <td className="px-2 py-1.5 text-center">
+          {isSingle ? (
+            <span className="text-sm font-semibold text-foreground">
+              {(() => { const v = parseFloat(String(linhas[0][7] ?? 0)); return isNaN(v) ? '—' : v.toFixed(2); })()}
+            </span>
+          ) : <span className="text-sm text-muted-foreground">—</span>}
+        </td>
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.ag7d || '—'}</td>
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.ag28d || '—'}</td>
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.ag90d || '—'}</td>
         {(isAdminOuMonitor || isRegulador) && (
           <td className="px-2 py-1.5 text-center">
             {todasConcluidas ? (
@@ -329,27 +353,14 @@ const GrupoRow = memo(function GrupoRow({
             </div>
           ) : <span className="text-xs text-muted-foreground">—</span>}
         </td>
-        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.cotas || '—'}</td>
-        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.saldo || '—'}</td>
-        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.aguardando || '—'}</td>
-        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.autorizadas || '—'}</td>
-        <td className="px-2 py-1.5 text-center">
-          {isSingle ? (
-            <span className="text-sm font-semibold text-foreground">
-              {(() => { const raw = String(linhas[0][6] ?? ''); const v = parseFloat(raw.replace(/\./g, '').replace(',', '.')); return isNaN(v) ? (raw || '—') : v.toFixed(2); })()}
-            </span>
-          ) : <span className="text-sm text-muted-foreground">—</span>}
-        </td>
-        <td className="px-2 py-1.5 text-center">
-          {isSingle ? (
-            <span className="text-sm font-semibold text-foreground">
-              {(() => { const v = parseFloat(String(linhas[0][7] ?? 0)); return isNaN(v) ? '—' : v.toFixed(2); })()}
-            </span>
-          ) : <span className="text-sm text-muted-foreground">—</span>}
-        </td>
-        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.ag7d || '—'}</td>
-        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.ag28d || '—'}</td>
-        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.ag90d || '—'}</td>
+        {!ocultarExtras && (
+          <>
+            <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.cotas || '—'}</td>
+            <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.saldo || '—'}</td>
+            <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.aguardando || '—'}</td>
+            <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.autorizadas || '—'}</td>
+          </>
+        )}
       </tr>
       {isExpanded && !isSingle && (linhas ?? []).map(row => {
         if (!row || !Array.isArray(row)) return null;
@@ -362,7 +373,7 @@ const GrupoRow = memo(function GrupoRow({
             checkInsAtuais={checkInsPorAgenda.get(agendaId) ?? []}
             reguladoresList={reguladoresList ?? []} emailUsuario={emailUsuario}
             onUpdate={onUpdate} isConcluida={isConcluida} isSubRow
-            checkInAtivoId={checkInAtivoIdProp} onCheckInLista={onCheckInListaProp} />
+            checkInAtivoId={checkInAtivoIdProp} onCheckInLista={onCheckInListaProp} ocultarExtras={ocultarExtras} />
         );
       })}
     </>
@@ -389,6 +400,16 @@ export default function DataTable({
 
   const [filtrarBloqueadas, setFiltrarBloqueadas] = useState<"todas" | "bloqueadas" | "livres">("livres");
   const [exportDropdownAberto, setExportDropdownAberto] = useState(false);
+  const [colunasExtrasOcultas, setColunasExtrasOcultas] = useState<boolean>(() => {
+    try { return localStorage.getItem('lista-agendas-ocultar-extras') === '1'; } catch { return false; }
+  });
+  const toggleColunasExtras = useCallback(() => {
+    setColunasExtrasOcultas(prev => {
+      const next = !prev;
+      try { localStorage.setItem('lista-agendas-ocultar-extras', next ? '1' : '0'); } catch { /* ignora */ }
+      return next;
+    });
+  }, []);
 
   const { data: reguladoresList = [] } = trpc.reguladores.listarReguladores.useQuery(undefined, { staleTime: 5 * 60 * 1000, gcTime: 10 * 60 * 1000 });
   const { data: encaminhamentosData = [], refetch: refetchEncaminhamentos } = trpc.encaminhamentos.getAll.useQuery(undefined, { staleTime: 30 * 1000 });
@@ -462,22 +483,23 @@ export default function DataTable({
   const SortIcon = ({ col }: { col: number }) =>
     sortColumn === col ? (sortOrder === 'desc' ? <ChevronDown size={16} className="text-primary" /> : <ChevronUp size={16} className="text-primary" />) : null;
 
-  const numCols = (isAdminOuMonitor || isRegulador) ? 13 : 12;
+  // Colunas fixas sempre visíveis: Agenda, Central, Município, Fila/Cotas, Index, >7d, >28d, >90d, Regulando = 9
+  const numCols = 9 + ((isAdminOuMonitor || isRegulador) ? 1 : 0) + (colunasExtrasOcultas ? 0 : 4);
 
   // Exportar tabela filtrada
   const handleExportar = (formato: 'csv' | 'xls') => {
-    const cabecalho = ['Agenda','Município','Central','Cotas','Saldo','Aguardando','Autorizadas','Fila/Cotas','Index','>7d','>28d','>90d'];
+    const cabecalho = ['Agenda','Central','Município','Fila/Cotas','Index','>7d','>28d','>90d','Cotas','Saldo','Aguardando','Autorizadas'];
     const linhasExport = filteredRows.map(r => [
-      String(r[0] ?? ''), String(r[1] ?? ''), String(r[11] ?? ''),
-      String(r[2] ?? ''), String(r[3] ?? ''), String(r[4] ?? ''), String(r[5] ?? ''),
+      String(r[0] ?? ''), String(r[11] ?? ''), String(r[1] ?? ''),
       String(r[6] ?? ''), String(r[7] ?? ''), String(r[8] ?? ''), String(r[9] ?? ''), String(r[10] ?? ''),
+      String(r[2] ?? ''), String(r[3] ?? ''), String(r[4] ?? ''), String(r[5] ?? ''),
     ]);
     // Linha de totais
     const somaExport = (idx: number) => filteredRows.reduce((acc, r) => acc + (parseFloat(String(r[idx])) || 0), 0);
     const linhaTotais = [
       `Totais (${filteredRows.length} linhas)`, '', '',
-      String(somaExport(2)), String(somaExport(3)), String(somaExport(4)), String(somaExport(5)),
       '—', '—', String(somaExport(8)), String(somaExport(9)), String(somaExport(10)),
+      String(somaExport(2)), String(somaExport(3)), String(somaExport(4)), String(somaExport(5)),
     ];
     const dados = [cabecalho, ...linhasExport, linhaTotais];
 
@@ -561,6 +583,18 @@ export default function DataTable({
              filtrarBloqueadas === 'bloqueadas' ? 'Só bloqueadas' :
              'Todas'}
           </button>
+          <button
+            onClick={toggleColunasExtras}
+            className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors ${
+              colunasExtrasOcultas
+                ? 'bg-muted text-foreground border-border'
+                : 'border-border text-muted-foreground hover:bg-muted'
+            }`}
+            title={colunasExtrasOcultas ? 'Mostrar Cotas/Saldo/Aguardando/Autorizadas' : 'Ocultar Cotas/Saldo/Aguardando/Autorizadas'}
+          >
+            {colunasExtrasOcultas ? <EyeOff size={11} /> : <Eye size={11} />}
+            {colunasExtrasOcultas ? 'Colunas ocultas' : 'Ocultar cotas/saldo/aguard./autoriz.'}
+          </button>
           <UltimaAtualizacao compact />
         </div>
       </div>
@@ -571,15 +605,20 @@ export default function DataTable({
               <th onClick={() => onSort(0)} className="px-3 py-1.5 text-left text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
                 <div className="flex items-center space-x-1"><span>Agenda</span><SortIcon col={0} /></div>
               </th>
-              <th onClick={() => onSort(1)} className="px-2 py-1.5 text-left text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
-                <div className="flex items-center space-x-1"><span>Município</span><SortIcon col={1} /></div>
-              </th>
               <th onClick={() => onSort(11)} className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
                 <div className="flex items-center justify-center space-x-1"><span>Central</span><SortIcon col={11} /></div>
               </th>
+              <th onClick={() => onSort(1)} className="px-2 py-1.5 text-left text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
+                <div className="flex items-center space-x-1"><span>Município</span><SortIcon col={1} /></div>
+              </th>
+              {[{label:'Fila/Cotas',col:6},{label:'Index',col:7},{label:'>7d',col:8},{label:'>28d',col:9},{label:'>90d',col:10}].map(({label,col}) => (
+                <th key={col} onClick={() => onSort(col)} className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
+                  <div className="flex items-center justify-center space-x-1"><span>{label}</span><SortIcon col={col} /></div>
+                </th>
+              ))}
               {(isAdminOuMonitor || isRegulador) && <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">Encaminhar</th>}
               <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">Regulando</th>
-              {[{label:'Cotas',col:2},{label:'Saldo',col:3},{label:'Aguardando',col:4},{label:'Autorizadas',col:5},{label:'Fila/Cotas',col:6},{label:'Index',col:7},{label:'>7d',col:8},{label:'>28d',col:9},{label:'>90d',col:10}].map(({label,col}) => (
+              {!colunasExtrasOcultas && [{label:'Cotas',col:2},{label:'Saldo',col:3},{label:'Aguardando',col:4},{label:'Autorizadas',col:5}].map(({label,col}) => (
                 <th key={col} onClick={() => onSort(col)} className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
                   <div className="flex items-center justify-center space-x-1"><span>{label}</span><SortIcon col={col} /></div>
                 </th>
@@ -597,7 +636,7 @@ export default function DataTable({
                   encaminhamentosPorAgenda={encaminhamentosPorAgenda} checkInsPorAgenda={checkInsPorAgenda}
                   reguladoresList={reguladoresList} emailUsuario={emailUsuario}
                   onUpdate={handleUpdate} concluidasSet={concluidasSet}
-                  checkInAtivoId={checkInAtivoId} onCheckInLista={onCheckInLista} />
+                  checkInAtivoId={checkInAtivoId} onCheckInLista={onCheckInLista} ocultarExtras={colunasExtrasOcultas} />
               );
             })}
           </tbody>
@@ -609,9 +648,9 @@ export default function DataTable({
               autorizadas: soma(5), ag7d: soma(8), ag28d: soma(9), ag90d: soma(10),
             };
             // Colunas da tabela (em ordem):
-            // Agenda | Município | Central | [Encaminhar] | Regulando | Cotas | Saldo | Aguardando | Autorizadas | Fila/Cotas | Index | >7d | >28d | >90d
-            // colSpan do label cobre: Agenda + Município + Central + [Encaminhar] + Regulando = 5 (sem Encaminhar: 4)
-            const colSpanLabel = (isAdminOuMonitor || isRegulador) ? 5 : 4;
+            // Agenda | Central | Município | Fila/Cotas | Index | >7d | >28d | >90d | [Encaminhar] | Regulando | Cotas | Saldo | Aguardando | Autorizadas
+            // colSpan do label cobre: Agenda + Central + Município = 3
+            const colSpanLabel = 3;
             const fmt = (v: number) => v > 0 ? v.toLocaleString('pt-BR') : '—';
             return (
               <tfoot>
@@ -619,15 +658,21 @@ export default function DataTable({
                   <td className="px-3 py-1.5 text-xs text-foreground" colSpan={colSpanLabel}>
                     Totais ({grupos.length} agenda{grupos.length !== 1 ? 's' : ''})
                   </td>
-                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.cotas)}</td>
-                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.saldo)}</td>
-                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.aguardando)}</td>
-                  <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.autorizadas)}</td>
                   <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">—</td>
                   <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">—</td>
                   <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.ag7d)}</td>
                   <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.ag28d)}</td>
                   <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.ag90d)}</td>
+                  {(isAdminOuMonitor || isRegulador) && <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">—</td>}
+                  <td className="px-2 py-1.5 text-center text-xs text-muted-foreground">—</td>
+                  {!colunasExtrasOcultas && (
+                    <>
+                      <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.cotas)}</td>
+                      <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.saldo)}</td>
+                      <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.aguardando)}</td>
+                      <td className="px-2 py-1.5 text-center text-xs text-foreground">{fmt(totaisTabela.autorizadas)}</td>
+                    </>
+                  )}
                 </tr>
               </tfoot>
             );
