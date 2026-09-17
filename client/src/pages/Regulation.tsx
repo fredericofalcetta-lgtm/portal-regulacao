@@ -320,7 +320,7 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
   };
 
   const perfilUsuario = perfilAtivo ?? regulador?.perfil ?? '';
-  const isRegulador = perfilUsuario.toLowerCase().includes('regulador');
+  const isRegulador = perfilUsuario.toLowerCase().includes('regulador') || perfilUsuario.toLowerCase().includes('consultor');
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden">
