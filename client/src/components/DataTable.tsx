@@ -391,7 +391,7 @@ export default function DataTable({
   const concluidasSet = useMemo(() => new Set(concluidasIds), [concluidasIds]);
   const perfilLower = perfilUsuario.toLowerCase();
   const isAdminOuMonitor = perfilLower.includes('administrador') || perfilLower.includes('monitoramento');
-  const isRegulador = perfilLower.includes('regulador');
+  const isRegulador = perfilLower.includes('regulador') || perfilLower.includes('consultor');
 
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
   const toggleGrupo = useCallback((chave: string) => {
