@@ -22,6 +22,13 @@ function useIsAdmin() {
   return perfilNorm.includes('administrador');
 }
 
+/** Visualização da página: administradores (para manutenção) e consultores (uso do dia a dia). */
+function useTemAcesso() {
+  const { regulador, perfilAtivo } = useRegulador();
+  const perfilNorm = (perfilAtivo ?? regulador?.perfil ?? '').toLowerCase();
+  return perfilNorm.includes('administrador') || perfilNorm.includes('consultor');
+}
+
 function normalize(s: string | null | undefined): string {
   return (s ?? '')
     .normalize('NFKD')
@@ -84,6 +91,7 @@ function formatarDataHora(iso: string | Date): string {
 
 export default function CondutasGercon() {
   const isAdmin = useIsAdmin();
+  const temAcesso = useTemAcesso();
   const [busca, setBusca] = useState('');
   const [especialidade, setEspecialidade] = useState<string>('');
   const [somenteFavoritos, setSomenteFavoritos] = useState(false);
@@ -91,8 +99,8 @@ export default function CondutasGercon() {
   const [abertos, setAbertos] = useState<Set<number>>(new Set());
   const [expandidos, setExpandidos] = useState<Set<number>>(new Set());
 
-  const { data: condutas, isLoading } = trpc.condutas.listar.useQuery(undefined, { enabled: isAdmin });
-  const { data: ultimaSync } = trpc.condutas.ultimaSincronizacao.useQuery(undefined, { enabled: isAdmin });
+  const { data: condutas, isLoading } = trpc.condutas.listar.useQuery(undefined, { enabled: temAcesso });
+  const { data: ultimaSync } = trpc.condutas.ultimaSincronizacao.useQuery(undefined, { enabled: temAcesso });
   const utils = trpc.useUtils();
 
   const sincronizarMutation = trpc.condutas.sincronizar.useMutation({
@@ -176,10 +184,10 @@ export default function CondutasGercon() {
     });
   };
 
-  if (!isAdmin) {
+  if (!temAcesso) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground">
-        Acesso restrito a administradores.
+        Acesso restrito a administradores e consultores.
       </div>
     );
   }
@@ -190,7 +198,7 @@ export default function CondutasGercon() {
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <BookOpen size={24} className="text-primary" />
-            Consultorias GERCON
+            Condutas para Consultorias
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Busque por situação clínica, CIAP/CID, especialidade ou texto da conduta para instruir consultorias.
