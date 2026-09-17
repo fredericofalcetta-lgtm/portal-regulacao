@@ -486,6 +486,31 @@ export default function DataTable({
   // Colunas fixas sempre visíveis: Agenda, Central, Município, Fila/Cotas, Index, >7d, >28d, >90d, Regulando = 9
   const numCols = 9 + ((isAdminOuMonitor || isRegulador) ? 1 : 0) + (colunasExtrasOcultas ? 0 : 4);
 
+  // Larguras de coluna proporcionais (recalculadas conforme quais colunas estão visíveis,
+  // pra distribuição não ficar estranha quando Encaminhar ou as 4 colunas extras somem)
+  const colWidths = useMemo(() => {
+    const cols: { key: string; weight: number }[] = [
+      { key: 'agenda', weight: 3 },
+      { key: 'central', weight: 1 },
+      { key: 'municipio', weight: 1.6 },
+      { key: 'filaCotas', weight: 1 },
+      { key: 'index', weight: 1 },
+      { key: 'd7', weight: 0.8 },
+      { key: 'd28', weight: 0.8 },
+      { key: 'd90', weight: 0.8 },
+      ...((isAdminOuMonitor || isRegulador) ? [{ key: 'encaminhar', weight: 2.2 }] : []),
+      { key: 'regulando', weight: 1.6 },
+      ...(!colunasExtrasOcultas ? [
+        { key: 'cotas', weight: 1 },
+        { key: 'saldo', weight: 1 },
+        { key: 'aguardando', weight: 1 },
+        { key: 'autorizadas', weight: 1 },
+      ] : []),
+    ];
+    const total = cols.reduce((s, c) => s + c.weight, 0);
+    return cols.map(c => ({ key: c.key, pct: (c.weight / total) * 100 }));
+  }, [isAdminOuMonitor, isRegulador, colunasExtrasOcultas]);
+
   // Exportar tabela filtrada
   const handleExportar = (formato: 'csv' | 'xls') => {
     const cabecalho = ['Agenda','Central','Município','Fila/Cotas','Index','>7d','>28d','>90d','Cotas','Saldo','Aguardando','Autorizadas'];
@@ -599,7 +624,12 @@ export default function DataTable({
         </div>
       </div>
       <div className="flex-1 overflow-x-auto">
-        <table className="w-full border-collapse">
+        <table className="w-full border-collapse table-fixed">
+          <colgroup>
+            {colWidths.map(c => (
+              <col key={c.key} style={{ width: `${c.pct}%` }} />
+            ))}
+          </colgroup>
           <thead className="sticky top-0 bg-secondary z-10">
             <tr>
               <th onClick={() => onSort(0)} className="px-3 py-1.5 text-left text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
