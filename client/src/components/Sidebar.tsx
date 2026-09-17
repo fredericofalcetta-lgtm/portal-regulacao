@@ -70,15 +70,17 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
 
   const toggleSidebar = () => setOpen(!isOpen);
 
-  // Visibilidade do Monitor de Check-ins: regulador, monitoramento ou administrador
+  // Visibilidade do Monitor de Check-ins: regulador, consultor, monitoramento ou administrador
   const isAdminOrMonitor =
     perfilAtivo === 'monitoramento' ||
     perfilAtivo === 'administrador' ||
     perfilAtivo === 'regulador' ||
+    perfilAtivo === 'consultor' ||
     (!perfilAtivo && (
       regulador?.perfil?.toLowerCase() === 'administrador' ||
       regulador?.perfil?.toLowerCase() === 'monitoramento' ||
-      regulador?.perfil?.toLowerCase() === 'regulador'
+      regulador?.perfil?.toLowerCase() === 'regulador' ||
+      regulador?.perfil?.toLowerCase() === 'consultor'
     ));
 
   const isAdminOrMonitorOnly =
@@ -95,7 +97,7 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     { href: '/minhas-agendas', page: 'minhas-agendas', icon: ClipboardList, label: 'Minhas Agendas', visible: true },
     { href: '/monitor-checkins', page: 'monitor-checkins', icon: Activity, label: 'Monitor de Check-ins', visible: isAdminOrMonitor },
     { href: '/reguladores', page: 'reguladores', icon: Users, label: 'Reguladores', visible: true },
-    { href: '/condutas-gercon', page: 'condutas-gercon', icon: BookOpen, label: 'Consultorias GERCON', visible: perfilAtivo === 'administrador' || (!perfilAtivo && (regulador?.perfil ?? '').toLowerCase().includes('administrador')) },
+    { href: '/condutas-gercon', page: 'condutas-gercon', icon: BookOpen, label: 'Condutas para Consultorias', visible: perfilAtivo === 'administrador' || perfilAtivo === 'consultor' || (!perfilAtivo && (regulador?.perfil ?? '').toLowerCase().includes('administrador')) || (!perfilAtivo && (regulador?.perfil ?? '').toLowerCase().includes('consultor')) },
     { href: '/agendas-relacionadas', page: 'agendas-relacionadas', icon: Link2, label: 'Agendas Relacionadas', visible: isAdminOrMonitorOnly },
     { href: '/novas-agendas', page: 'novas-agendas', icon: Sparkles, label: 'Novas Agendas', visible: isAdminOrMonitorOnly },
     { href: '/monitor-logins', page: 'monitor-logins', icon: LogIn, label: 'Monitor de Logins', visible: isAdminOrMonitorOnly },
