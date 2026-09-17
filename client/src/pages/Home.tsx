@@ -24,11 +24,12 @@ export default function Home() {
   const utils = trpc.useUtils();
   const { perfilAtivo } = useRegulador();
 
-  // Perfil é exclusivamente regulador (sem admin/monitoramento)
+  // Perfil é exclusivamente regulador ou consultor (sem admin/monitoramento)
   const perfilNorm = (perfilAtivo ?? '').toLowerCase();
   const isReguladorPuro =
     perfilNorm === 'regulador' ||
-    (perfilNorm.includes('regulador') &&
+    perfilNorm === 'consultor' ||
+    ((perfilNorm.includes('regulador') || perfilNorm.includes('consultor')) &&
       !perfilNorm.includes('administrador') &&
       !perfilNorm.includes('monitoramento'));
 
