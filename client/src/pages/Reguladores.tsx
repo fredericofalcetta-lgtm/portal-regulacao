@@ -32,6 +32,7 @@ function perfilLabel(perfil: string | null): string {
   if (!perfil) return '—';
   const map: Record<string, string> = {
     regulador: 'Regulador',
+    consultor: 'Consultor',
     monitoramento: 'Monitoramento',
     administrador: 'Administrador',
   };
@@ -419,9 +420,20 @@ interface ReguladorLinhaProps {
 
 const PERFIS = [
   { value: 'regulador', label: 'Regulador' },
+  { value: 'consultor', label: 'Consultor' },
   { value: 'monitoramento', label: 'Monitoramento' },
   { value: 'administrador', label: 'Administrador' },
 ];
+
+// Regulador e Consultor são excludentes: marcar um desmarca o outro automaticamente.
+function togglePerfilExcludente(prev: string[], value: string): string[] {
+  const checked = prev.includes(value);
+  if (checked) return prev.filter(v => v !== value);
+  const EXCLUDENTES: Record<string, string> = { regulador: 'consultor', consultor: 'regulador' };
+  const oposto = EXCLUDENTES[value];
+  const semOposto = oposto ? prev.filter(v => v !== oposto) : prev;
+  return [...semOposto, value];
+}
 
 // Converte string de perfil (ex: "regulador, monitoramento") em array de valores
 function parsePerfis(perfil: string | null): string[] {
@@ -624,11 +636,7 @@ function ReguladorLinha({ reg, todasAgendas, todasAgendasPerfil, todasEspecialid
                         type="button"
                         onClick={e => {
                           e.stopPropagation();
-                          setPerfisSelecionados(prev =>
-                            checked
-                              ? prev.filter(v => v !== p.value)
-                              : [...prev, p.value]
-                          );
+                          setPerfisSelecionados(prev => togglePerfilExcludente(prev, p.value));
                         }}
                         className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border cursor-pointer transition-colors select-none ${
                           checked
@@ -795,9 +803,7 @@ function ModalCadastroRegulador({ onClose, onSaved }: ModalCadastroProps) {
                     key={p.value}
                     type="button"
                     onClick={() => {
-                      setPerfisSelecionados(prev =>
-                        checked ? prev.filter(v => v !== p.value) : [...prev, p.value]
-                      );
+                      setPerfisSelecionados(prev => togglePerfilExcludente(prev, p.value));
                     }}
                     className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-full border cursor-pointer transition-colors select-none ${
                       checked
@@ -842,7 +848,7 @@ export default function Reguladores() {
 
   const perfilNorm = (perfilAtivo ?? regulador?.perfil ?? '').toLowerCase();
   const isAdmin = perfilNorm.includes('administrador') || perfilNorm.includes('monitoramento');
-  const isRegulador = perfilNorm.includes('regulador') && !isAdmin;
+  const isRegulador = (perfilNorm.includes('regulador') || perfilNorm.includes('consultor')) && !isAdmin;
   const temAcesso = isAdmin || isRegulador;
 
   const { data: reguladoresList, isLoading, refetch } = trpc.reguladorConfig.listarTodos.useQuery(undefined, {
