@@ -32,6 +32,7 @@ import { syncFromPostgres } from "./syncPostgres";
 import { syncCondutasGerconComLog } from "./syncMetabase";
 import { importCondutasGerconFromCsvComLog } from "./importCondutasCsv";
 import { testarQueryPlataformaBackend } from "./plataformaBackendClient";
+import { testarConectividadeTcp } from "./diagnosticoRede";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -1524,7 +1525,7 @@ export const appRouter = router({
       }),
 
     /**
-     * Atualizar o perfil de um regulador (regulador | monitoramento | administrador).
+     * Atualizar o perfil de um regulador (regulador | consultor | monitoramento | administrador).
      * Apenas admin e monitor podem alterar perfis.
      */
     atualizarDados: protectedProcedure
@@ -2226,6 +2227,21 @@ export const appRouter = router({
       .input(z.object({ sql: z.string().min(1) }))
       .mutation(async ({ input }) => {
         return testarQueryPlataformaBackend(input.sql);
+      }),
+  }),
+
+  /**
+   * Ferramenta genérica de diagnóstico de rede — testa se o Railway consegue
+   * abrir uma conexão TCP crua com qualquer host:porta (equivalente a
+   * `nc -zv host port`), útil para diferenciar bloqueio de rede/VPN de
+   * problema de credencial/config em qualquer uma das integrações externas
+   * (sesdw, Metabase, plataforma-backend, etc.).
+   */
+  diagnosticoRede: router({
+    testarTcp: protectedProcedure
+      .input(z.object({ host: z.string().min(1), port: z.number().int().min(1).max(65535) }))
+      .mutation(async ({ input }) => {
+        return testarConectividadeTcp(input.host, input.port);
       }),
   }),
 
