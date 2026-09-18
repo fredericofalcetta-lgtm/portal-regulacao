@@ -392,6 +392,8 @@ export default function DataTable({
   const perfilLower = perfilUsuario.toLowerCase();
   const isAdminOuMonitor = perfilLower.includes('administrador') || perfilLower.includes('monitoramento');
   const isRegulador = perfilLower.includes('regulador') || perfilLower.includes('consultor');
+  // TEMP DEBUG — remover depois de diagnosticar
+  console.log('[DEBUG DataTable] perfilUsuario recebido:', JSON.stringify(perfilUsuario), '| isAdminOuMonitor:', isAdminOuMonitor, '| isRegulador:', isRegulador);
 
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
   const toggleGrupo = useCallback((chave: string) => {
