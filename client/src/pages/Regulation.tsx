@@ -320,6 +320,8 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
   };
 
   const perfilUsuario = perfilAtivo ?? regulador?.perfil ?? '';
+  // TEMP DEBUG — remover depois de diagnosticar
+  console.log('[DEBUG Regulation] perfilAtivo:', JSON.stringify(perfilAtivo), '| regulador?.perfil (bruto):', JSON.stringify(regulador?.perfil), '| perfilUsuario final:', JSON.stringify(perfilUsuario));
   const isRegulador = perfilUsuario.toLowerCase().includes('regulador') || perfilUsuario.toLowerCase().includes('consultor');
 
   return (
