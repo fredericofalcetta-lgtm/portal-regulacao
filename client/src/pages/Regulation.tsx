@@ -49,6 +49,7 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
     saldo?: number;
     aguardando?: number;
     indexRegula?: number;
+    filaCotas?: number;
   } | null>(null);
   const [filtrosRecolhidos, setFiltrosRecolhidos] = useState(false);
 
@@ -86,7 +87,7 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
   const handleCheckInLista = useCallback((agenda: {
     agendaId: number; agendaNome: string; especialidade: string;
     central?: string; municipio?: string; cotas?: number;
-    saldo?: number; aguardando?: number; indexRegula?: number;
+    saldo?: number; aguardando?: number; indexRegula?: number; filaCotas?: number;
   }) => {
     // Se clicou na mesma agenda — fecha o painel
     if (checkInAtivo?.agendaId === agenda.agendaId) {
@@ -407,7 +408,7 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
                     )}
                     {checkInAtivo.indexRegula !== undefined && (
                       <span className="px-2 py-0.5 rounded bg-blue-900/60 text-blue-100 font-medium">
-                        Índice: <strong className="text-white">{checkInAtivo.indexRegula}</strong>
+                        Índice: <strong className="text-white">{checkInAtivo.indexRegula.toFixed(2)}</strong>
                       </span>
                     )}
                   </div>
@@ -438,6 +439,19 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
                   </button>
                 </div>
               </div>
+              {checkInAtivo.filaCotas !== undefined && (
+                <div className={`px-4 py-1.5 text-xs font-medium shrink-0 leading-snug ${
+                  checkInAtivo.filaCotas <= 4
+                    ? 'bg-emerald-900/70 text-emerald-100'
+                    : 'bg-amber-900/70 text-amber-100'
+                }`}>
+                  {checkInAtivo.filaCotas <= 4 ? (
+                    <>⏩ Autorize o que for pertinente à especialidade e ao prestador indicado. Não faça consultoria ativa, não use aguarda matriciamento ou pendente para pedir informações sobre prioridade.</>
+                  ) : (
+                    <>⚠️ Aplique os critérios do protocolo. Utilize a consultoria ativa, o status Pendente ou Aguarda Matriciamento (nas especialidades disponíveis no 0800) para solicitar as informações necessárias ao cumprimento dos critérios do protocolo e à definição da prioridade.</>
+                  )}
+                </div>
+              )}
               {/* Conteúdo */}
               <div className="flex-1 overflow-y-auto p-4">
                 <CheckInDetalhes
