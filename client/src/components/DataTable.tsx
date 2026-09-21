@@ -13,7 +13,7 @@ interface DataTableProps {
   headers: string[];
   rows: (string | number)[][];
   checkInAtivoId?: number | null;
-  onCheckInLista?: (a: { agendaId: number; agendaNome: string; especialidade: string; central?: string; municipio?: string; cotas?: number; saldo?: number; aguardando?: number; indexRegula?: number; }) => void;
+  onCheckInLista?: (a: { agendaId: number; agendaNome: string; especialidade: string; central?: string; municipio?: string; cotas?: number; saldo?: number; aguardando?: number; indexRegula?: number; filaCotas?: number; }) => void;
   selectedAgendas: Set<string>;
   selectedCentrais: Set<string>;
   selectedMunicipios?: Set<string>;
@@ -57,7 +57,7 @@ const TableRow = memo(function TableRow({
   isConcluida: boolean;
   isSubRow?: boolean;
   checkInAtivoId?: number | null;
-  onCheckInLista?: (a: { agendaId: number; agendaNome: string; especialidade: string; central?: string; municipio?: string; cotas?: number; saldo?: number; aguardando?: number; indexRegula?: number; }) => void;
+  onCheckInLista?: (a: { agendaId: number; agendaNome: string; especialidade: string; central?: string; municipio?: string; cotas?: number; saldo?: number; aguardando?: number; indexRegula?: number; filaCotas?: number; }) => void;
   ocultarExtras?: boolean;
 }) {
   const agendaId = typeof row[17] === 'number' ? row[17] : 0;
@@ -139,6 +139,7 @@ const TableRow = memo(function TableRow({
                       saldo: typeof row[3] === 'number' ? row[3] : undefined,
                       aguardando: typeof row[4] === 'number' ? row[4] : undefined,
                       indexRegula: typeof row[7] === 'number' ? row[7] : undefined,
+                      filaCotas: (() => { const raw = String(row[6] ?? ''); const v = parseFloat(raw.replace(/\./g, '').replace(',', '.')); return isNaN(v) ? undefined : v; })(),
                     })}
                     className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
                       checkInAtivoId === agendaId
@@ -200,7 +201,7 @@ const GrupoRow = memo(function GrupoRow({
   onUpdate: () => void;
   concluidasSet: Set<number>;
   checkInAtivoId?: number | null;
-  onCheckInLista?: (a: { agendaId: number; agendaNome: string; especialidade: string; central?: string; municipio?: string; cotas?: number; saldo?: number; aguardando?: number; indexRegula?: number; }) => void;
+  onCheckInLista?: (a: { agendaId: number; agendaNome: string; especialidade: string; central?: string; municipio?: string; cotas?: number; saldo?: number; aguardando?: number; indexRegula?: number; filaCotas?: number; }) => void;
   ocultarExtras?: boolean;
 }) {
   const { linhas, nome, central } = grupo;
@@ -283,18 +284,18 @@ const GrupoRow = memo(function GrupoRow({
             <span className="text-sm font-semibold text-foreground">
               {(() => { const raw = String(linhas[0][6] ?? ''); const v = parseFloat(raw.replace(/\./g, '').replace(',', '.')); return isNaN(v) ? (raw || '—') : v.toFixed(2); })()}
             </span>
-          ) : <span className="text-sm text-muted-foreground">—</span>}
+          ) : null}
         </td>
         <td className="px-2 py-1.5 text-center">
           {isSingle ? (
             <span className="text-sm font-semibold text-foreground">
               {(() => { const v = parseFloat(String(linhas[0][7] ?? 0)); return isNaN(v) ? '—' : v.toFixed(2); })()}
             </span>
-          ) : <span className="text-sm text-muted-foreground">—</span>}
+          ) : null}
         </td>
-        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.ag7d || '—'}</td>
-        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.ag28d || '—'}</td>
-        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.ag90d || '—'}</td>
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{isSingle ? (totais.ag7d || '—') : ''}</td>
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{isSingle ? (totais.ag28d || '—') : ''}</td>
+        <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{isSingle ? (totais.ag90d || '—') : ''}</td>
         {(isAdminOuMonitor || isRegulador) && (
           <td className="px-2 py-1.5 text-center">
             {todasConcluidas ? (
@@ -324,6 +325,7 @@ const GrupoRow = memo(function GrupoRow({
                         saldo: typeof r[3] === 'number' ? r[3] : undefined,
                         aguardando: typeof r[4] === 'number' ? r[4] : undefined,
                         indexRegula: typeof r[7] === 'number' ? r[7] : undefined,
+                        filaCotas: (() => { const raw = String(r[6] ?? ''); const v = parseFloat(raw.replace(/\./g, '').replace(',', '.')); return isNaN(v) ? undefined : v; })(),
                       })}
                       className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
                         checkInAtivoIdProp === aId
@@ -355,10 +357,10 @@ const GrupoRow = memo(function GrupoRow({
         </td>
         {!ocultarExtras && (
           <>
-            <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.cotas || '—'}</td>
-            <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.saldo || '—'}</td>
-            <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.aguardando || '—'}</td>
-            <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{totais.autorizadas || '—'}</td>
+            <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{isSingle ? (totais.cotas || '—') : ''}</td>
+            <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{isSingle ? (totais.saldo || '—') : ''}</td>
+            <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{isSingle ? (totais.aguardando || '—') : ''}</td>
+            <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{isSingle ? (totais.autorizadas || '—') : ''}</td>
           </>
         )}
       </tr>
