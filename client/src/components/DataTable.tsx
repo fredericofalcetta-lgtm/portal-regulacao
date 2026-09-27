@@ -505,8 +505,8 @@ export default function DataTable({
       ...(!colunasExtrasOcultas ? [
         { key: 'cotas', weight: 1 },
         { key: 'saldo', weight: 1 },
-        { key: 'aguardando', weight: 1 },
-        { key: 'autorizadas', weight: 1 },
+        { key: 'aguardando', weight: 1.8 },
+        { key: 'autorizadas', weight: 1.9 },
       ] : []),
     ];
     const total = cols.reduce((s, c) => s + c.weight, 0);
@@ -635,24 +635,24 @@ export default function DataTable({
           <thead className="sticky top-0 bg-secondary z-10">
             <tr>
               <th onClick={() => onSort(0)} className="px-3 py-1.5 text-left text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
-                <div className="flex items-center space-x-1"><span>Agenda</span><SortIcon col={0} /></div>
+                <div className="flex items-center gap-1 min-w-0"><span className="whitespace-normal leading-tight">Agenda</span><SortIcon col={0} /></div>
               </th>
               <th onClick={() => onSort(11)} className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
-                <div className="flex items-center justify-center space-x-1"><span>Central</span><SortIcon col={11} /></div>
+                <div className="flex items-center justify-center gap-1 min-w-0"><span className="whitespace-normal leading-tight">Central</span><SortIcon col={11} /></div>
               </th>
               <th onClick={() => onSort(1)} className="px-2 py-1.5 text-left text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
-                <div className="flex items-center space-x-1"><span>Município</span><SortIcon col={1} /></div>
+                <div className="flex items-center gap-1 min-w-0"><span className="whitespace-normal leading-tight">Município</span><SortIcon col={1} /></div>
               </th>
               {[{label:'Fila/Cotas',col:6},{label:'Index',col:7},{label:'>7d',col:8},{label:'>28d',col:9},{label:'>90d',col:10}].map(({label,col}) => (
                 <th key={col} onClick={() => onSort(col)} className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
-                  <div className="flex items-center justify-center space-x-1"><span>{label}</span><SortIcon col={col} /></div>
+                  <div className="flex items-center justify-center gap-1 min-w-0"><span className="whitespace-normal leading-tight text-center">{label}</span><SortIcon col={col} /></div>
                 </th>
               ))}
               {(isAdminOuMonitor || isRegulador) && <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">Encaminhar</th>}
               <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">Regulando</th>
               {!colunasExtrasOcultas && [{label:'Cotas',col:2},{label:'Saldo',col:3},{label:'Aguardando',col:4},{label:'Autorizadas',col:5}].map(({label,col}) => (
                 <th key={col} onClick={() => onSort(col)} className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border cursor-pointer hover:bg-muted transition-colors">
-                  <div className="flex items-center justify-center space-x-1"><span>{label}</span><SortIcon col={col} /></div>
+                  <div className="flex items-center justify-center gap-1 min-w-0"><span className="whitespace-normal leading-tight text-center">{label}</span><SortIcon col={col} /></div>
                 </th>
               ))}
             </tr>
