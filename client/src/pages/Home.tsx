@@ -11,6 +11,7 @@ import AgendasRelacionadas from './AgendasRelacionadas';
 import SemCotas from './SemCotas';
 import NovasAgendas from './NovasAgendas';
 import MonitorLogins from './MonitorLogins';
+import UsoPortal from './UsoPortal';
 import PreviaPostgres from './PreviaPostgres';
 import TestePlataformaBackend from './TestePlataformaBackend';
 import Recados from './Recados';
@@ -113,6 +114,7 @@ export default function Home() {
           <Route path="/agendas-relacionadas" component={AgendasRelacionadas} />
           <Route path="/novas-agendas" component={NovasAgendas} />
           <Route path="/monitor-logins" component={MonitorLogins} />
+          <Route path="/uso-portal" component={UsoPortal} />
           <Route path="/previa-pg" component={PreviaPostgres} />
           <Route path="/teste-plataforma-backend" component={TestePlataformaBackend} />
           <Route path="/recados" component={Recados} />
