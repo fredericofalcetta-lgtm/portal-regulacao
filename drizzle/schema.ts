@@ -375,10 +375,32 @@ export const loginLog = mysqlTable("login_log", {
   reguladorNome: varchar("regulador_nome", { length: 255 }),
   loginAt: timestamp("login_at").defaultNow().notNull(),
   logoutAt: timestamp("logout_at"),
+  /** Último heartbeat recebido do navegador (interação real com o portal). */
+  ultimaAtividadeAt: timestamp("ultima_atividade_at"),
 });
 
 export type LoginLog = typeof loginLog.$inferSelect;
 export type InsertLoginLog = typeof loginLog.$inferInsert;
+
+/**
+ * Histórico PERMANENTE de atividade de regulação (somente inserção).
+ * Necessário porque check_ins é apagada no check-out/após 24h e
+ * agendas_concluidas pode ser limpa pelo próprio usuário.
+ * tipo: 'checkin' | 'conclusao'
+ */
+export const atividadeLog = mysqlTable("atividade_log", {
+  id: int("id").autoincrement().primaryKey(),
+  usuarioEmail: varchar("usuario_email", { length: 320 }).notNull(),
+  usuarioNome: varchar("usuario_nome", { length: 255 }),
+  tipo: varchar("tipo", { length: 30 }).notNull(),
+  agendaNome: varchar("agenda_nome", { length: 255 }),
+  municipio: varchar("municipio", { length: 255 }),
+  central: varchar("central", { length: 100 }),
+  especialidade: varchar("especialidade", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type AtividadeLog = typeof atividadeLog.$inferSelect;
 
 /**
  * Recados enviados pelo administrador para toda a equipe.
