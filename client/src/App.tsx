@@ -107,6 +107,14 @@ function Router() {
         )}
       </Route>
 
+      <Route path="/uso-portal">
+        {() => (
+          <AuthGuard>
+            <Home />
+          </AuthGuard>
+        )}
+      </Route>
+
       <Route path="/recados">
         {() => (
           <AuthGuard>
