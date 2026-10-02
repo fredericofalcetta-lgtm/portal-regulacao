@@ -4,6 +4,7 @@ import { getLoginUrl } from "@/const";
 import { useEffect } from "react";
 import AcessoNegado from "@/pages/AcessoNegado";
 import { ReguladorProvider } from "@/contexts/ReguladorContext";
+import { useHeartbeat } from "@/hooks/useHeartbeat";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -20,6 +21,9 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       refetchOnWindowFocus: false,
     }
   );
+
+  // Heartbeat de atividade (só para usuários autorizados)
+  useHeartbeat(!!accessData?.authorized);
 
   // Redirecionar para login se não autenticado
   useEffect(() => {
