@@ -320,6 +320,52 @@ async function runPendingMigrations() {
       console.log('[Migration] condutas_gercon e condutas_gercon_sync_log OK!');
     } catch(e) { console.warn('[Migration] condutas_gercon:', e); }
 
+    // Migration: heartbeat de atividade no login_log + histórico permanente de atividade
+    try {
+      const colsLoginLog = await db.execute(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'login_log' AND TABLE_SCHEMA = DATABASE()"
+      ) as unknown as [{ COLUMN_NAME: string }[], unknown];
+      const loginLogCols = colsLoginLog[0].map((r: { COLUMN_NAME: string }) => r.COLUMN_NAME);
+      if (!loginLogCols.includes('ultima_atividade_at')) {
+        console.log('[Migration] Adicionando ultima_atividade_at em login_log...');
+        await db.execute("ALTER TABLE login_log ADD COLUMN ultima_atividade_at timestamp NULL");
+        // Sessões antigas ficaram "abertas" para sempre por falta de logout — encerra todas
+        await db.execute("UPDATE login_log SET logout_at = login_at WHERE logout_at IS NULL");
+        console.log('[Migration] ultima_atividade_at OK (sessões antigas encerradas).');
+      }
+
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS \`atividade_log\` (
+          \`id\`             int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+          \`usuario_email\`  varchar(320) NOT NULL,
+          \`usuario_nome\`   varchar(255) NULL,
+          \`tipo\`           varchar(30)  NOT NULL,
+          \`agenda_nome\`    varchar(255) NULL,
+          \`municipio\`      varchar(255) NULL,
+          \`central\`        varchar(100) NULL,
+          \`especialidade\`  varchar(255) NULL,
+          \`created_at\`     timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          INDEX \`idx_atividade_email_data\` (\`usuario_email\`, \`created_at\`)
+        )
+      `);
+
+      // Carga inicial (só na primeira vez): aproveita o que ainda existe de histórico
+      const cnt = await db.execute("SELECT COUNT(*) AS total FROM atividade_log") as unknown as [{ total: number }[], unknown];
+      if (Number(cnt[0][0]?.total ?? 0) === 0) {
+        await db.execute(`
+          INSERT INTO atividade_log (usuario_email, usuario_nome, tipo, agenda_nome, municipio, central, especialidade, created_at)
+          SELECT LOWER(usuario_email), usuario_nome, 'conclusao', agenda_nome, municipio, central, especialidade, concluido_em
+          FROM agendas_concluidas
+        `);
+        await db.execute(`
+          INSERT INTO atividade_log (usuario_email, usuario_nome, tipo, agenda_nome, municipio, central, especialidade, created_at)
+          SELECT LOWER(usuario_email), usuario_nome, 'checkin', agenda_nome, municipio, central, especialidade, createdAt
+          FROM check_ins
+        `);
+        console.log('[Migration] atividade_log criada com carga inicial.');
+      }
+    } catch(e) { console.warn('[Migration] atividade/heartbeat:', e); }
+
     // Limpeza diária: remover check-ins com mais de 24h
     try {
       await db.execute("DELETE FROM check_ins WHERE createdAt < DATE_SUB(NOW(), INTERVAL 24 HOUR)");
