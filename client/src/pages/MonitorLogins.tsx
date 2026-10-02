@@ -48,7 +48,7 @@ export default function MonitorLogins() {
               <h1 className="text-xl font-semibold text-foreground">Monitor de Logins</h1>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              Histórico de entradas e saídas dos reguladores
+              Sessões de uso do portal. Uma sessão é encerrada após 30 min sem interação; o fim registrado é o horário da última atividade real.
             </p>
           </div>
           <button
@@ -84,28 +84,37 @@ export default function MonitorLogins() {
                     <div className="flex items-center justify-center gap-1"><LogIn size={11} /> Login</div>
                   </th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">
-                    <div className="flex items-center justify-center gap-1"><LogOut size={11} /> Logout</div>
+                    <div className="flex items-center justify-center gap-1"><LogOut size={11} /> Fim</div>
                   </th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">Última atividade</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">Duração</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-foreground uppercase tracking-wider border-b border-border">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {data.map((row) => {
-                  const dur = duracao(row.loginAt, row.logoutAt);
-                  const ativo = !row.logoutAt;
+                  const ultima = row.ultimaAtividadeAt ?? row.loginAt;
+                  const dur = duracao(row.loginAt, row.logoutAt ?? ultima);
+                  const minDesdeUltima = (Date.now() - new Date(ultima).getTime()) / 60000;
+                  const ativo = !row.logoutAt && minDesdeUltima <= 10;
+                  const ocioso = !row.logoutAt && !ativo;
                   return (
                     <tr key={row.id} className="border-b border-border hover:bg-muted/40 transition-colors">
                       <td className="px-4 py-3 text-sm font-medium text-foreground">{row.reguladorNome ?? '—'}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{row.reguladorEmail}</td>
                       <td className="px-4 py-3 text-center text-xs text-foreground">{formatDate(row.loginAt)}</td>
                       <td className="px-4 py-3 text-center text-xs text-foreground">{formatDate(row.logoutAt)}</td>
+                      <td className="px-4 py-3 text-center text-xs text-foreground">{formatDate(row.ultimaAtividadeAt)}</td>
                       <td className="px-4 py-3 text-center text-xs text-muted-foreground">{dur ?? '—'}</td>
                       <td className="px-4 py-3 text-center">
                         {ativo ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">
                             <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                            Online
+                            Ativo agora
+                          </span>
+                        ) : ocioso ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300">
+                            Ocioso
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
