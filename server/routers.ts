@@ -33,6 +33,7 @@ import { syncCondutasGerconComLog } from "./syncMetabase";
 import { importCondutasGerconFromCsvComLog } from "./importCondutasCsv";
 import { testarQueryPlataformaBackend } from "./plataformaBackendClient";
 import { testarConectividadeTcp } from "./diagnosticoRede";
+import { registrarAtividadeSessao, registrarEventoAtividade, encerrarSessoesInativas, relatorioUso } from "./atividade";
 import { z } from "zod";
 
 export const appRouter = router({
@@ -60,6 +61,25 @@ export const appRouter = router({
     }),
 
     /**
+     * Heartbeat de atividade — enviado pelo navegador apenas quando há interação
+     * real com o portal (ver client/src/hooks/useHeartbeat.ts).
+     */
+    heartbeat: protectedProcedure.mutation(async ({ ctx }) => {
+      const userEmail = ctx.user?.email?.toLowerCase();
+      if (!userEmail) return { ok: false };
+      const db = await getDb();
+      if (!db) return { ok: false };
+      const reg = await db
+        .select({ nome: reguladores.nome, ativo: reguladores.ativo })
+        .from(reguladores)
+        .where(eq(reguladores.email, userEmail))
+        .limit(1);
+      if (reg.length === 0 || reg[0].ativo !== "sim") return { ok: false };
+      try { await registrarAtividadeSessao(userEmail, reg[0].nome); } catch { return { ok: false }; }
+      return { ok: true };
+    }),
+
+    /**
      * Verifica se o usuário autenticado está na lista de reguladores autorizados.
      * Retorna o perfil do regulador se autorizado, ou null se não autorizado.
      */
@@ -82,28 +102,9 @@ export const appRouter = router({
 
       const reg = result[0];
 
-      // Registrar login no log com debounce de 30 minutos
-      // (evita múltiplos registros por navegação entre abas)
+      // Carregar o portal conta como atividade (abre ou estende a sessão)
       if (reg.ativo === "sim") {
-        try {
-          const recentLogin = await db
-            .select({ id: loginLog.id })
-            .from(loginLog)
-            .where(and(
-              eq(loginLog.reguladorEmail, userEmail),
-              sql`${loginLog.loginAt} > DATE_SUB(NOW(), INTERVAL 30 MINUTE)`,
-              sql`${loginLog.logoutAt} IS NULL`
-            ))
-            .limit(1);
-
-          if (recentLogin.length === 0) {
-            await db.insert(loginLog).values({
-              reguladorEmail: userEmail,
-              reguladorNome: reg.nome,
-              loginAt: new Date(),
-            });
-          }
-        } catch { /* ignora erros no log */ }
+        try { await registrarAtividadeSessao(userEmail, reg.nome); } catch { /* ignora erros no log */ }
       }
 
       return {
@@ -1085,6 +1086,13 @@ export const appRouter = router({
           usuarioNome,
         });
 
+        // Histórico permanente (check_ins é apagada no check-out e após 24h)
+        await registrarEventoAtividade({
+          email: usuarioEmail, nome: usuarioNome, tipo: "checkin",
+          agendaNome: input.agendaNome, municipio: input.municipio,
+          central: input.central, especialidade: input.especialidade,
+        });
+
         return { action: "checkin" as const, bloqueado: false, reguladores: [] };
       }),
 
@@ -1338,6 +1346,13 @@ export const appRouter = router({
           indexRegula: input.indexRegula,
           usuarioEmail,
           usuarioNome,
+        });
+
+        // 4. Histórico permanente (não é apagado por "limpar" nem por reabertura)
+        await registrarEventoAtividade({
+          email: usuarioEmail, nome: usuarioNome, tipo: "conclusao",
+          agendaNome: input.agendaNome, municipio: input.municipio,
+          central: input.central, especialidade: input.especialidade,
         });
 
         return { success: true };
@@ -2145,11 +2160,30 @@ export const appRouter = router({
         const reg = await db.select({ perfil: reguladores.perfil }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
         const perfil = (reg[0]?.perfil ?? '').toLowerCase();
         if (!perfil.includes('administrador') && !perfil.includes('monitoramento')) return [];
+        await encerrarSessoesInativas();
         return db
           .select()
           .from(loginLog)
           .orderBy(desc(loginLog.loginAt))
           .limit(input.limite ?? 500);
+      }),
+  }),
+
+  /**
+   * Relatório de uso do portal por regulador (admin/monitoramento) — combina
+   * sessões (heartbeat) com o histórico permanente de check-ins e conclusões.
+   */
+  usoPortal: router({
+    relatorio: protectedProcedure
+      .input(z.object({ dias: z.number().int().min(1).max(365) }))
+      .query(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const userEmail = ctx.user?.email?.toLowerCase() ?? '';
+        const reg = await db.select({ perfil: reguladores.perfil }).from(reguladores).where(eq(reguladores.email, userEmail)).limit(1);
+        const perfil = (reg[0]?.perfil ?? '').toLowerCase();
+        if (!perfil.includes('administrador') && !perfil.includes('monitoramento')) return [];
+        return relatorioUso(input.dias);
       }),
   }),
 
