@@ -7,7 +7,8 @@ import { useRegulador } from '@/contexts/ReguladorContext';
 import { usePersistedFilters } from '@/hooks/usePersistedFilters';
 import { trpc } from '@/lib/trpc';
 import { UltimaAtualizacao } from '@/components/UltimaAtualizacao';
-import { LogOut, CheckCircle2, Loader2, X, GripHorizontal } from 'lucide-react';
+import { LogOut, CheckCircle2, Loader2, X, GripHorizontal, Map as MapIcon } from 'lucide-react';
+import MapaRegioesSaude from '@/components/MapaRegioesSaude';
 
 interface RegulationProps {
   data: (string | number)[][];
@@ -39,6 +40,8 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
   const [selectedMunicipios, setSelectedMunicipios] = useState<Set<string>>(new Set());
 
   // Check-in ativo na tela de Lista de Agendas
+  // Janela do mapa das regiões de saúde — abre só quando o usuário clica no botão "RS"
+  const [mapaAberto, setMapaAberto] = useState(false);
   const [checkInAtivo, setCheckInAtivo] = useState<{
     agendaId: number;
     agendaNome: string;
@@ -430,6 +433,15 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
                     {concluirMutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
                     Concluído
                   </button>
+                  {/* Mapa das regiões de saúde — somente sob demanda */}
+                  <button
+                    onClick={() => setMapaAberto(true)}
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-md border border-blue-400/60 text-blue-100 hover:text-white hover:bg-slate-700 text-xs font-medium transition-colors"
+                    title="Ver mapa das regiões de saúde do RS (macro / CRS / região)"
+                  >
+                    <MapIcon size={13} />
+                    RS
+                  </button>
                   <button
                     onClick={() => { setCheckInAtivo(null); setFiltrosRecolhidos(false); }}
                     className="flex items-center gap-1 px-2 py-1.5 rounded-md text-blue-300 hover:text-white hover:bg-slate-700 text-xs transition-colors"
@@ -463,6 +475,12 @@ export default function Regulation({ data, concluidasIds = [], onConcluir, onRef
                   autoExpandir
                 />
               </div>
+              {/* Janela do mapa — fica fechada até o usuário pedir */}
+              <MapaRegioesSaude
+                open={mapaAberto}
+                onOpenChange={setMapaAberto}
+                municipio={checkInAtivo.municipio}
+              />
             </div>
           </Panel>
         </PanelGroup>
