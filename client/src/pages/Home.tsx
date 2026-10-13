@@ -102,6 +102,8 @@ export default function Home() {
           <Route path="/">
             {() => isReguladorPuro ? <Redirect to="/minhas-agendas" /> : <Landing />}
           </Route>
+          {/* Início acessível a todos os perfis (inclusive regulador) pelo menu */}
+          <Route path="/inicio" component={Landing} />
           <Route path="/regulacao">
             {() => <Regulation data={rows} concluidasIds={concluidasIds} onConcluir={invalidateSheetsData} onRefresh={handleRefresh} dataUpdatedAt={sheetsDataUpdatedAt} />}
           </Route>
