@@ -22,6 +22,13 @@ function Router() {
           </AuthGuard>
         )}
       </Route>
+      <Route path="/inicio">
+        {() => (
+          <AuthGuard>
+            <Home />
+          </AuthGuard>
+        )}
+      </Route>
       <Route path="/regulacao">
         {() => (
           <AuthGuard>
