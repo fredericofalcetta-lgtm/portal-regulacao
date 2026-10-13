@@ -92,7 +92,9 @@ export default function Sidebar({ currentPage, onToggle }: SidebarProps) {
     ));
 
   const navItems = [
-    { href: '/', page: 'inicio', icon: Home, label: 'Início', visible: isAdminOrMonitorOnly || perfilAtivo?.toLowerCase().includes('administrador') || perfilAtivo?.toLowerCase().includes('monitoramento') },
+    // Início visível para todos os perfis. Usa /inicio (e não /) porque o regulador puro
+    // continua sendo redirecionado de / para Minhas Agendas ao entrar no portal.
+    { href: '/inicio', page: 'inicio', icon: Home, label: 'Início', visible: true },
     { href: '/regulacao', page: 'regulacao', icon: Table2, label: 'Lista de agendas', visible: true },
     { href: '/minhas-agendas', page: 'minhas-agendas', icon: ClipboardList, label: 'Minhas Agendas', visible: true },
     { href: '/monitor-checkins', page: 'monitor-checkins', icon: Activity, label: 'Monitor de Check-ins', visible: isAdminOrMonitor },
