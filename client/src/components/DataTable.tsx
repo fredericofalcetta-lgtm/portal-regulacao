@@ -1,12 +1,12 @@
 import { memo, useMemo, useCallback, useState } from 'react';
-import { ChevronUp, ChevronDown, ChevronRight, Lock, LogIn, Download, Eye, EyeOff } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronRight, Lock, LogIn, Download, Eye, EyeOff, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import EncaminharCell from './EncaminharCell';
 import EncaminharGrupoCell from './EncaminharGrupoCell';
 import AutoEncaminharCell from './AutoEncaminharCell';
 import AutoEncaminharGrupoCell from './AutoEncaminharGrupoCell';
 import CheckInCell from './CheckInCell';
-import { getCorRowStyle, getCorBadgeStyle, getCorPrioridade } from '@/lib/corAgenda';
+import { getCorRowStyle, getCorBadgeStyle, getCorPrioridade, getFilaCotasInfo } from '@/lib/corAgenda';
 import { UltimaAtualizacao } from '@/components/UltimaAtualizacao';
 
 interface DataTableProps {
@@ -63,8 +63,7 @@ const TableRow = memo(function TableRow({
   const agendaId = typeof row[17] === 'number' ? row[17] : 0;
   const cor = String(row[14] ?? '');
   const flagIndex = String(row[13] ?? '');
-  const flagAutCotas = String(row[15] ?? '');
-  const corAutCotas = String(row[16] ?? '');
+  const filaCotas = getFilaCotasInfo(row[6]);
   const indexValue = parseFloat(String(row[7])) || 0;
 
   const getIndexColor = (v: number) => {
@@ -102,8 +101,9 @@ const TableRow = memo(function TableRow({
       <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{String(row[11])}</td>
       <td className="px-2 py-1.5 text-xs text-muted-foreground">{isSubRow ? String(row[1]) : '—'}</td>
       <td className="px-2 py-1.5 text-center">
-        <span title={flagAutCotas || undefined} className={`inline-block px-1.5 py-0.5 rounded text-xs font-semibold cursor-default ${corAutCotas === 'Vermelho' ? 'bg-red-100 dark:bg-red-950/50 text-red-900 dark:text-red-300' : corAutCotas === 'Laranja' ? 'bg-orange-100 dark:bg-orange-950/50 text-orange-900 dark:text-orange-300' : corAutCotas === 'Amarelo' ? 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-900 dark:text-yellow-300' : corAutCotas === 'Verde' ? 'bg-green-100 dark:bg-green-950/50 text-green-900 dark:text-green-300' : 'text-foreground'}`}>
-          {(() => { const raw = String(row[6] ?? ''); const v = parseFloat(raw.replace(/\./g, '').replace(',', '.')); return isNaN(v) ? (raw || '—') : v.toFixed(2); })()}
+        {/* Fila/Cotas — destaque pela regra ≤ 4 (⏩) / > 4 (⚠️); frase de orientação no tooltip */}
+        <span title={filaCotas.frase ? `${filaCotas.icone} ${filaCotas.frase}` : undefined} className={`inline-block px-1.5 py-0.5 rounded text-xs font-semibold cursor-default ${filaCotas.badgeClass}`}>
+          {filaCotas.texto}
         </span>
       </td>
       <td className="px-2 py-1.5 text-center">
@@ -280,11 +280,16 @@ const GrupoRow = memo(function GrupoRow({
           )}
         </td>
         <td className="px-2 py-1.5 text-center">
-          {isSingle ? (
-            <span className="text-sm font-semibold text-foreground">
-              {(() => { const raw = String(linhas[0][6] ?? ''); const v = parseFloat(raw.replace(/\./g, '').replace(',', '.')); return isNaN(v) ? (raw || '—') : v.toFixed(2); })()}
-            </span>
-          ) : null}
+          {isSingle ? (() => {
+            // Destaque pela regra ≤ 4 (⏩) / > 4 (⚠️), igual às sub-linhas
+            const fc = getFilaCotasInfo(linhas[0][6]);
+            return (
+              <span title={fc.frase ? `${fc.icone} ${fc.frase}` : undefined}
+                className={`inline-block px-1.5 py-0.5 rounded text-sm font-semibold cursor-default ${fc.badgeClass}`}>
+                {fc.texto}
+              </span>
+            );
+          })() : null}
         </td>
         <td className="px-2 py-1.5 text-center">
           {isSingle ? (
@@ -395,9 +400,25 @@ export default function DataTable({
   const isAdminOuMonitor = perfilLower.includes('administrador') || perfilLower.includes('monitoramento');
   const isRegulador = perfilLower.includes('regulador') || perfilLower.includes('consultor');
 
+  // Expansão dos grupos (agendas com vários municípios).
+  // `todasExpandidas` define o padrão (lembrado no navegador); `expandidos` guarda
+  // as EXCEÇÕES clicadas individualmente — assim o botão "Expandir todas" também
+  // vale para agendas que aparecem depois (troca de filtro, atualização de dados).
+  const [todasExpandidas, setTodasExpandidas] = useState<boolean>(() => {
+    try { return localStorage.getItem('lista-agendas-expandir-todas') === '1'; } catch { return false; }
+  });
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
   const toggleGrupo = useCallback((chave: string) => {
     setExpandidos(prev => { const next = new Set(prev); if (next.has(chave)) next.delete(chave); else next.add(chave); return next; });
+  }, []);
+  const isGrupoExpandido = (chave: string) => todasExpandidas ? !expandidos.has(chave) : expandidos.has(chave);
+  const toggleTodasExpandidas = useCallback(() => {
+    setTodasExpandidas(prev => {
+      const next = !prev;
+      try { localStorage.setItem('lista-agendas-expandir-todas', next ? '1' : '0'); } catch { /* ignora */ }
+      return next;
+    });
+    setExpandidos(new Set()); // zera exceções individuais
   }, []);
 
   const [filtrarBloqueadas, setFiltrarBloqueadas] = useState<"todas" | "bloqueadas" | "livres">("livres");
@@ -458,26 +479,42 @@ export default function DataTable({
       mapa.get(chave)!.linhas.push(row);
     }
     const lista = Array.from(mapa.values());
-    lista.sort((a, b) => {
-      const getVal = (g: Grupo): number | string => {
-        if (sortColumn === 14) return Math.min(...g.linhas.map(r => getCorPrioridade(String(r[14] ?? ''))));
-        const numCols = [2, 3, 4, 5, 7, 8, 9, 10];
-        if (numCols.includes(sortColumn)) return g.linhas.reduce((s, r) => s + (parseFloat(String(r[sortColumn])) || 0), 0);
-        if (sortColumn === 6) { const raw = String(g.linhas[0][6] ?? ''); return parseFloat(raw.replace(/\./g, '').replace(',', '.')) || 0; }
-        return String(g.linhas[0][sortColumn]);
-      };
-      const aVal = getVal(a), bVal = getVal(b);
+
+    // Comparador de LINHAS (município a município), usado em dois níveis:
+    //  1) ordena as linhas dentro de cada grupo (sub-linhas ao expandir);
+    //  2) ordena os grupos pela sua 1ª linha já ordenada — ou seja, cada agenda
+    //     agrupada fica posicionada pelo município "mais extremo" na coluna
+    //     escolhida (maior valor em ordem decrescente, menor em crescente).
+    // Antes, agendas agrupadas eram ordenadas pela SOMA (que fica oculta na
+    // linha do grupo) e as sub-linhas não eram ordenadas — por isso a ordenação
+    // parecia não funcionar para elas.
+    const ORDEM_CENTRAL = ['CRA','1CRS','2CRS','3CRS','4CRS','5CRS','6CRS','7CRS','8CRS','9CRS','10CRS','11CRS','12CRS','13CRS','14CRS','15CRS','16CRS','17CRS','18CRS'];
+    const numCols = [2, 3, 4, 5, 7, 8, 9, 10];
+    const getValLinha = (r: (string | number)[]): number | string => {
+      if (sortColumn === 14) return getCorPrioridade(String(r[14] ?? ''));
+      if (numCols.includes(sortColumn)) return parseFloat(String(r[sortColumn])) || 0;
+      if (sortColumn === 6) return getFilaCotasInfo(r[6]).valor ?? 0;
+      if (sortColumn === 11) { const i = ORDEM_CENTRAL.indexOf(String(r[11] ?? '')); return i === -1 ? 999 : i; }
+      return String(r[sortColumn] ?? '');
+    };
+    const compararLinhas = (a: (string | number)[], b: (string | number)[]): number => {
+      const aVal = getValLinha(a), bVal = getValLinha(b);
       if (typeof aVal === 'number' && typeof bVal === 'number') return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
-      // Ordenação especial para Central (col 11) — segue ordem CRA, 1CRS, 2CRS...
-      if (sortColumn === 11) {
-        const ORDEM_CENTRAL = ['CRA','1CRS','2CRS','3CRS','4CRS','5CRS','6CRS','7CRS','8CRS','9CRS','10CRS','11CRS','12CRS','13CRS','14CRS','15CRS','16CRS','17CRS','18CRS'];
-        const ia = ORDEM_CENTRAL.indexOf(String(aVal));
-        const ib = ORDEM_CENTRAL.indexOf(String(bVal));
-        const posA = ia === -1 ? 999 : ia;
-        const posB = ib === -1 ? 999 : ib;
-        return sortOrder === 'desc' ? posB - posA : posA - posB;
-      }
       return sortOrder === 'desc' ? String(bVal).localeCompare(String(aVal), 'pt-BR') : String(aVal).localeCompare(String(bVal), 'pt-BR');
+    };
+
+    // 1) Ordena as sub-linhas de cada grupo
+    for (const g of lista) g.linhas.sort(compararLinhas);
+
+    // 2) Ordena os grupos pela 1ª linha (já ordenada)
+    lista.sort((a, b) => {
+      // Cor: o grupo usa a cor mais prioritária entre seus municípios (mantido)
+      if (sortColumn === 14) {
+        const pa = Math.min(...a.linhas.map(r => getCorPrioridade(String(r[14] ?? ''))));
+        const pb = Math.min(...b.linhas.map(r => getCorPrioridade(String(r[14] ?? ''))));
+        return sortOrder === 'desc' ? pb - pa : pa - pb;
+      }
+      return compararLinhas(a.linhas[0], b.linhas[0]);
     });
     return lista;
   }, [filteredRows, sortColumn, sortOrder]);
@@ -622,6 +659,19 @@ export default function DataTable({
             {colunasExtrasOcultas ? <EyeOff size={11} /> : <Eye size={11} />}
             {colunasExtrasOcultas ? 'Colunas ocultas' : 'Ocultar cotas/saldo/aguard./autoriz.'}
           </button>
+          {/* Expandir / recolher todas as agendas agrupadas (vários municípios) */}
+          <button
+            onClick={toggleTodasExpandidas}
+            className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors ${
+              todasExpandidas
+                ? 'bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700'
+                : 'border-border text-muted-foreground hover:bg-muted'
+            }`}
+            title={todasExpandidas ? 'Recolher os municípios de todas as agendas' : 'Mostrar os municípios de todas as agendas agrupadas'}
+          >
+            {todasExpandidas ? <ChevronsDownUp size={11} /> : <ChevronsUpDown size={11} />}
+            {todasExpandidas ? 'Recolher todas' : 'Expandir todas'}
+          </button>
           <UltimaAtualizacao compact />
         </div>
       </div>
@@ -663,7 +713,7 @@ export default function DataTable({
             ) : grupos.map(grupo => {
               const chave = `${grupo.nome}|${grupo.central}`;
               return (
-                <GrupoRow key={chave} grupo={grupo} isExpanded={expandidos.has(chave)} onToggle={() => toggleGrupo(chave)}
+                <GrupoRow key={chave} grupo={grupo} isExpanded={isGrupoExpandido(chave)} onToggle={() => toggleGrupo(chave)}
                   isAdminOuMonitor={isAdminOuMonitor} isRegulador={isRegulador}
                   encaminhamentosPorAgenda={encaminhamentosPorAgenda} checkInsPorAgenda={checkInsPorAgenda}
                   reguladoresList={reguladoresList} emailUsuario={emailUsuario}
