@@ -124,3 +124,54 @@ export function getCorBorderClass(_cor: string | null | undefined): string {
 export function getCorBorderStyle(cor: string | null | undefined): CSSProperties {
   return getCorRowStyle(cor);
 }
+
+// ─── Fila/Cotas: regra de destaque e frases de orientação ────────────────────
+// Regra única usada em todo o portal (Lista de agendas, Minhas agendas,
+// agendas relacionadas e barra azul de check-in):
+//   Fila/Cotas ≤ 4  → ⏩ regulação mais flexível
+//   Fila/Cotas > 4  → ⚠️ aplicar os critérios do protocolo
+
+export const FILA_COTAS_LIMITE = 4;
+
+export const FRASE_FILA_COTAS_BAIXA =
+  'Autorize o que for pertinente à especialidade e ao prestador indicado. Não faça consultoria ativa, não use aguarda matriciamento ou pendente para pedir informações sobre prioridade.';
+
+export const FRASE_FILA_COTAS_ALTA =
+  'Aplique os critérios do protocolo. Utilize a consultoria ativa, o status Pendente ou Aguarda Matriciamento (nas especialidades disponíveis no 0800) para solicitar as informações necessárias ao cumprimento dos critérios do protocolo e à definição da prioridade.';
+
+/** Converte o Fila/Cotas (string pt-BR como "21,2" ou número) em número. */
+export function parseFilaCotas(raw: unknown): number | undefined {
+  if (raw == null || raw === '') return undefined;
+  if (typeof raw === 'number') return isNaN(raw) ? undefined : raw;
+  const v = parseFloat(String(raw).replace(/\./g, '').replace(',', '.'));
+  return isNaN(v) ? undefined : v;
+}
+
+/**
+ * Informações de exibição do Fila/Cotas: valor formatado, classes do "badge"
+ * da célula, ícone e frase de orientação (usada no title/tooltip e nos alertas).
+ */
+export function getFilaCotasInfo(raw: unknown): {
+  valor: number | undefined;
+  texto: string;
+  alta: boolean | null;
+  icone: string;
+  frase: string;
+  badgeClass: string;
+} {
+  const valor = parseFilaCotas(raw);
+  if (valor === undefined) {
+    return { valor, texto: raw != null && raw !== '' ? String(raw) : '—', alta: null, icone: '', frase: '', badgeClass: 'text-foreground' };
+  }
+  const alta = valor > FILA_COTAS_LIMITE;
+  return {
+    valor,
+    texto: valor.toFixed(2),
+    alta,
+    icone: alta ? '⚠️' : '⏩',
+    frase: alta ? FRASE_FILA_COTAS_ALTA : FRASE_FILA_COTAS_BAIXA,
+    badgeClass: alta
+      ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-900 dark:text-amber-200 ring-1 ring-inset ring-amber-400 dark:ring-amber-700'
+      : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-900 dark:text-emerald-200 ring-1 ring-inset ring-emerald-400 dark:ring-emerald-700',
+  };
+}
