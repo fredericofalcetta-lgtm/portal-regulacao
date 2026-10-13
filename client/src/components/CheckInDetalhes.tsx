@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Loader2, FileText, ListOrdered, ExternalLink, TrendingDown, ChevronsUpDown, Columns2, X } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
+import { getCorRowStyle, getCorBadgeStyle, getFilaCotasInfo } from '@/lib/corAgenda';
 
 interface CheckInDetalhesProps {
   agendaId: number;
@@ -10,6 +10,17 @@ interface CheckInDetalhesProps {
   central?: string | null;
   municipio?: string | null;
   autoExpandir?: boolean;
+}
+
+/** Célula de Fila/Cotas com o mesmo destaque da Lista de agendas (≤ 4 ⏩ / > 4 ⚠️). */
+function CelulaFilaCotas({ raw }: { raw: unknown }) {
+  const fc = getFilaCotasInfo(raw);
+  return (
+    <span title={fc.frase ? `${fc.icone} ${fc.frase}` : undefined}
+      className={`inline-block px-1 rounded font-semibold cursor-default ${fc.badgeClass}`}>
+      {fc.texto}
+    </span>
+  );
 }
 
 export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, central, municipio, autoExpandir = false }: CheckInDetalhesProps) {
@@ -241,14 +252,16 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                       <thead className="bg-secondary">
                         <tr>
                           {([
+                            // Mesma ordem da Lista de agendas: Agenda, Município, Fila/Cotas, Índice, Cotas, Saldo, Aguardando, Autorizadas
+                            // (Central é omitida porque todas as linhas são da mesma central)
                             { label: 'Agenda', col: 'agenda' as SortCol },
                             { label: 'Município', col: 'municipio' as SortCol },
+                            { label: 'Fila/Cotas', col: 'autCotas' as SortCol },
+                            { label: 'Índice', col: 'indexRegula' as SortCol },
                             { label: 'Cotas', col: 'cotas' as SortCol },
                             { label: 'Saldo', col: 'saldo' as SortCol },
                             { label: 'Aguardando', col: 'aguardando' as SortCol },
                             { label: 'Autorizadas', col: 'autorizadas' as SortCol },
-                            { label: 'Fila/Cotas', col: 'autCotas' as SortCol },
-                            { label: 'Índice', col: 'indexRegula' as SortCol },
                           ]).map(({ label, col }) => (
                             <th
                               key={col}
@@ -282,23 +295,15 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                                 {a.agenda ?? '—'}
                               </div>
                             </td>
-                            <td className="px-2 py-0.5 text-center text-muted-foreground">{a.municipio ?? '—'}</td>
+                            <td className="px-2 py-0.5 text-left text-muted-foreground">{a.municipio ?? '—'}</td>
+                            <td className="px-2 py-0.5 text-center"><CelulaFilaCotas raw={a.autCotas} /></td>
+                            <td className={`px-2 py-0.5 text-center ${getIndexColor(a.indexRegula)}`}>
+                              {a.indexRegula != null ? a.indexRegula.toFixed(2) : '—'}
+                            </td>
                             <td className="px-2 py-0.5 text-center text-foreground">{a.cotas ?? '—'}</td>
                             <td className="px-2 py-0.5 text-center text-foreground">{a.saldo ?? '—'}</td>
                             <td className="px-2 py-0.5 text-center text-foreground">{a.aguardando ?? '—'}</td>
                             <td className="px-2 py-0.5 text-center text-foreground">{a.autorizadas ?? '—'}</td>
-                            <td className="px-2 py-0.5 text-center text-foreground">
-                              {a.autCotas != null
-                                ? (() => {
-                                    // autCotas vem como string pt-BR (ex: "21,2") — converter antes de formatar
-                                    const v = parseFloat(String(a.autCotas).replace(/\./g, '').replace(',', '.'));
-                                    return isNaN(v) ? String(a.autCotas) : v.toFixed(2);
-                                  })()
-                                : '—'}
-                            </td>
-                            <td className={`px-2 py-0.5 text-center ${getIndexColor(a.indexRegula)}`}>
-                              {a.indexRegula != null ? a.indexRegula.toFixed(2) : '—'}
-                            </td>
                           </tr>
                           );
                         })}
@@ -323,7 +328,7 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                         <table className="w-full text-[10px] border-collapse">
                           <thead className="bg-secondary">
                             <tr>
-                              {(['Agenda','Município','Cotas','Saldo','Aguardando','Autorizadas','Fila/Cotas','Índice']).map(label => (
+                              {(['Agenda','Município','Fila/Cotas','Índice','Cotas','Saldo','Aguardando','Autorizadas']).map(label => (
                                 <th key={label} className={`px-2 py-1 font-semibold text-foreground text-[10px] ${label === 'Agenda' || label === 'Município' ? 'text-left' : 'text-center'}`}>{label}</th>
                               ))}
                             </tr>
@@ -341,16 +346,14 @@ export default function CheckInDetalhes({ agendaId, agendaNome, especialidade, c
                                     </div>
                                   </td>
                                   <td className="px-2 py-0.5 text-muted-foreground">{a.municipio ?? '—'}</td>
+                                  <td className="px-2 py-0.5 text-center"><CelulaFilaCotas raw={a.autCotas} /></td>
+                                  <td className={`px-2 py-0.5 text-center ${getIndexColor(a.indexRegula)}`}>
+                                    {a.indexRegula != null ? a.indexRegula.toFixed(2) : '—'}
+                                  </td>
                                   <td className="px-2 py-0.5 text-center">{a.cotas ?? '—'}</td>
                                   <td className="px-2 py-0.5 text-center">{a.saldo ?? '—'}</td>
                                   <td className="px-2 py-0.5 text-center">{a.aguardando ?? '—'}</td>
                                   <td className="px-2 py-0.5 text-center">{a.autorizadas ?? '—'}</td>
-                                  <td className="px-2 py-0.5 text-center">
-                                    {a.autCotas != null ? (() => { const v = parseFloat(String(a.autCotas).replace(/\./g,'').replace(',','.')); return isNaN(v) ? String(a.autCotas) : v.toFixed(2); })() : '—'}
-                                  </td>
-                                  <td className={`px-2 py-0.5 text-center ${getIndexColor(a.indexRegula)}`}>
-                                    {a.indexRegula != null ? a.indexRegula.toFixed(2) : '—'}
-                                  </td>
                                 </tr>
                               );
                             })}
