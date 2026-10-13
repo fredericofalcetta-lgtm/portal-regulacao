@@ -1,6 +1,6 @@
 import React from 'react';
 import { LogIn, LogOut, Loader2, ClipboardList, Send, CheckCircle2, Trash2, Flag, CheckCheck, XCircle, Users } from 'lucide-react';
-import { getCorRowStyle, getCorBadgeStyle } from '@/lib/corAgenda';
+import { getCorRowStyle, getCorBadgeStyle, getFilaCotasInfo } from '@/lib/corAgenda';
 import CheckInDetalhes from '@/components/CheckInDetalhes';
 import { trpc } from '@/lib/trpc';
 import { Link } from 'wouter';
@@ -76,7 +76,6 @@ function AgendaRow({
   flagIndex,
   corIndex,
   flagAutCotas,
-  corAutCotas,
   temCheckIn,
   reguladoresAtivos,
   encaminhadoPor,
@@ -137,37 +136,25 @@ function AgendaRow({
           </div>
         )}
       </td>
-      {/* Município */}
-      <td className="px-2 py-1.5 text-xs text-muted-foreground">{municipio ?? '—'}</td>
+      {/* Ordem igual à Lista de agendas:
+          Agenda | Central | Município | Fila/Cotas | Index | >7d | >28d | >90d | [contextuais] | Cotas | Saldo | Aguardando | Autorizadas */}
       {/* Central */}
       <td className="px-2 py-1.5 text-center text-xs text-foreground">{central ?? '—'}</td>
-      {/* Cotas */}
-      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{cotas ?? '—'}</td>
-      {/* Saldo */}
-      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{saldo ?? '—'}</td>
-      {/* Aguardando */}
-      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{aguardando ?? '—'}</td>
-      {/* Autorizadas */}
-      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{autorizadas ?? '—'}</td>
-      {/* Fila/Cotas */}
+      {/* Município */}
+      <td className="px-2 py-1.5 text-xs text-muted-foreground">{municipio ?? '—'}</td>
+      {/* Fila/Cotas — destaque pela regra ≤ 4 (⏩) / > 4 (⚠️) */}
       <td className="px-2 py-1.5 text-center">
-        <span
-          title={flagAutCotas || undefined}
-          className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium cursor-default ${
-            corAutCotas === 'Vermelho' ? 'bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300' :
-            corAutCotas === 'Laranja' ? 'bg-orange-100 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300' :
-            corAutCotas === 'Amarelo' ? 'bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300' :
-            corAutCotas === 'Verde' ? 'bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300' :
-            'text-foreground'
-          }`}
-        >
-          {autCotas != null
-            ? (() => {
-                const v = parseFloat(String(autCotas).replace(/\./g, '').replace(',', '.'));
-                return isNaN(v) ? String(autCotas) : v.toFixed(2);
-              })()
-            : (autorizadas != null ? `${autorizadas}` : '—')}
-        </span>
+        {(() => {
+          const fc = getFilaCotasInfo(autCotas);
+          return (
+            <span
+              title={fc.frase ? `${fc.icone} ${fc.frase}` : (flagAutCotas || undefined)}
+              className={`inline-block px-1.5 py-0.5 rounded text-xs font-semibold cursor-default ${fc.badgeClass}`}
+            >
+              {fc.texto}
+            </span>
+          );
+        })()}
       </td>
       {/* IndexRegula */}
       <td className="px-2 py-1.5 text-center">
@@ -248,13 +235,21 @@ function AgendaRow({
           </span>
         </td>
       )}
+
+      {/* ── Colunas finais (mesmas da Lista de agendas) ── */}
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{cotas ?? '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{saldo ?? '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{aguardando ?? '—'}</td>
+      <td className="px-2 py-1.5 text-center text-xs font-medium text-foreground">{autorizadas ?? '—'}</td>
     </tr>
   );
 }
 
 // ─── Cabeçalho da tabela ─────────────────────────────────────────────────────
-// Colunas fixas: Agenda | Central | Cotas | Fila/Cotas | Saldo | Aguardando | >7d | >28d | >90d | Index
-// Colunas extras (contextuais): Encaminhado por? | Data | Check-in? | Ação? | Status?
+// Mesma ordem da Lista de agendas:
+// Agenda | Central | Município | Fila/Cotas | Index | >7d | >28d | >90d
+//   | contextuais: Encaminhado por? | Data | Check-in? | Ação? | Status?
+//   | Cotas | Saldo | Aguardando | Autorizadas
 
 function TableHeader({
   showEncaminhadoPor = false,
@@ -274,12 +269,8 @@ function TableHeader({
       <tr>
         {/* Colunas fixas — mesma ordem da aba Lista de agendas */}
         <th className="px-2 py-1.5 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Agenda</th>
-        <th className="px-2 py-1.5 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Município</th>
         <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Central</th>
-        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Cotas</th>
-        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Saldo</th>
-        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aguardando</th>
-        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Autorizadas</th>
+        <th className="px-2 py-1.5 text-left text-xs font-semibold text-foreground uppercase tracking-wider">Município</th>
         <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Fila/Cotas</th>
         <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Index</th>
         <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">&gt;7d</th>
@@ -299,6 +290,11 @@ function TableHeader({
         {showStatus && (
           <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Status</th>
         )}
+        {/* Colunas finais — iguais às da Lista de agendas */}
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Cotas</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Saldo</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Aguardando</th>
+        <th className="px-2 py-1.5 text-center text-xs font-semibold text-foreground uppercase tracking-wider">Autorizadas</th>
       </tr>
     </thead>
   );
@@ -452,9 +448,6 @@ export default function MinhasAgendas() {
     refetchConcluidas();
   };
 
-  // Número de colunas fixas (Agenda…Index = 10) + Data = 11
-  // Usado para colSpan no rodapé e nas linhas de detalhe
-  const FIXED_COLS = 13; // Agenda, Central, Cotas, Saldo, Aguardando, Autorizadas, Fila/Cotas, Index, >7d, >28d, >90d, Data
 
   // Agrupar encaminhadas por nome+central para check-in em grupo (item 8)
   const gruposEncaminhadas = React.useMemo(() => {
@@ -564,8 +557,20 @@ export default function MinhasAgendas() {
                         dateLabel="Check-in em"
                       />
                       <tr key={`detalhes-${ci.id}`}>
-                        {/* Check-ins ativos: FIXED_COLS(11) + Check-in(1) + Ação(1) = 13 */}
+                        {/* Check-ins ativos: 8 fixas + Data + Check-in + Ação + 4 finais = 15 */}
                         <td colSpan={15} className="p-0">
+                          {/* Frase de alerta pela regra Fila/Cotas (mesma da barra azul da Lista de agendas) */}
+                          {(() => {
+                            const fc = getFilaCotasInfo((ci as any).autCotas);
+                            if (fc.alta === null) return null;
+                            return (
+                              <div className={`px-4 py-1.5 text-xs font-medium leading-snug border-t ${fc.alta
+                                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 border-amber-300 dark:border-amber-800'
+                                : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 border-emerald-300 dark:border-emerald-800'}`}>
+                                {fc.icone} {fc.frase}
+                              </div>
+                            );
+                          })()}
                           <CheckInDetalhes
                             agendaId={ci.agendaId}
                             agendaNome={ci.agendaNome}
@@ -667,7 +672,9 @@ export default function MinhasAgendas() {
                                 <span className="px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-medium">{grupo.length} municípios</span>
                               </div>
                             </td>
-                            <td colSpan={9} />
+                            {/* Fila/Cotas…>90d (5) + Encaminhado por + Data = 7 */}
+                            <td colSpan={7} />
+                            {/* Coluna Check-in */}
                             <td className="px-4 py-2 text-center">
                               {!todasComCheckIn && (
                                 <button
@@ -680,7 +687,8 @@ export default function MinhasAgendas() {
                                 </button>
                               )}
                             </td>
-                            <td colSpan={2} />
+                            {/* Ação + Cotas/Saldo/Aguardando/Autorizadas = 5 */}
+                            <td colSpan={5} />
                           </tr>
                         )}
                         {/* Linhas individuais do grupo */}
@@ -824,16 +832,16 @@ export default function MinhasAgendas() {
                   ))}
                 </tbody>
                 {/* Rodapé com soma total de Aguardando */}
-                {/* Colunas: Agenda, Central, Cotas, Fila/Cotas, Saldo, Aguardando, >7d, >28d, >90d, Index, Data, Status = 12 */}
+                {/* 14 colunas: 8 fixas + Data + Status + Cotas + Saldo + Aguardando(13ª) + Autorizadas */}
                 <tfoot className="bg-emerald-50 dark:bg-emerald-950/20 border-t-2 border-emerald-200 dark:border-emerald-800">
                   <tr>
-                    <td colSpan={5} className="px-4 py-3 text-right text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+                    <td colSpan={12} className="px-4 py-3 text-right text-xs font-semibold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
                       Total Aguardando (produtividade):
                     </td>
                     <td className="px-4 py-3 text-center text-sm font-bold text-emerald-700 dark:text-emerald-300">
                       {totalAguardandoConcluidas}
                     </td>
-                    <td colSpan={9} />
+                    <td />
                   </tr>
                 </tfoot>
               </table>
