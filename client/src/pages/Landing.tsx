@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { trpc } from '@/lib/trpc';
+import { FRASE_FILA_COTAS_BAIXA, FRASE_FILA_COTAS_ALTA } from '@/lib/corAgenda';
 import {
   Table2,
-  BarChart3,
-  ListChecks,
   ArrowRight,
   Activity,
   Users,
@@ -12,42 +11,49 @@ import {
   AlertCircle,
   Clock,
   RefreshCw,
+  BookOpen,
 } from 'lucide-react';
 
-const NAV_CARDS = [
+
+// ─── Legenda (dicionário das colunas) ─────────────────────────────────────────
+// Texto fornecido pela equipe de regulação. As regras de Fila/Cotas usam as
+// mesmas frases do alerta exibido no check-in (lib/corAgenda.ts).
+const LEGENDA: {
+  termo: string;
+  descricao: string;
+  regras?: { rotulo: string; texto: string; classe: string }[];
+}[] = [
+  { termo: 'AGENDA', descricao: 'Nome da agenda no GERCON.' },
+  { termo: 'CENTRAL', descricao: 'Central de regulação no GERCON.' },
   {
-    href: '/regulacao',
-    icon: Table2,
-    title: 'Portal de Monitoramento da Regulação TSRS',
-    description:
-      'Consulte e filtre as agendas disponíveis por especialidade, central e município. Dados ordenados por índice de regulação.',
-    color: 'bg-blue-600',
-    borderColor: 'border-blue-200 dark:border-blue-800',
-    bgColor: 'bg-blue-50 dark:bg-blue-950/40',
-    textColor: 'text-blue-700 dark:text-blue-300',
+    termo: 'MUNICÍPIO',
+    descricao: 'Município que oferece a agenda, conforme regionalização configurada no GERCON. Ao expandir a linha da agenda visualizamos cada município que a oferece. Uma linha com esse campo em branco irá aparecer sempre que houver solicitações sem município ou com uma instituição indicada; estes casos são contabilizados como município nulo.',
   },
   {
-    href: '/dashboard',
-    icon: BarChart3,
-    title: 'Dashboard',
-    description:
-      'Visualize métricas e gráficos com a distribuição de cotas, saldos e índices por especialidade e central.',
-    color: 'bg-indigo-600',
-    borderColor: 'border-indigo-200 dark:border-indigo-800',
-    bgColor: 'bg-indigo-50 dark:bg-indigo-950/40',
-    textColor: 'text-indigo-700 dark:text-indigo-300',
+    termo: 'FILA/COTAS',
+    descricao: 'Relação entre a quantidade de casos autorizados e em aguarda regulação/reavaliação/reversão pela quantidade de cotas disponíveis no mês vigente. Quanto maior o número, mais tempo o paciente demora para consultar.',
+    regras: [
+      { rotulo: '⏩ ≤ 4,00', texto: FRASE_FILA_COTAS_BAIXA, classe: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 border border-emerald-200 dark:border-emerald-800' },
+      { rotulo: '⚠️ > 4,00', texto: FRASE_FILA_COTAS_ALTA, classe: 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 border border-amber-200 dark:border-amber-800' },
+    ],
   },
   {
-    href: '/prioridades',
-    icon: ListChecks,
-    title: 'Listas de Prioridades',
-    description:
-      'Acesse os documentos de critérios de priorização para cada especialidade, organizados por grupo clínico.',
-    color: 'bg-violet-600',
-    borderColor: 'border-violet-200 dark:border-violet-800',
-    bgColor: 'bg-violet-50 dark:bg-violet-950/40',
-    textColor: 'text-violet-700 dark:text-violet-300',
+    termo: 'INDEX',
+    descricao: 'Cálculo que leva em conta o saldo do mês vigente, a quantidade de casos aguardando regulação e a quantidade de casos autorizados, para sinalizar em quais agendas se corre o risco de perder consultas, por falta de casos autorizados.',
+    regras: [
+      { rotulo: 'Index > 3', texto: 'Situação crítica para perda de consultas. Esta agenda deve ser regulada prioritariamente. Avalie a relação FILA/COTAS para decidir a flexibilidade da regulação.', classe: 'bg-red-50 dark:bg-red-950/40 text-red-900 dark:text-red-100 border border-red-200 dark:border-red-800' },
+      { rotulo: 'Index > 2', texto: 'Alta oferta de consultas. A agenda deve ser regulada com brevidade.', classe: 'bg-orange-50 dark:bg-orange-950/40 text-orange-900 dark:text-orange-100 border border-orange-200 dark:border-orange-800' },
+      { rotulo: 'Index > 1', texto: 'Não há casos autorizados suficientes para cobrir a oferta do mês. Priorize a regulação dessas agendas após terminar a regulação das agendas em vermelho e laranja.', classe: 'bg-yellow-50 dark:bg-yellow-950/40 text-yellow-900 dark:text-yellow-100 border border-yellow-200 dark:border-yellow-800' },
+      { rotulo: 'Index ≤ 1', texto: 'Seguir pelo tempo de espera: agendas com mais de 90 dias e mais de 28 dias aguardando regulação.', classe: 'bg-muted text-foreground border border-border' },
+    ],
   },
+  { termo: '> 7D', descricao: 'Número de casos aguardando a primeira regulação há mais de 7 dias. Monitorado em agendas "tempo sensível" como oncologias e PNAR.' },
+  { termo: '> 28D', descricao: 'Número de casos aguardando a primeira regulação há mais de 28 dias. Monitorado em todas as agendas como uma das metas pactuadas com a SES/RS. Clique sobre ">28D" para ordenar as linhas a partir do maior número de casos.' },
+  { termo: '> 90D', descricao: 'Número de casos aguardando a primeira regulação há mais de 90 dias. Agendas com atraso crítico para primeira regulação. Clique sobre ">90D" para ordenar as linhas a partir do maior número de casos.' },
+  { termo: 'COTAS', descricao: 'Total de consultas na especialidade no mês vigente. Este dado é informado pelos prestadores e não varia ao longo do mês.' },
+  { termo: 'SALDO', descricao: 'Número de consultas ainda disponíveis no mês vigente. Este número vai diminuindo ao longo do mês, conforme as consultas são agendadas.' },
+  { termo: 'AGUARDANDO', descricao: 'Casos com a situação Aguardando Regulação, Reavaliação ou Reversão na respectiva central, especialidade e município indicado.' },
+  { termo: 'AUTORIZADAS', descricao: 'Casos com a situação Autorizada e Autorização Automática na respectiva central, especialidade e município indicado.' },
 ];
 
 function StatCard({
@@ -233,24 +239,33 @@ export default function Landing() {
           </section>
         )}
 
-        {/* Links rápidos */}
+        {/* Legenda do portal — substitui o antigo "Acesso Rápido" */}
         <section>
-          <h2 className="text-lg font-semibold text-foreground mb-4">Acesso Rápido</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {NAV_CARDS.map(({ href, icon: Icon, title, description, color, borderColor, bgColor, textColor }) => (
-              <Link key={href} href={href}>
-                <div className={`group block border rounded-xl p-6 hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 cursor-pointer ${borderColor} ${bgColor}`}>
-                  <div className={`inline-flex p-3 rounded-lg ${color} mb-4`}>
-                    <Icon size={22} className="text-white" />
-                  </div>
-                  <h3 className={`font-semibold text-base mb-2 ${textColor}`}>{title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">{description}</p>
-                  <div className={`flex items-center gap-1 text-sm font-medium ${textColor} group-hover:gap-2 transition-all`}>
-                    Acessar
-                    <ArrowRight size={14} />
-                  </div>
+          <h2 className="text-lg font-semibold text-foreground mb-1 flex items-center gap-2">
+            <BookOpen size={18} className="text-primary" />
+            Aprenda a interpretar as informações do Portal de Monitoramento 👇🏽
+          </h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Significado de cada coluna da Lista de agendas e como usar os indicadores para decidir a regulação.
+          </p>
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            {LEGENDA.map((item, i) => (
+              <div key={item.termo} className={`grid grid-cols-1 md:grid-cols-[150px_1fr] gap-x-5 gap-y-1 px-5 py-3 ${i > 0 ? 'border-t border-border' : ''}`}>
+                <div className="text-sm font-bold text-foreground tracking-wide">{item.termo}</div>
+                <div className="min-w-0">
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.descricao}</p>
+                  {item.regras && (
+                    <ul className="mt-2 space-y-1.5">
+                      {item.regras.map(r => (
+                        <li key={r.rotulo} className={`flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3 rounded-md px-3 py-2 text-sm ${r.classe}`}>
+                          <span className="font-semibold whitespace-nowrap shrink-0">{r.rotulo}</span>
+                          <span className="leading-relaxed">{r.texto}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </section>
