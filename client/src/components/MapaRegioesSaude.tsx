@@ -161,6 +161,9 @@ export default function MapaRegioesSaude({
   const [selecionada, setSelecionada] = useState<string | null>(regiaoInicial);
   const [abertas, setAbertas] = useState<Set<string>>(new Set(regiaoInicial ? [regiaoInicial] : []));
   const [busca, setBusca] = useState('');
+  // Região "fixada" pelo clique no mapa: a lista passa a mostrar só ela, logo
+  // abaixo do mapa. Clicar de novo na mesma região (liga/desliga) volta a listar todas.
+  const [fixada, setFixada] = useState<string | null>(null);
 
   // Ao abrir a janela (ou trocar de agenda), volta a destacar a região da agenda atual
   useEffect(() => {
@@ -168,14 +171,31 @@ export default function MapaRegioesSaude({
       setSelecionada(regiaoInicial);
       setAbertas(new Set(regiaoInicial ? [regiaoInicial] : []));
       setBusca('');
+      setFixada(null);
     }
   }, [open, regiaoInicial]);
 
   const termo = norm(busca);
-  const filtradas = useMemo(() => !termo ? REGIOES : REGIOES.filter(r =>
-    norm(`${r.num} ${r.nome} ${r.crs}crs ${r.crs}acrs`).includes(termo) ||
-    r.municipios.some(m => norm(m).includes(termo))
-  ), [termo]);
+  const filtradas = useMemo(() => {
+    if (fixada) return REGIOES.filter(r => r.num === fixada);
+    return !termo ? REGIOES : REGIOES.filter(r =>
+      norm(`${r.num} ${r.nome} ${r.crs}crs ${r.crs}acrs`).includes(termo) ||
+      r.municipios.some(m => norm(m).includes(termo))
+    );
+  }, [termo, fixada]);
+
+  // Clique no mapa = liga/desliga: 1º clique mostra só a região (já aberta);
+  // 2º clique na mesma região volta a mostrar todas.
+  const cliqueNoMapa = (num: string) => {
+    if (fixada === num) {
+      setFixada(null);
+      return;
+    }
+    setFixada(num);
+    setBusca('');
+    setSelecionada(num);
+    setAbertas(prev => new Set(prev).add(num));
+  };
 
   const macros = Object.keys(CORES_MACRO);
 
@@ -213,7 +233,7 @@ export default function MapaRegioesSaude({
               stroke={selecionada === r.num ? '#042C53' : '#ffffff'}
               strokeWidth={selecionada === r.num ? 2.5 : 1}
               className="cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => selecionar(r.num, false)}>
+              onClick={() => cliqueNoMapa(r.num)}>
               <title>{`${r.num} · ${r.nome} · ${r.crs}ª CRS`}</title>
             </path>
           ))}
@@ -243,10 +263,20 @@ export default function MapaRegioesSaude({
         {/* Busca */}
         <div className="relative">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input value={busca} onChange={e => setBusca(e.target.value)}
+          <input value={busca} onChange={e => { setBusca(e.target.value); setFixada(null); }}
             placeholder="Buscar município, região ou CRS"
             className="w-full text-sm pl-8 pr-3 py-1.5 rounded-md border border-border bg-background" />
         </div>
+
+        {/* Aviso de filtro pelo mapa (liga/desliga) */}
+        {fixada && (
+          <div className="flex items-center justify-between gap-2 text-xs rounded-md px-3 py-1.5 bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-800">
+            <span>Mostrando só a região {fixada}. Clique nela de novo no mapa para ver todas.</span>
+            <button onClick={() => setFixada(null)} className="font-medium underline underline-offset-2 whitespace-nowrap">
+              Mostrar todas
+            </button>
+          </div>
+        )}
 
         {/* Lista: macrorregião → região (CRS) → municípios */}
         <div>
@@ -263,7 +293,7 @@ export default function MapaRegioesSaude({
                   Macrorregião {m}
                 </div>
                 {regs.map(r => {
-                  const aberta = !!termo || abertas.has(r.num);
+                  const aberta = !!termo || !!fixada || abertas.has(r.num);
                   return (
                     <div key={r.num} onClick={() => selecionar(r.num, true)}
                       className={`border-t border-border px-2 py-1.5 cursor-pointer text-sm transition-colors ${selecionada === r.num ? 'bg-blue-50 dark:bg-blue-950/40' : 'hover:bg-muted/50'}`}>
