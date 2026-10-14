@@ -4,7 +4,8 @@ import { getCorRowStyle, getCorBadgeStyle, getFilaCotasInfo } from '@/lib/corAge
 import CheckInDetalhes from '@/components/CheckInDetalhes';
 import { trpc } from '@/lib/trpc';
 import { Link } from 'wouter';
-import { Settings } from 'lucide-react';
+import { Settings, Map as MapIcon } from 'lucide-react';
+import MapaRegioesSaude from '@/components/MapaRegioesSaude';
 import { useRegulador } from '@/contexts/ReguladorContext';
 import { UltimaAtualizacao } from '@/components/UltimaAtualizacao';
 import {
@@ -425,6 +426,10 @@ export default function MinhasAgendas() {
     });
   };
 
+  // Janela do mapa das regiões de saúde — abre só quando o usuário clica em "RS"
+  // num check-in ativo. Uma única janela para a página; guarda o município da agenda clicada.
+  const [mapa, setMapa] = React.useState<{ aberto: boolean; municipio: string | null }>({ aberto: false, municipio: null });
+
   const isLoading = loadingCheckIns || loadingEncaminhadas || loadingConcluidas;
   const checkInIds = new Set(checkIns.map(ci => ci.agendaId));
   const totalAguardandoConcluidas = concluidas.reduce((acc, c) => acc + (c.aguardando ?? 0), 0);
@@ -559,15 +564,26 @@ export default function MinhasAgendas() {
                       <tr key={`detalhes-${ci.id}`}>
                         {/* Check-ins ativos: 8 fixas + Data + Check-in + Ação + 4 finais = 15 */}
                         <td colSpan={15} className="p-0">
-                          {/* Frase de alerta pela regra Fila/Cotas (mesma da barra azul da Lista de agendas) */}
+                          {/* Frase de alerta pela regra Fila/Cotas (mesma da barra azul da Lista de agendas)
+                              + botão "RS" que abre o mapa das regiões de saúde sob demanda */}
                           {(() => {
                             const fc = getFilaCotasInfo((ci as any).autCotas);
-                            if (fc.alta === null) return null;
-                            return (
-                              <div className={`px-4 py-1.5 text-xs font-medium leading-snug border-t ${fc.alta
+                            const cores = fc.alta === null
+                              ? 'bg-muted/40 text-muted-foreground border-border'
+                              : fc.alta
                                 ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 border-amber-300 dark:border-amber-800'
-                                : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 border-emerald-300 dark:border-emerald-800'}`}>
-                                {fc.icone} {fc.frase}
+                                : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 border-emerald-300 dark:border-emerald-800';
+                            return (
+                              <div className={`flex items-start gap-3 px-4 py-1.5 text-xs font-medium leading-snug border-t ${cores}`}>
+                                <span className="flex-1 min-w-0">{fc.alta !== null ? `${fc.icone} ${fc.frase}` : ''}</span>
+                                <button
+                                  onClick={() => setMapa({ aberto: true, municipio: ci.municipio ?? null })}
+                                  className="shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-md border border-blue-300 dark:border-blue-700 bg-white/70 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/50 transition-colors"
+                                  title="Ver mapa das regiões de saúde do RS (macro / CRS / região)"
+                                >
+                                  <MapIcon size={12} />
+                                  RS
+                                </button>
                               </div>
                             );
                           })()}
@@ -850,6 +866,13 @@ export default function MinhasAgendas() {
         </section>
 
       </div>
+
+      {/* Mapa das regiões de saúde — fechado até o usuário clicar em "RS" */}
+      <MapaRegioesSaude
+        open={mapa.aberto}
+        onOpenChange={(v) => setMapa(m => ({ ...m, aberto: v }))}
+        municipio={mapa.municipio}
+      />
     </div>
   );
 }
