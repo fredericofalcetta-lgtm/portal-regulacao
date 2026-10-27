@@ -1,15 +1,36 @@
 import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import { InsertUser, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
+/**
+ * Conexão com o PostgreSQL (antes: MySQL).
+ * DATABASE_URL no formato postgresql://usuario:senha@host:5432/banco
+ * Se o servidor exigir SSL, acrescente ?sslmode=require na URL
+ * (ou defina DATABASE_SSL=true para aceitar certificado autoassinado).
+ */
+function criarPool(url: string) {
+  const sslForcado = process.env.DATABASE_SSL === "true";
+  return new Pool({
+    connectionString: url,
+    max: 10,
+    // Sessões em UTC: NOW()/CURRENT_DATE previsíveis; conversões para o horário
+    // de Brasília são feitas explicitamente nas consultas (AT TIME ZONE).
+    options: "-c TimeZone=UTC",
+    ...(sslForcado ? { ssl: { rejectUnauthorized: false } } : {}),
+  });
+}
+
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      const pool = criarPool(process.env.DATABASE_URL);
+      pool.on("error", err => console.error("[Database] Erro no pool:", err.message));
+      _db = drizzle(pool);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -68,7 +89,8 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: users.openId,
       set: updateSet,
     });
   } catch (error) {
